@@ -5,6 +5,25 @@
 
 ---
 
+## v0.8.1-alpha — 2026-04-21
+
+### Ajouts
+- **Raccourcis clavier globaux** — actifs sur toutes les pages, ignorés si focus dans un champ texte
+  - `n` → Nouvelle session
+  - `l` → Session en cours (Live)
+  - `g` `h` → Accueil (liste sessions)
+  - `g` `s` → Statistiques
+  - `g` `p` → ⚡ Spark
+  - `/` → Focus sur la recherche (ou redirect vers l'accueil)
+  - `j` / `k` → Session suivante / précédente dans la liste visible
+  - `Enter` → Ouvrir la session sélectionnée
+  - `Esc` → Fermer l'overlay ou désélectionner
+  - `?` → Afficher / masquer l'aide des raccourcis
+- **Overlay aide** (`?`) — panel centré avec la liste de tous les raccourcis, style terminal
+- **Sélection j/k** — highlight `.kbd-focus` sur la session active, scroll automatique dans la vue
+
+---
+
 ## v0.8.0-alpha — 2026-04-21
 
 ### Ajouts

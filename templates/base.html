@@ -294,6 +294,49 @@
 
         @media(max-width:600px) { .form-grid,.detail-grid { grid-template-columns: 1fr; } .session-row { grid-template-columns: 1fr auto; } }
 
+        /* ── RACCOURCIS CLAVIER ── */
+        .session-row.kbd-focus {
+            border-color: var(--accent2) !important;
+            background: var(--accent2-soft) !important;
+            box-shadow: 0 0 0 2px rgba(45,74,107,0.2), var(--shadow) !important;
+            transform: translateX(4px) !important;
+        }
+        /* Overlay aide raccourcis */
+        #kbd-overlay {
+            display: none; position: fixed; inset: 0; z-index: 500;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(3px);
+            align-items: center; justify-content: center;
+        }
+        #kbd-overlay.open { display: flex; }
+        #kbd-panel {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+            padding: 28px 32px; min-width: 420px; max-width: 520px;
+        }
+        #kbd-panel h2 {
+            font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+            letter-spacing: .14em; color: var(--text-muted); margin-bottom: 20px;
+            padding-bottom: 12px; border-bottom: 1px solid var(--border);
+        }
+        .kbd-section { margin-bottom: 18px; }
+        .kbd-section-title {
+            font-family: var(--mono); font-size: 9px; text-transform: uppercase;
+            letter-spacing: .14em; color: var(--accent); margin-bottom: 8px; font-weight: 700;
+        }
+        .kbd-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 5px 0; border-bottom: 1px solid var(--border); gap: 16px;
+        }
+        .kbd-row:last-child { border-bottom: none; }
+        .kbd-desc { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+        .kbd-keys { display: flex; gap: 4px; flex-shrink: 0; }
+        kbd {
+            font-family: var(--mono); font-size: 11px; font-weight: 600;
+            background: var(--bg-alt); border: 1px solid var(--border-strong);
+            border-radius: 3px; padding: 2px 7px; color: var(--text);
+            box-shadow: 0 1px 0 var(--border-strong);
+        }
+
         /* ── POMODORO ── */
         .pomo {
             position: fixed; bottom: 20px; right: 20px; z-index: 200;
@@ -416,6 +459,33 @@
 
     <footer>Robōtariis Session Journal v{{ version }} — La machine ne ment pas. Elle déforme.</footer>
 
+    <!-- OVERLAY RACCOURCIS CLAVIER -->
+    <div id="kbd-overlay" onclick="kbdClose()">
+        <div id="kbd-panel" onclick="event.stopPropagation()">
+            <h2>⌨ Raccourcis clavier</h2>
+            <div class="kbd-section">
+                <div class="kbd-section-title">Navigation</div>
+                <div class="kbd-row"><span class="kbd-desc">Nouvelle session</span><span class="kbd-keys"><kbd>n</kbd></span></div>
+                <div class="kbd-row"><span class="kbd-desc">Session en cours (Live)</span><span class="kbd-keys"><kbd>l</kbd></span></div>
+                <div class="kbd-row"><span class="kbd-desc">Accueil — liste des sessions</span><span class="kbd-keys"><kbd>g</kbd><kbd>h</kbd></span></div>
+                <div class="kbd-row"><span class="kbd-desc">Statistiques</span><span class="kbd-keys"><kbd>g</kbd><kbd>s</kbd></span></div>
+                <div class="kbd-row"><span class="kbd-desc">⚡ Spark</span><span class="kbd-keys"><kbd>g</kbd><kbd>p</kbd></span></div>
+            </div>
+            <div class="kbd-section">
+                <div class="kbd-section-title">Liste des sessions</div>
+                <div class="kbd-row"><span class="kbd-desc">Rechercher</span><span class="kbd-keys"><kbd>/</kbd></span></div>
+                <div class="kbd-row"><span class="kbd-desc">Session suivante</span><span class="kbd-keys"><kbd>j</kbd></span></div>
+                <div class="kbd-row"><span class="kbd-desc">Session précédente</span><span class="kbd-keys"><kbd>k</kbd></span></div>
+                <div class="kbd-row"><span class="kbd-desc">Ouvrir la session sélectionnée</span><span class="kbd-keys"><kbd>Enter</kbd></span></div>
+                <div class="kbd-row"><span class="kbd-desc">Désélectionner / Fermer</span><span class="kbd-keys"><kbd>Esc</kbd></span></div>
+            </div>
+            <div class="kbd-section">
+                <div class="kbd-section-title">Aide</div>
+                <div class="kbd-row"><span class="kbd-desc">Afficher / masquer cette aide</span><span class="kbd-keys"><kbd>?</kbd></span></div>
+            </div>
+        </div>
+    </div>
+
     <!-- POMODORO WIDGET -->
     <div class="pomo" id="pomo">
         <div class="pomo-head" onclick="pomoTogglePanel()">
@@ -470,6 +540,88 @@
         const saved = localStorage.getItem('theme') || 'beton';
         applyTheme(saved);
     })();
+
+    // ── RACCOURCIS CLAVIER ──────────────────────────────────────────────────────
+    let _kbdIdx  = -1;   // index session sélectionnée par j/k
+    let _kbdGSeq = '';   // buffer pour séquences type "gh", "gs"…
+
+    function kbdRows() {
+        return [...document.querySelectorAll('#session-list .session-row:not([style*="display:none"])')];
+    }
+    function kbdSelect(idx) {
+        kbdRows().forEach((r, i) => r.classList.toggle('kbd-focus', i === idx));
+        _kbdIdx = idx;
+        const row = kbdRows()[idx];
+        if (row) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    function kbdClear() { kbdRows().forEach(r => r.classList.remove('kbd-focus')); _kbdIdx = -1; }
+
+    function kbdOpen()  { document.getElementById('kbd-overlay').classList.add('open'); }
+    function kbdClose() { document.getElementById('kbd-overlay').classList.remove('open'); }
+
+    document.addEventListener('keydown', e => {
+        const tag  = document.activeElement.tagName;
+        const inInput = ['INPUT','TEXTAREA','SELECT'].includes(tag);
+        const key  = e.key;
+
+        // Escape — ferme overlay ou désélectionne
+        if (key === 'Escape') {
+            if (document.getElementById('kbd-overlay').classList.contains('open')) { kbdClose(); return; }
+            kbdClear();
+            return;
+        }
+
+        // ? — toggle aide (même si focus input)
+        if (key === '?' && !inInput) { kbdOpen(); return; }
+
+        // Ne pas intercepter si on tape dans un champ
+        if (inInput) return;
+
+        // / — focus recherche
+        if (key === '/') {
+            e.preventDefault();
+            const s = document.getElementById('search');
+            if (s) { s.focus(); s.select(); }
+            else window.location.href = '/';
+            return;
+        }
+
+        // Séquences à deux touches (g + h/s/p)
+        if (key === 'g') { _kbdGSeq = 'g'; setTimeout(() => _kbdGSeq = '', 1000); return; }
+        if (_kbdGSeq === 'g') {
+            _kbdGSeq = '';
+            if (key === 'h') { window.location.href = '/'; return; }
+            if (key === 's') { window.location.href = '/stats'; return; }
+            if (key === 'p') { window.location.href = '/spark'; return; }
+        }
+
+        // Touches simples
+        if (key === 'n') { window.location.href = '/new'; return; }
+        if (key === 'l') { window.location.href = '/live'; return; }
+
+        // j / k — naviguer la liste
+        if (key === 'j' || key === 'k') {
+            const rows = kbdRows();
+            if (!rows.length) return;
+            let next = _kbdIdx + (key === 'j' ? 1 : -1);
+            next = Math.max(0, Math.min(rows.length - 1, next));
+            kbdSelect(next);
+            return;
+        }
+
+        // Enter — ouvrir la session sélectionnée
+        if (key === 'Enter' && _kbdIdx >= 0) {
+            const row = kbdRows()[_kbdIdx];
+            if (row) row.click();
+            return;
+        }
+    });
+
+    // Réinitialiser la sélection si la liste change (filtres)
+    const _listEl = document.getElementById('session-list');
+    if (_listEl) {
+        new MutationObserver(() => kbdClear()).observe(_listEl, { childList: true, subtree: true, attributes: true });
+    }
 
     async function refreshOblique() {
         const r = await fetch('/oblique');
