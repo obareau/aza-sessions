@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Journal Robōtariis{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F4F1EC;
+            --bg-alt: #EDEAE3;
+            --surface: #FFFFFF;
+            --border: #C8C2B8;
+            --border-strong: #8A8278;
+            --text: #1A1814;
+            --text-muted: #6B6560;
+            --accent: #D4380D;
+            --accent-soft: #FFF1EE;
+            --accent2: #2D4A6B;
+            --accent2-soft: #EEF3F8;
+            --success: #2D6A4F;
+            --success-soft: #EDFAF3;
+            --warning: #B45309;
+            --warning-soft: #FFF8EE;
+            --mono: 'IBM Plex Mono', monospace;
+            --sans: 'IBM Plex Sans', sans-serif;
+            --radius: 2px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+
+        header {
+            background: var(--text); color: var(--bg);
+            padding: 0 24px; display: flex; align-items: center;
+            justify-content: space-between; height: 52px;
+            position: sticky; top: 0; z-index: 100;
+            border-bottom: 2px solid var(--accent);
+        }
+        .header-brand {
+            font-family: var(--mono); font-size: 12px; font-weight: 600;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .header-brand .dot {
+            width: 6px; height: 6px; background: var(--accent);
+            border-radius: 50%; animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        .header-nav { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+        .header-nav a {
+            color: var(--bg); text-decoration: none;
+            font-family: var(--mono); font-size: 11px;
+            letter-spacing: 0.06em; text-transform: uppercase;
+            padding: 4px 10px; border-radius: var(--radius);
+            opacity: 0.7; transition: all 0.15s;
+        }
+        .header-nav a:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+        .header-nav .sep { color: rgba(255,255,255,0.2); font-size: 10px; }
+        .version-badge {
+            font-family: var(--mono); font-size: 10px; color: var(--text-muted);
+            background: var(--bg-alt); border: 1px solid var(--border);
+            padding: 2px 6px; border-radius: var(--radius); margin-left: 8px;
+        }
+
+        .oblique-banner {
+            background: var(--accent-soft); border-bottom: 1px solid var(--border);
+            padding: 10px 24px; display: flex; align-items: center; gap: 12px;
+        }
+        .oblique-label { font-family: var(--mono); font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap; font-weight: 600; }
+        .oblique-text { font-family: var(--mono); font-size: 12px; font-style: italic; flex: 1; }
+        .oblique-btn { background: none; border: 1px solid var(--accent); color: var(--accent); font-family: var(--mono); font-size: 10px; padding: 3px 8px; cursor: pointer; border-radius: var(--radius); text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.15s; }
+        .oblique-btn:hover { background: var(--accent); color: white; }
+
+        main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 20px; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .card-title { font-family: var(--mono); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group.full { grid-column: 1 / -1; }
+        label { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); font-weight: 600; }
+
+        input[type="text"], input[type="number"], input[type="datetime-local"], select, textarea {
+            font-family: var(--mono); font-size: 13px;
+            background: var(--bg); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 9px 12px;
+            color: var(--text); transition: border-color 0.15s; width: 100%;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(45,74,107,0.12); }
+        textarea { resize: vertical; min-height: 80px; }
+
+        .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
+        .chk { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; transition: all 0.15s; background: var(--bg); font-size: 11px; font-family: var(--mono); }
+        .chk:hover { border-color: var(--accent2); background: var(--accent2-soft); }
+        .chk input[type="checkbox"] { accent-color: var(--accent2); width: auto; }
+
+        .star-group { display: flex; gap: 4px; flex-direction: row-reverse; justify-content: flex-end; }
+        .star-group input[type="radio"] { display: none; }
+        .star-group label { font-size: 22px; cursor: pointer; color: var(--border-strong); transition: color 0.1s; text-transform: none; letter-spacing: 0; }
+        .star-group input[type="radio"]:checked ~ label, .star-group label:hover, .star-group label:hover ~ label { color: var(--warning); }
+
+        .toggle-row { display: flex; align-items: center; gap: 10px; }
+        .toggle { position: relative; width: 36px; height: 20px; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 10px; cursor: pointer; transition: background 0.2s; }
+        .toggle-slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: transform 0.2s; }
+        .toggle input:checked + .toggle-slider { background: var(--accent2); }
+        .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+        .toggle-label { font-family: var(--mono); font-size: 12px; }
+
+        .btn { font-family: var(--mono); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; padding: 10px 20px; border-radius: var(--radius); border: none; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.15s; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: #B82E08; }
+        .btn-secondary { background: var(--bg-alt); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--border-strong); }
+        .btn-ghost { background: none; color: var(--accent2); border: 1px solid var(--accent2); }
+        .btn-ghost:hover { background: var(--accent2); color: white; }
+        .btn-danger { background: none; color: var(--accent); border: 1px solid var(--accent); }
+        .btn-danger:hover { background: var(--accent); color: white; }
+        .btn-sm { padding: 5px 10px; font-size: 10px; }
+
+        .session-row { display: grid; grid-template-columns: 140px 1fr auto auto; align-items: center; gap: 16px; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); text-decoration: none; color: var(--text); transition: all 0.15s; margin-bottom: 8px; }
+        .session-row:hover { border-color: var(--accent2); box-shadow: var(--shadow); transform: translateX(2px); }
+        .session-date { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+        .session-machines { font-family: var(--mono); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .badge { font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+        .badge-release { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); }
+        .badge-rework { background: var(--accent2-soft); color: var(--accent2); border: 1px solid var(--accent2); }
+        .badge-neu { background: var(--bg-alt); color: var(--text-muted); border: 1px solid var(--border); }
+        .rating-stars { font-size: 12px; color: var(--warning); }
+
+        .section-title { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-muted); font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        .page-header { margin-bottom: 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .page-title { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
+        .page-subtitle { font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .detail-field { display: flex; flex-direction: column; gap: 4px; }
+        .detail-field.full { grid-column: 1 / -1; }
+        .detail-label { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); font-weight: 600; }
+        .detail-value { font-family: var(--mono); font-size: 13px; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); min-height: 36px; white-space: pre-wrap; }
+
+        .oblique-pill { background: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--radius); padding: 16px; }
+        .oblique-pill .obl-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); font-weight: 700; margin-bottom: 8px; }
+        .oblique-pill .obl-txt { font-family: var(--mono); font-size: 13px; font-style: italic; }
+
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+        .stat-num { font-family: var(--mono); font-size: 32px; font-weight: 600; color: var(--text); }
+        .stat-lbl { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-top: 4px; }
+
+        .cat-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); margin-bottom: 6px; }
+        .cat-row.inactive { opacity: 0.45; background: var(--bg-alt); }
+
+        .type-section { margin-bottom: 28px; }
+        .type-badge { display: inline-flex; align-items: center; font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 3px 10px; border-radius: 10px; }
+        .type-machine { background: #FFF3E0; color: #E65100; border: 1px solid #FFB74D; }
+        .type-effet { background: #FCE4EC; color: #880E4F; border: 1px solid #F48FB1; }
+        .type-daw { background: #E8F5E9; color: #1B5E20; border: 1px solid #A5D6A7; }
+        .type-synth_ios { background: #E3F2FD; color: #0D47A1; border: 1px solid #90CAF9; }
+        .type-plugin { background: #F3E5F5; color: #4A148C; border: 1px solid #CE93D8; }
+        .type-artiste { background: var(--accent-soft); color: var(--accent); border: 1px solid #FFAB91; }
+        .type-label { background: var(--accent2-soft); color: var(--accent2); border: 1px solid #90B4D4; }
+        .type-autre { background: var(--bg-alt); color: var(--text-muted); border: 1px solid var(--border); }
+
+        .empty { text-align: center; padding: 60px 24px; color: var(--text-muted); }
+        .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+
+        footer { border-top: 1px solid var(--border); padding: 16px 24px; text-align: center; font-family: var(--mono); font-size: 10px; color: var(--text-muted); letter-spacing: 0.06em; }
+
+        @media(max-width:600px) { .form-grid,.detail-grid { grid-template-columns: 1fr; } .session-row { grid-template-columns: 1fr auto; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-brand"><span class="dot"></span>Journal Robōtariis</div>
+        <nav class="header-nav">
+            <a href="{{ url_for('index') }}">Sessions</a>
+            <a href="{{ url_for('new_session') }}">+ Nouvelle</a>
+            <span class="sep">|</span>
+            <a href="{{ url_for('stats') }}">📊 Stats</a>
+            <span class="sep">|</span>
+            <a href="{{ url_for('manage_catalogue') }}">⚙ Catalogue</a>
+            <a href="{{ url_for('manage_influences') }}">♪ Influences</a>
+            <a href="{{ url_for('manage_obliques') }}">∴ Stratégies</a>
+            <span class="sep">|</span>
+            <a href="{{ url_for('export_all') }}">↓ Export</a>
+            <span class="version-badge">v{{ version }}</span>
+        </nav>
+    </header>
+
+    {% if oblique is defined %}
+    <div class="oblique-banner">
+        <span class="oblique-label">∴ Stratégie</span>
+        <span class="oblique-text" id="oblique-text">{{ oblique }}</span>
+        <button class="oblique-btn" onclick="refreshOblique()">Autre</button>
+    </div>
+    {% endif %}
+
+    <main>{% block content %}{% endblock %}</main>
+
+    <footer>Robōtariis Session Journal v{{ version }} — La machine ne ment pas. Elle déforme.</footer>
+
+    <script>
+    async function refreshOblique() {
+        const r = await fetch('/oblique');
+        const d = await r.json();
+        document.getElementById('oblique-text').textContent = d.text;
+    }
+    </script>
+</body>
+</html>

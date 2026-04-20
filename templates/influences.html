@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Influences — Robōtariis{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">♪ Influences</div>
+        <div class="page-subtitle">{{ influences|length }} influence{% if influences|length > 1 %}s{% endif %}</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+</div>
+
+<!-- AJOUTER -->
+<div class="card">
+    <div class="card-title">+ Ajouter une influence</div>
+    <form method="POST" action="{{ url_for('manage_influences') }}" style="display:grid;grid-template-columns:1fr 140px 2fr auto;gap:10px;align-items:end;">
+        <input type="hidden" name="action" value="add">
+        <div>
+            <label style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px;">Nom</label>
+            <input type="text" name="name" placeholder="ex: Merzbow, Ant-Zen..." required style="font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;color:var(--text);width:100%;">
+        </div>
+        <div>
+            <label style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px;">Type</label>
+            <select name="type" style="font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;color:var(--text);width:100%;">
+                <option value="artiste">Artiste</option>
+                <option value="label">Label</option>
+                <option value="autre">Autre</option>
+            </select>
+        </div>
+        <div>
+            <label style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px;">Notes (optionnel)</label>
+            <input type="text" name="notes" placeholder="ex: Berlin 90s, noise japonais..." style="font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;color:var(--text);width:100%;">
+        </div>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+    </form>
+</div>
+
+{% set artistes = influences|selectattr('type','equalto','artiste')|list %}
+{% set labels = influences|selectattr('type','equalto','label')|list %}
+{% set autres = influences|selectattr('type','equalto','autre')|list %}
+
+{% for group_name, group_type, group_items in [('Artistes', 'artiste', artistes), ('Labels', 'label', labels), ('Autres', 'autre', autres)] %}
+{% if group_items %}
+<div class="type-section">
+    <div class="section-title">
+        <span class="type-badge type-{{ group_type }}">{{ group_name }}</span>
+        <span style="font-size:10px;color:var(--text-muted)">{{ group_items|length }}</span>
+    </div>
+    {% for inf in group_items %}
+    <div class="cat-row {{ 'inactive' if not inf.active }}">
+        <form method="POST" action="{{ url_for('manage_influences') }}" style="flex:1;display:flex;gap:8px;align-items:center;">
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="id" value="{{ inf.id }}">
+            <input type="hidden" name="type" value="{{ inf.type }}">
+            <input type="text" name="name" value="{{ inf.name }}"
+                   style="font-family:var(--mono);font-size:12px;background:transparent;border:1px solid transparent;border-radius:var(--radius);padding:4px 8px;color:var(--text);flex:1;transition:all .15s;"
+                   onfocus="this.style.borderColor='var(--accent2)';this.style.background='white'"
+                   onblur="this.style.borderColor='transparent';this.style.background='transparent'">
+            <input type="text" name="notes" value="{{ inf.notes or '' }}" placeholder="notes..."
+                   style="font-family:var(--mono);font-size:11px;color:var(--text-muted);background:transparent;border:1px solid transparent;border-radius:var(--radius);padding:4px 8px;width:200px;transition:all .15s;"
+                   onfocus="this.style.borderColor='var(--accent2)';this.style.background='white'"
+                   onblur="this.style.borderColor='transparent';this.style.background='transparent'">
+            <select name="type" style="font-family:var(--mono);font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 6px;color:var(--text);">
+                <option value="artiste" {{ 'selected' if inf.type == 'artiste' }}>Artiste</option>
+                <option value="label" {{ 'selected' if inf.type == 'label' }}>Label</option>
+                <option value="autre" {{ 'selected' if inf.type == 'autre' }}>Autre</option>
+            </select>
+            <button type="submit" class="btn btn-secondary btn-sm">✓</button>
+        </form>
+        <form method="POST" action="{{ url_for('manage_influences') }}">
+            <input type="hidden" name="action" value="toggle">
+            <input type="hidden" name="id" value="{{ inf.id }}">
+            <button type="submit" class="btn btn-secondary btn-sm">{{ '●' if inf.active else '○' }}</button>
+        </form>
+        <form method="POST" action="{{ url_for('manage_influences') }}" onsubmit="return confirm('Supprimer ?')">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="id" value="{{ inf.id }}">
+            <button type="submit" class="btn btn-secondary btn-sm" style="color:var(--accent)">✕</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endfor %}
+
+{% if not influences %}
+<div class="empty">
+    <div class="empty-icon">♪</div>
+    <h3 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Aucune influence</h3>
+    <p>Ajoute tes artistes et labels de référence.</p>
+</div>
+{% endif %}
+
+{% endblock %}

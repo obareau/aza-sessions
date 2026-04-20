@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Catalogue — Robōtariis{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">⚙ Catalogue</div>
+        <div class="page-subtitle">Machines, effets et logiciels</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+</div>
+
+<!-- AJOUTER -->
+<div class="card">
+    <div class="card-title">+ Ajouter un élément</div>
+    <form method="POST" action="{{ url_for('manage_catalogue') }}" style="display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:10px;align-items:end;">
+        <input type="hidden" name="action" value="add">
+        <div>
+            <label style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px;">Type</label>
+            <select name="type" style="font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;color:var(--text);width:100%;">
+                {% for key, label in item_types.items() %}
+                <option value="{{ key }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px;">Nom</label>
+            <input type="text" name="name" placeholder="ex: Volca Keys" required style="font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;color:var(--text);width:100%;">
+        </div>
+        <div>
+            <label style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px;">Notes (optionnel)</label>
+            <input type="text" name="notes" placeholder="ex: futur achat, sur PC..." style="font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;color:var(--text);width:100%;">
+        </div>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+    </form>
+</div>
+
+{% for type_key, type_label in item_types.items() %}
+{% set items = grouped[type_key] %}
+<div class="type-section">
+    <div class="section-title">
+        <span class="type-badge type-{{ type_key }}">{{ type_label }}</span>
+        <span style="font-size:10px;color:var(--text-muted)">{{ items|length }} élément{% if items|length > 1 %}s{% endif %}</span>
+    </div>
+
+    {% if items %}
+    {% for item in items %}
+    <div class="cat-row {{ 'inactive' if not item.active }}">
+        <!-- EDIT -->
+        <form method="POST" action="{{ url_for('manage_catalogue') }}" style="flex:1;display:flex;gap:8px;align-items:center;">
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="id" value="{{ item.id }}">
+            <input type="text" name="name" value="{{ item.name }}"
+                   style="font-family:var(--mono);font-size:12px;background:transparent;border:1px solid transparent;border-radius:var(--radius);padding:4px 8px;color:var(--text);flex:1;transition:all .15s;"
+                   onfocus="this.style.borderColor='var(--accent2)';this.style.background='white'"
+                   onblur="this.style.borderColor='transparent';this.style.background='transparent'">
+            <input type="text" name="notes" value="{{ item.notes or '' }}" placeholder="notes..."
+                   style="font-family:var(--mono);font-size:11px;color:var(--text-muted);background:transparent;border:1px solid transparent;border-radius:var(--radius);padding:4px 8px;width:180px;transition:all .15s;"
+                   onfocus="this.style.borderColor='var(--accent2)';this.style.background='white'"
+                   onblur="this.style.borderColor='transparent';this.style.background='transparent'">
+            <button type="submit" class="btn btn-secondary btn-sm">✓</button>
+        </form>
+        <!-- TOGGLE -->
+        <form method="POST" action="{{ url_for('manage_catalogue') }}">
+            <input type="hidden" name="action" value="toggle">
+            <input type="hidden" name="id" value="{{ item.id }}">
+            <button type="submit" class="btn btn-secondary btn-sm" title="{{ 'Désactiver' if item.active else 'Activer' }}">{{ '●' if item.active else '○' }}</button>
+        </form>
+        <!-- DELETE -->
+        <form method="POST" action="{{ url_for('manage_catalogue') }}" onsubmit="return confirm('Supprimer ?')">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="id" value="{{ item.id }}">
+            <button type="submit" class="btn btn-secondary btn-sm" style="color:var(--accent)">✕</button>
+        </form>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);padding:12px 0;">Aucun élément dans cette catégorie.</p>
+    {% endif %}
+</div>
+{% endfor %}
+
+{% endblock %}

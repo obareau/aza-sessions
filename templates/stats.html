@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Statistiques — Robōtariis{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">📊 Statistiques</div>
+        <div class="page-subtitle">Analyse de tes sessions</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+</div>
+
+{% if total == 0 %}
+<div class="empty">
+    <div class="empty-icon">📊</div>
+    <h3 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Pas encore de données</h3>
+    <p>Enregistre des sessions pour voir apparaître les statistiques.</p>
+    <br>
+    <a href="{{ url_for('new_session') }}" class="btn btn-primary">Première session</a>
+</div>
+{% else %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const S = {{ stats_data|safe }};
+const COLORS = {
+    red: '#D4380D', redSoft: 'rgba(212,56,13,0.15)',
+    blue: '#2D4A6B', blueSoft: 'rgba(45,74,107,0.15)',
+    warn: '#B45309', warnSoft: 'rgba(180,83,9,0.15)',
+    green: '#2D6A4F', greenSoft: 'rgba(45,106,79,0.15)',
+    purple: '#6B2D9E', purpleSoft: 'rgba(107,45,158,0.15)',
+    palette: ['#D4380D','#2D4A6B','#B45309','#2D6A4F','#6B2D9E','#B05E00','#0D6B8E','#7A3B19','#1B5E20','#4A148C','#880E4F','#0D47A1','#E65100','#37474F','#1A237E'],
+};
+Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#6B6560';
+
+function hBar(ctx, data, label, color) {
+    const labels = Object.keys(data);
+    const values = Object.values(data);
+    return new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label,
+                data: values,
+                backgroundColor: color || COLORS.redSoft,
+                borderColor: color ? color.replace('0.15','1') : COLORS.red,
+                borderWidth: 1,
+                borderRadius: 2,
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw} session${ctx.raw > 1 ? 's' : ''}` } } },
+            scales: { x: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.04)' } }, y: { grid: { display: false } } }
+        }
+    });
+}
+
+function doughnut(ctx, data, colors) {
+    const labels = Object.keys(data);
+    const values = Object.values(data);
+    return new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data: values,
+                backgroundColor: colors || COLORS.palette.slice(0, labels.length).map(c => c + '99'),
+                borderColor: colors || COLORS.palette.slice(0, labels.length),
+                borderWidth: 1,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom', labels: { padding: 12, boxWidth: 12 } },
+                tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}` } }
+            }
+        }
+    });
+}
+
+function lineMonth(ctx, data) {
+    return new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: Object.keys(data),
+            datasets: [{
+                label: 'Sessions',
+                data: Object.values(data),
+                borderColor: COLORS.red,
+                backgroundColor: COLORS.redSoft,
+                fill: true,
+                tension: 0.3,
+                pointBackgroundColor: COLORS.red,
+                pointRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: 'rgba(0,0,0,0.04)' } },
+                y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.04)' } }
+            }
+        }
+    });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    if (Object.keys(S.machines).length) hBar(document.getElementById('cMachines'), S.machines, 'Sessions', COLORS.redSoft);
+    if (Object.keys(S.effects).length) hBar(document.getElementById('cEffects'), S.effects, 'Sessions', 'rgba(136,14,79,0.15)');
+    if (Object.keys(S.daws).length) hBar(document.getElementById('cDaws'), S.daws, 'Sessions', COLORS.greenSoft);
+    if (Object.keys(S.synths_ios).length) hBar(document.getElementById('cSynths'), S.synths_ios, 'Sessions', COLORS.blueSoft);
+    if (Object.keys(S.plugins).length) hBar(document.getElementById('cPlugins'), S.plugins, 'Sessions', COLORS.purpleSoft);
+    if (Object.keys(S.influences).length) hBar(document.getElementById('cInfluences'), S.influences, 'Sessions', COLORS.warnSoft);
+    if (Object.keys(S.characters).length) doughnut(document.getElementById('cChars'));
+    if (Object.keys(S.modes).length) doughnut(document.getElementById('cModes'));
+    if (Object.keys(S.rating_dist).length) {
+        new Chart(document.getElementById('cRatings'), {
+            type: 'bar',
+            data: {
+                labels: ['★','★★','★★★','★★★★','★★★★★'],
+                datasets: [{ data: Object.values(S.rating_dist), backgroundColor: COLORS.warnSoft, borderColor: COLORS.warn, borderWidth: 1, borderRadius: 2 }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+    }
+    if (Object.keys(S.energy_dist).length) {
+        new Chart(document.getElementById('cEnergy'), {
+            type: 'bar',
+            data: {
+                labels: ['⚡','⚡⚡','⚡⚡⚡'],
+                datasets: [{ data: Object.values(S.energy_dist), backgroundColor: COLORS.greenSoft, borderColor: COLORS.green, borderWidth: 1, borderRadius: 2 }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+    }
+    if (Object.keys(S.monthly).length > 1) lineMonth(document.getElementById('cMonthly'), S.monthly);
+});
+</script>
+
+<!-- KPIs -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;margin-bottom:24px;">
+    <div class="stat-card">
+        <div class="stat-num">{{ total }}</div>
+        <div class="stat-lbl">Sessions</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-num">{{ stats.avg_duration }}</div>
+        <div class="stat-lbl">Min. moy. / session</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-num" style="color:var(--accent)">{{ stats.release_count }}</div>
+        <div class="stat-lbl">Potentiel release</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-num" style="color:var(--accent2)">{{ stats.rework_count }}</div>
+        <div class="stat-lbl">À retravailler</div>
+    </div>
+</div>
+
+<!-- TIMELINE -->
+{% if stats.monthly|length > 1 %}
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-title">∙ Sessions par mois</div>
+    <canvas id="cMonthly" height="80"></canvas>
+</div>
+{% endif %}
+
+<!-- MACHINES -->
+{% if stats.machines %}
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-title">∙ Machines hardware — utilisation</div>
+    <canvas id="cMachines" height="{{ [stats.machines|length * 28, 100]|max }}"></canvas>
+</div>
+{% endif %}
+
+<!-- EFFETS -->
+{% if stats.effects %}
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-title">∙ Effets hardware — utilisation</div>
+    <canvas id="cEffects" height="{{ [stats.effects|length * 28, 80]|max }}"></canvas>
+</div>
+{% endif %}
+
+<!-- LOGICIELS en 3 colonnes -->
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;">
+    {% if stats.daws %}
+    <div class="card">
+        <div class="card-title">∙ DAW</div>
+        <canvas id="cDaws" height="120"></canvas>
+    </div>
+    {% endif %}
+    {% if stats.synths_ios %}
+    <div class="card">
+        <div class="card-title">∙ Synthés iOS</div>
+        <canvas id="cSynths" height="120"></canvas>
+    </div>
+    {% endif %}
+    {% if stats.plugins %}
+    <div class="card">
+        <div class="card-title">∙ Plugins VST/AU</div>
+        <canvas id="cPlugins" height="120"></canvas>
+    </div>
+    {% endif %}
+</div>
+
+<!-- INFLUENCES -->
+{% if stats.influences %}
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-title">∙ Influences les plus présentes</div>
+    <canvas id="cInfluences" height="{{ [stats.influences|length * 28, 80]|max }}"></canvas>
+</div>
+{% endif %}
+
+<!-- DISTRIBUTIONS -->
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;">
+    {% if stats.rating_dist %}
+    <div class="card">
+        <div class="card-title">∙ Distribution notes</div>
+        <canvas id="cRatings" height="160"></canvas>
+    </div>
+    {% endif %}
+    {% if stats.energy_dist %}
+    <div class="card">
+        <div class="card-title">∙ Niveau d'énergie</div>
+        <canvas id="cEnergy" height="160"></canvas>
+    </div>
+    {% endif %}
+    {% if stats.characters %}
+    <div class="card">
+        <div class="card-title">∙ Caractère sonore</div>
+        <canvas id="cChars" height="160"></canvas>
+    </div>
+    {% endif %}
+</div>
+
+<!-- MODES + INTENTIONS -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+    {% if stats.modes %}
+    <div class="card">
+        <div class="card-title">∙ Modes de travail</div>
+        <canvas id="cModes" height="200"></canvas>
+    </div>
+    {% endif %}
+</div>
+
+{% endif %}
+{% endblock %}

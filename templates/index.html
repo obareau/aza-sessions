@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Sessions — Robōtariis{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-title">Sessions</div>
+        <div class="page-subtitle">{{ sessions|length }} session{% if sessions|length != 1 %}s{% endif %}</div>
+    </div>
+    <div style="display:flex;gap:10px;">
+        <a href="{{ url_for('export_all') }}" class="btn btn-secondary">↓ Export tout</a>
+        <a href="{{ url_for('new_session') }}" class="btn btn-primary">+ Nouvelle session</a>
+    </div>
+</div>
+
+{% if sessions %}
+<div class="section-title">Toutes les sessions</div>
+{% for s in sessions %}
+<a href="{{ url_for('view_session', sid=s.id) }}" class="session-row">
+    <span class="session-date">{{ s.date[:16] }}</span>
+    <span class="session-machines">{{ s.machines or '—' }}{% if s.daws %} · {{ s.daws }}{% endif %}</span>
+    <span style="display:flex;gap:6px;align-items:center;">
+        {% if s.release_potential %}<span class="badge badge-release">Release</span>{% endif %}
+        {% if s.to_rework %}<span class="badge badge-rework">Retravailler</span>{% endif %}
+        {% if s.mode %}<span class="badge badge-neu">{{ s.mode }}</span>{% endif %}
+    </span>
+    <span class="rating-stars">{{ '★' * (s.rating or 0) }}</span>
+</a>
+{% endfor %}
+{% else %}
+<div class="empty">
+    <div class="empty-icon">🤖</div>
+    <h3 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Aucune session</h3>
+    <p>Les Robōtariis attendent. Commence à enregistrer.</p>
+    <br>
+    <a href="{{ url_for('new_session') }}" class="btn btn-primary">Première session</a>
+</div>
+{% endif %}
+{% endblock %}

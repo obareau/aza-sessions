@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Session {{ session.date[:10] }} — Robōtariis{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">Session #{{ session.id }}</div>
+        <div class="page-subtitle">{{ session.date[:16] }}{% if session.duration_min %} — {{ session.duration_min }} min{% endif %}</div>
+    </div>
+    <div style="display:flex;gap:10px;">
+        <a href="{{ url_for('export_one', sid=session.id) }}" class="btn btn-ghost">↓ Export Obsidian</a>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+    </div>
+</div>
+
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+    {% if session.rating %}<span class="rating-stars" style="font-size:16px">{{ '★' * session.rating }}</span>{% endif %}
+    {% if session.energy_level %}<span class="badge badge-neu">{{ '⚡' * session.energy_level }}</span>{% endif %}
+    {% if session.mode %}<span class="badge badge-neu">{{ session.mode }}</span>{% endif %}
+    {% if session.intention %}<span class="badge badge-neu">{{ session.intention }}</span>{% endif %}
+    {% if session.release_potential %}<span class="badge badge-release">Release</span>{% endif %}
+    {% if session.to_rework %}<span class="badge badge-rework">Retravailler</span>{% endif %}
+</div>
+
+{% if session.oblique %}
+<div class="oblique-pill" style="margin-bottom:20px;">
+    <div class="obl-lbl">∴ Stratégie de session</div>
+    <div class="obl-txt">{{ session.oblique }}</div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-title">∙ Setup Hardware</div>
+    <div class="detail-grid">
+        <div class="detail-field">
+            <div class="detail-label">Machines</div>
+            <div class="detail-value">{{ session.machines or '—' }}</div>
+        </div>
+        <div class="detail-field">
+            <div class="detail-label">Effets hardware</div>
+            <div class="detail-value">{{ session.effects or '—' }}</div>
+        </div>
+        <div class="detail-field full">
+            <div class="detail-label">Signal routing</div>
+            <div class="detail-value">{{ session.signal_routing or '—' }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">∙ Logiciels</div>
+    <div class="detail-grid">
+        <div class="detail-field">
+            <div class="detail-label">DAW</div>
+            <div class="detail-value">{{ session.daws or '—' }}</div>
+        </div>
+        <div class="detail-field">
+            <div class="detail-label">Synthés iOS</div>
+            <div class="detail-value">{{ session.synths_ios or '—' }}</div>
+        </div>
+        <div class="detail-field full">
+            <div class="detail-label">Plugins VST/AU</div>
+            <div class="detail-value">{{ session.plugins or '—' }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">∙ Technique</div>
+    <div class="detail-grid">
+        <div class="detail-field">
+            <div class="detail-label">Algo MicroFreak</div>
+            <div class="detail-value">{{ session.microfreak_algo or '—' }}</div>
+        </div>
+        <div class="detail-field">
+            <div class="detail-label">Tempo</div>
+            <div class="detail-value">{{ session.tempo or '—' }}</div>
+        </div>
+        <div class="detail-field">
+            <div class="detail-label">Tonalité</div>
+            <div class="detail-value">{{ session.tonality or '—' }}</div>
+        </div>
+        <div class="detail-field">
+            <div class="detail-label">Caractère sonore</div>
+            <div class="detail-value">{{ session.character or '—' }}</div>
+        </div>
+        <div class="detail-field full">
+            <div class="detail-label">Patches / Presets</div>
+            <div class="detail-value">{{ session.patches or '—' }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">∙ Capture</div>
+    <div class="detail-grid">
+        <div class="detail-field">
+            <div class="detail-label">Fichier audio</div>
+            <div class="detail-value">{{ session.audio_file or '—' }}</div>
+        </div>
+        <div class="detail-field">
+            <div class="detail-label">Tags</div>
+            <div class="detail-value">{{ session.tags or '—' }}</div>
+        </div>
+        <div class="detail-field full">
+            <div class="detail-label">Timestamps</div>
+            <div class="detail-value">{{ session.timestamps or '—' }}</div>
+        </div>
+    </div>
+</div>
+
+{% if session.influences or session.lore_link %}
+<div class="card">
+    <div class="card-title">∙ Univers Robōtariis</div>
+    <div class="detail-grid">
+        <div class="detail-field">
+            <div class="detail-label">Influences de session</div>
+            <div class="detail-value">{{ session.influences or '—' }}</div>
+        </div>
+        <div class="detail-field">
+            <div class="detail-label">Lien lore</div>
+            <div class="detail-value">{{ session.lore_link or '—' }}</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if session.comments %}
+<div class="card">
+    <div class="card-title">∙ Notes libres</div>
+    <div class="detail-value">{{ session.comments }}</div>
+</div>
+{% endif %}
+
+{% if session.recap_claude %}
+<div class="card" style="border-color:var(--accent2);background:var(--accent2-soft);">
+    <div class="card-title" style="color:var(--accent2);">∙ Récap session Claude</div>
+    <div class="detail-value" style="font-size:12px;line-height:1.7;">{{ session.recap_claude }}</div>
+</div>
+{% endif %}
+
+{% endblock %}
