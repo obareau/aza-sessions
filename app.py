@@ -707,36 +707,34 @@ def find_free_port(start=5001, attempts=10):
     raise RuntimeError("Aucun port disponible entre %d et %d" % (start, start + attempts - 1))
 
 
+def _row(text, width, color=""):
+    """Ligne de cadre : │  texte<padding>  │ — padding calculé sans ANSI."""
+    inner = width - 4  # 2 espaces de chaque côté
+    pad = max(0, inner - len(text))
+    return f"{_C}{_B}│{_R}  {color}{text}{_R}{' ' * pad}  {_C}{_B}│{_R}"
+
+
 def print_banner(port):
-    url = f"http://localhost:{port}"
-    width = 48
-    line = "─" * width
+    url   = f"http://localhost:{port}"
+    W     = 52                      # largeur intérieure totale (entre les │)
+    hrule = "─" * W
 
-    print()
-    print(f"{_C}{_B}┌{line}┐{_R}")
-    print(f"{_C}{_B}│{_R}{'':^{width}}{_C}{_B}│{_R}")
-
-    title = f"  ROBŌTARIIS SESSIONS  v{VERSION}"
-    pad = width - len(title) - 2
-    print(f"{_C}{_B}│  {_W}{title}{_R}{' ' * pad}{_C}{_B}  │{_R}")
-
+    title    = f"ROBOTARIIS SESSIONS  v{VERSION}"
     subtitle = "Journal de sessions musicales"
-    pad2 = width - len(subtitle) - 2
-    print(f"{_C}{_B}│  {_DIM}{subtitle}{_R}{' ' * pad2}{_C}{_B}  │{_R}")
+    url_line = f"> {url}"
 
-    print(f"{_C}{_B}│{_R}{'':^{width}}{_C}{_B}│{_R}")
-    print(f"{_C}{_B}├{line}┤{_R}")
-
-    url_label = "▶  " + url
-    pad3 = width - len(url_label) - 2
-    print(f"{_C}{_B}│  {_GR}{_B}{url_label}{_R}{' ' * pad3}{_C}{_B}  │{_R}")
-
-    print(f"{_C}{_B}└{line}┘{_R}")
     print()
-    print(f"{_G}  Ctrl+C pour arrêter{_R}")
+    print(f"{_C}{_B}┌{hrule}┐{_R}")
+    print(f"{_C}{_B}│{' ' * W}│{_R}")
+    print(_row(title,    W, _W + _B))
+    print(_row(subtitle, W, _DIM))
+    print(f"{_C}{_B}│{' ' * W}│{_R}")
+    print(f"{_C}{_B}├{hrule}┤{_R}")
+    print(_row(url_line, W, _GR + _B))
+    print(f"{_C}{_B}└{hrule}┘{_R}")
     print()
-
-    # Ligne persistante — réaffichée après le démarrage de Flask
+    print(f"{_G}  Ctrl+C pour arreter{_R}")
+    print()
     return url
 
 
