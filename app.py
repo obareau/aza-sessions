@@ -11,7 +11,7 @@ from collections import Counter
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
-VERSION = "0.5.1-alpha"
+VERSION = "0.5.2-alpha"
 DB_PATH = os.path.join(os.path.dirname(__file__), "sessions.db")
 
 # ── DONNÉES PAR DÉFAUT ────────────────────────────────────────────────────────
@@ -358,6 +358,9 @@ def new_session():
         return redirect(url_for("index"))
 
     cat = get_catalogue()
+    conn = get_db()
+    all_sessions = conn.execute("SELECT id, date, machines FROM sessions ORDER BY date DESC").fetchall()
+    conn.close()
     return render_template("new.html",
                            catalogue=cat,
                            item_types=ITEM_TYPES,
@@ -366,6 +369,7 @@ def new_session():
                            intentions=INTENTIONS,
                            influences=get_influences_active(),
                            oblique=rand_oblique(),
+                           all_sessions=all_sessions,
                            version=VERSION,
                            now=datetime.now().strftime("%Y-%m-%dT%H:%M"))
 
@@ -376,10 +380,15 @@ def view_session(sid):
     session = conn.execute(
         "SELECT * FROM sessions WHERE id = ?", (sid,)
     ).fetchone()
+    linked = None
+    if session and session["linked_session"]:
+        linked = conn.execute(
+            "SELECT * FROM sessions WHERE id = ?", (session["linked_session"],)
+        ).fetchone()
     conn.close()
     if not session:
         return redirect(url_for("index"))
-    return render_template("view.html", session=session, version=VERSION)
+    return render_template("view.html", session=session, linked=linked, version=VERSION)
 
 
 @app.route("/session/<int:sid>/edit", methods=["GET", "POST"])
@@ -440,6 +449,11 @@ def edit_session(sid):
         return redirect(url_for("view_session", sid=sid))
 
     cat = get_catalogue()
+    conn2 = get_db()
+    all_sessions = conn2.execute(
+        "SELECT id, date, machines FROM sessions WHERE id != ? ORDER BY date DESC", (sid,)
+    ).fetchall()
+    conn2.close()
     return render_template("edit.html",
                            session=session,
                            catalogue=cat,
@@ -448,6 +462,7 @@ def edit_session(sid):
                            modes=MODES,
                            intentions=INTENTIONS,
                            influences=get_influences_active(),
+                           all_sessions=all_sessions,
                            version=VERSION)
 
 

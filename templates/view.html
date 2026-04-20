@@ -97,7 +97,14 @@
     <div class="detail-grid">
         <div class="detail-field">
             <div class="detail-label">Fichier audio</div>
-            <div class="detail-value">{{ session.audio_file or '—' }}</div>
+            {% if session.audio_file %}
+            <div class="detail-value" style="display:flex;align-items:center;gap:8px;">
+                <span style="flex:1">{{ session.audio_file }}</span>
+                <button onclick="navigator.clipboard.writeText('{{ session.audio_file }}')" class="btn btn-secondary btn-sm" title="Copier le nom">⎘</button>
+            </div>
+            {% else %}
+            <div class="detail-value">—</div>
+            {% endif %}
         </div>
         <div class="detail-field">
             <div class="detail-label">Tags</div>
@@ -123,6 +130,18 @@
             <div class="detail-value">{{ session.lore_link or '—' }}</div>
         </div>
     </div>
+</div>
+{% endif %}
+
+{% if linked %}
+<div class="card" style="border-color:var(--accent2);">
+    <div class="card-title" style="color:var(--accent2);">∙ Session liée</div>
+    <a href="{{ url_for('view_session', sid=linked.id) }}" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text);padding:8px 0;">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text-muted);">#{{ linked.id }} — {{ linked.date[:16] }}</span>
+        <span style="font-family:var(--mono);font-size:12px;">{{ linked.machines or '—' }}</span>
+        {% if linked.rating %}<span class="rating-stars">{{ '★' * linked.rating }}</span>{% endif %}
+        <span style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--accent2);">→</span>
+    </a>
 </div>
 {% endif %}
 

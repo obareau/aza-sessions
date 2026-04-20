@@ -4,7 +4,7 @@
 <div class="page-header">
     <div>
         <div class="page-title">Sessions</div>
-        <div class="page-subtitle">{{ sessions|length }} session{% if sessions|length != 1 %}s{% endif %}</div>
+        <div class="page-subtitle" id="count-label">{{ sessions|length }} session{% if sessions|length != 1 %}s{% endif %}</div>
     </div>
     <div style="display:flex;gap:10px;">
         <a href="{{ url_for('export_all') }}" class="btn btn-secondary">↓ Export tout</a>
@@ -13,9 +13,31 @@
 </div>
 
 {% if sessions %}
-<div class="section-title">Toutes les sessions</div>
+<!-- BARRE DE FILTRES -->
+<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:10px;margin-bottom:20px;align-items:center;">
+    <input type="text" id="search" placeholder="Rechercher — machines, tags, notes..." oninput="filterSessions()" style="margin:0;">
+    <select id="filter-mode" onchange="filterSessions()" style="margin:0;width:auto;">
+        <option value="">Tous les modes</option>
+        {% for s in sessions %}{% if s.mode %}<option>{{ s.mode }}</option>{% endif %}{% endfor %}
+    </select>
+    <select id="filter-rating" onchange="filterSessions()" style="margin:0;width:auto;">
+        <option value="">Toutes les notes</option>
+        <option value="5">★★★★★</option>
+        <option value="4">★★★★</option>
+        <option value="3">★★★</option>
+        <option value="2">★★</option>
+        <option value="1">★</option>
+    </select>
+    <button onclick="resetFilters()" class="btn btn-secondary btn-sm" title="Réinitialiser">✕</button>
+</div>
+
+<div class="section-title" id="list-label">Toutes les sessions</div>
+<div id="session-list">
 {% for s in sessions %}
-<a href="{{ url_for('view_session', sid=s.id) }}" class="session-row">
+<a href="{{ url_for('view_session', sid=s.id) }}" class="session-row"
+   data-text="{{ [s.machines, s.daws, s.tags, s.comments, s.intention, s.mode, s.character]|select|join(' ')|lower }}"
+   data-mode="{{ s.mode or '' }}"
+   data-rating="{{ s.rating or 0 }}">
     <span class="session-date">{{ s.date[:16] }}</span>
     <span class="session-machines">{{ s.machines or '—' }}{% if s.daws %} · {{ s.daws }}{% endif %}</span>
     <span style="display:flex;gap:6px;align-items:center;">
@@ -26,6 +48,12 @@
     <span class="rating-stars">{{ '★' * (s.rating or 0) }}</span>
 </a>
 {% endfor %}
+</div>
+
+<div id="no-results" style="display:none;text-align:center;padding:40px;font-family:var(--mono);font-size:12px;color:var(--text-muted);">
+    Aucune session ne correspond aux filtres.
+</div>
+
 {% else %}
 <div class="empty">
     <div class="empty-icon">🤖</div>
@@ -35,4 +63,45 @@
     <a href="{{ url_for('new_session') }}" class="btn btn-primary">Première session</a>
 </div>
 {% endif %}
+
+<script>
+// Dédupliquer les options du select mode
+(function() {
+    const sel = document.getElementById('filter-mode');
+    if (!sel) return;
+    const seen = new Set();
+    Array.from(sel.options).forEach(o => {
+        if (o.value && seen.has(o.value)) o.remove();
+        else seen.add(o.value);
+    });
+})();
+
+function filterSessions() {
+    const q     = document.getElementById('search').value.toLowerCase().trim();
+    const mode  = document.getElementById('filter-mode').value;
+    const rating = document.getElementById('filter-rating').value;
+    const rows  = document.querySelectorAll('#session-list .session-row');
+    let visible = 0;
+    rows.forEach(row => {
+        const text   = row.dataset.text || '';
+        const rMode  = row.dataset.mode || '';
+        const rRating = parseInt(row.dataset.rating) || 0;
+        const matchQ = !q || text.includes(q);
+        const matchM = !mode || rMode === mode;
+        const matchR = !rating || rRating >= parseInt(rating);
+        const show = matchQ && matchM && matchR;
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+    document.getElementById('count-label').textContent = visible + ' session' + (visible !== 1 ? 's' : '');
+    document.getElementById('no-results').style.display = visible === 0 ? 'block' : 'none';
+}
+
+function resetFilters() {
+    document.getElementById('search').value = '';
+    document.getElementById('filter-mode').value = '';
+    document.getElementById('filter-rating').value = '';
+    filterSessions();
+}
+</script>
 {% endblock %}

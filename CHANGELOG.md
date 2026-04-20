@@ -2,6 +2,15 @@
 
 > Les versions alpha sont des releases actives en développement continu.
 
+## v0.5.2-alpha — 2026-04-20
+
+### Ajouts
+- Filtres et recherche en temps réel sur la liste des sessions (texte libre, mode, note)
+- Liaison entre sessions : select dropdown dans les formulaires new/edit, affichage en card dans la vue détail
+- Fichier audio : bouton copier-presse-papiers dans la vue détail
+
+---
+
 ## v0.5.1-alpha — 2026-04-20
 
 ### Ajouts

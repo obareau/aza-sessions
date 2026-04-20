@@ -185,8 +185,13 @@
             <input type="text" name="audio_file" value="{{ session.audio_file or '' }}" placeholder="ex: session_20260419.wav">
         </div>
         <div class="form-group">
-            <label>Session liée (ID)</label>
-            <input type="number" name="linked_session" value="{{ session.linked_session or '' }}" placeholder="ID">
+            <label>Session liée</label>
+            <select name="linked_session">
+                <option value="">— Aucune —</option>
+                {% for s in all_sessions %}
+                <option value="{{ s.id }}" {% if session.linked_session == s.id %}selected{% endif %}>#{{ s.id }} — {{ s.date[:10] }}{% if s.machines %} · {{ s.machines[:30] }}{% endif %}</option>
+                {% endfor %}
+            </select>
         </div>
         <div class="form-group full">
             <label>Timestamps intéressants</label>
