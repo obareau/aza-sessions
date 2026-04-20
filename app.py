@@ -7,7 +7,7 @@ from datetime import datetime
 from collections import Counter
 
 app = Flask(__name__)
-VERSION = "0.3.1"
+VERSION = "0.4.0"
 DB_PATH = os.path.join(os.path.dirname(__file__), "sessions.db")
 
 # ── DONNÉES PAR DÉFAUT ────────────────────────────────────────────────────────
@@ -376,6 +376,75 @@ def view_session(sid):
     if not session:
         return redirect(url_for("index"))
     return render_template("view.html", session=session, version=VERSION)
+
+
+@app.route("/session/<int:sid>/edit", methods=["GET", "POST"])
+def edit_session(sid):
+    conn = get_db()
+    session = conn.execute(
+        "SELECT * FROM sessions WHERE id = ?", (sid,)
+    ).fetchone()
+    conn.close()
+    if not session:
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        data = request.form
+        conn = get_db()
+        conn.execute("""
+            UPDATE sessions SET
+                date=?, duration_min=?, mode=?, intention=?, energy_level=?,
+                machines=?, effects=?, daws=?, synths_ios=?, plugins=?,
+                patches=?, audio_file=?, timestamps=?, rating=?, tags=?,
+                character=?, lore_link=?, to_rework=?, release_potential=?,
+                tempo=?, tonality=?, signal_routing=?, microfreak_algo=?,
+                linked_session=?, influences=?, oblique=?, comments=?, recap_claude=?
+            WHERE id=?
+        """, (
+            data.get("date"),
+            data.get("duration_min") or None,
+            data.get("mode"),
+            data.get("intention"),
+            data.get("energy_level") or None,
+            ", ".join(request.form.getlist("machines")),
+            ", ".join(request.form.getlist("effects")),
+            ", ".join(request.form.getlist("daws")),
+            ", ".join(request.form.getlist("synths_ios")),
+            ", ".join(request.form.getlist("plugins")),
+            data.get("patches"),
+            data.get("audio_file"),
+            data.get("timestamps"),
+            data.get("rating") or None,
+            data.get("tags"),
+            ", ".join(request.form.getlist("character")),
+            data.get("lore_link"),
+            1 if data.get("to_rework") else 0,
+            1 if data.get("release_potential") else 0,
+            data.get("tempo"),
+            data.get("tonality"),
+            data.get("signal_routing"),
+            data.get("microfreak_algo"),
+            data.get("linked_session") or None,
+            ", ".join(request.form.getlist("influences")),
+            data.get("oblique"),
+            data.get("comments"),
+            data.get("recap_claude"),
+            sid,
+        ))
+        conn.commit()
+        conn.close()
+        return redirect(url_for("view_session", sid=sid))
+
+    cat = get_catalogue()
+    return render_template("edit.html",
+                           session=session,
+                           catalogue=cat,
+                           item_types=ITEM_TYPES,
+                           characters=CHARACTERS,
+                           modes=MODES,
+                           intentions=INTENTIONS,
+                           influences=get_influences_active(),
+                           version=VERSION)
 
 
 # ── ROUTES EXPORT ──────────────────────────────────────────────────────────────
