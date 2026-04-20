@@ -178,9 +178,25 @@
 
         .cat-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); margin-bottom: 6px; }
         .cat-row.inactive { opacity: 0.45; background: var(--bg-alt); }
-        .cat-row input[name="name"] { background: var(--bg) !important; border-color: var(--border) !important; }
-        .cat-row input[name="notes"] { opacity: 0; transition: opacity .15s; }
-        .cat-row:hover input[name="notes"], .cat-row input[name="notes"]:focus { opacity: 1; }
+        /* champ nom — toujours visible */
+        .inf-name, .cat-name {
+            font-family: var(--mono); font-size: 12px;
+            background: var(--bg); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 4px 8px;
+            color: var(--text); flex: 1; transition: border-color .15s;
+        }
+        .inf-name:focus, .cat-name:focus { outline: none; border-color: var(--accent2); }
+        /* champ notes — masqué, visible au hover/focus */
+        .inf-notes, .cat-notes {
+            font-family: var(--mono); font-size: 11px;
+            background: var(--bg); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 4px 8px;
+            color: var(--text-muted); width: 200px;
+            opacity: 0; transition: opacity .15s, border-color .15s;
+        }
+        .cat-row:hover .inf-notes, .inf-notes:focus,
+        .cat-row:hover .cat-notes, .cat-notes:focus { opacity: 1; }
+        .inf-notes:focus, .cat-notes:focus { outline: none; border-color: var(--accent2); }
 
         /* ── AUTOSAVE BANNER ── */
         .autosave-banner {
