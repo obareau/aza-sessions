@@ -40,10 +40,16 @@
    data-rating="{{ s.rating or 0 }}">
     <span class="session-date">{{ s.date[:16] }}</span>
     <span class="session-machines">{{ s.machines or '—' }}{% if s.daws %} · {{ s.daws }}{% endif %}</span>
-    <span style="display:flex;gap:6px;align-items:center;">
+    <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
         {% if s.release_potential %}<span class="badge badge-release">Release</span>{% endif %}
         {% if s.to_rework %}<span class="badge badge-rework">Retravailler</span>{% endif %}
         {% if s.mode %}<span class="badge badge-neu">{{ s.mode }}</span>{% endif %}
+        {% if s.tags %}
+            {% for tag in s.tags.split(',') %}
+            {% set t = tag.strip() %}{% if t %}
+            <span class="badge badge-tag" onclick="event.preventDefault();filterByTag('{{ t }}')">{{ t }}</span>
+            {% endif %}{% endfor %}
+        {% endif %}
     </span>
     <span class="rating-stars">{{ '★' * (s.rating or 0) }}</span>
 </a>
@@ -102,6 +108,11 @@ function resetFilters() {
     document.getElementById('filter-mode').value = '';
     document.getElementById('filter-rating').value = '';
     filterSessions();
+}
+function filterByTag(tag) {
+    document.getElementById('search').value = tag;
+    filterSessions();
+    document.getElementById('search').focus();
 }
 </script>
 {% endblock %}

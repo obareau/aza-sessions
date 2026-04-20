@@ -12,7 +12,7 @@ from collections import Counter
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
-VERSION = "0.5.4-alpha"
+VERSION = "0.6.0-alpha"
 DB_PATH = os.path.join(os.path.dirname(__file__), "sessions.db")
 
 # ── DONNÉES PAR DÉFAUT ────────────────────────────────────────────────────────
@@ -184,12 +184,27 @@ def init_db():
         for name in DEFAULT_INFLUENCES:
             conn.execute("INSERT INTO influences (name) VALUES (?)", (name,))
 
-    # Migration : ajouter recap_claude si absent (v0.3.1+)
-    try:
-        conn.execute("ALTER TABLE sessions ADD COLUMN recap_claude TEXT")
-        conn.commit()
-    except Exception:
-        pass
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            color TEXT DEFAULT '#D4380D',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Migrations
+    for migration in [
+        "ALTER TABLE sessions ADD COLUMN recap_claude TEXT",
+        "ALTER TABLE sessions ADD COLUMN project_id INTEGER",
+    ]:
+        try:
+            conn.execute(migration)
+            conn.commit()
+        except Exception:
+            pass
+
     conn.commit()
     conn.close()
 
@@ -322,8 +337,8 @@ def new_session():
                 patches, audio_file, timestamps, rating, tags,
                 character, lore_link, to_rework, release_potential,
                 tempo, tonality, signal_routing, microfreak_algo,
-                linked_session, influences, oblique, comments, recap_claude
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                linked_session, influences, oblique, comments, recap_claude, project_id
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, (
             data.get("date", datetime.now().strftime("%Y-%m-%d %H:%M")),
             data.get("duration_min") or None,
@@ -353,14 +368,26 @@ def new_session():
             data.get("oblique"),
             data.get("comments"),
             data.get("recap_claude"),
+            data.get("project_id") or None,
         ))
         conn.commit()
         conn.close()
         return redirect(url_for("index"))
 
+    # Prefill depuis une session existante (?from=ID)
+    prefill = None
+    from_id = request.args.get("from")
+    if from_id:
+        pf_conn = get_db()
+        prefill = pf_conn.execute(
+            "SELECT * FROM sessions WHERE id=?", (from_id,)
+        ).fetchone()
+        pf_conn.close()
+
     cat = get_catalogue()
     conn = get_db()
     all_sessions = conn.execute("SELECT id, date, machines FROM sessions ORDER BY date DESC").fetchall()
+    projects = conn.execute("SELECT * FROM projects ORDER BY title").fetchall()
     conn.close()
     return render_template("new.html",
                            catalogue=cat,
@@ -371,6 +398,8 @@ def new_session():
                            influences=get_influences_active(),
                            oblique=rand_oblique(),
                            all_sessions=all_sessions,
+                           projects=projects,
+                           prefill=prefill,
                            version=VERSION,
                            now=datetime.now().strftime("%Y-%m-%dT%H:%M"))
 
@@ -412,7 +441,8 @@ def edit_session(sid):
                 patches=?, audio_file=?, timestamps=?, rating=?, tags=?,
                 character=?, lore_link=?, to_rework=?, release_potential=?,
                 tempo=?, tonality=?, signal_routing=?, microfreak_algo=?,
-                linked_session=?, influences=?, oblique=?, comments=?, recap_claude=?
+                linked_session=?, influences=?, oblique=?, comments=?, recap_claude=?,
+                project_id=?
             WHERE id=?
         """, (
             data.get("date"),
@@ -443,6 +473,7 @@ def edit_session(sid):
             data.get("oblique"),
             data.get("comments"),
             data.get("recap_claude"),
+            data.get("project_id") or None,
             sid,
         ))
         conn.commit()
@@ -454,6 +485,7 @@ def edit_session(sid):
     all_sessions = conn2.execute(
         "SELECT id, date, machines FROM sessions WHERE id != ? ORDER BY date DESC", (sid,)
     ).fetchall()
+    projects = conn2.execute("SELECT * FROM projects ORDER BY title").fetchall()
     conn2.close()
     return render_template("edit.html",
                            session=session,
@@ -464,7 +496,75 @@ def edit_session(sid):
                            intentions=INTENTIONS,
                            influences=get_influences_active(),
                            all_sessions=all_sessions,
+                           projects=projects,
                            version=VERSION)
+
+
+@app.route("/session/<int:sid>/delete", methods=["POST"])
+def delete_session(sid):
+    conn = get_db()
+    conn.execute("DELETE FROM sessions WHERE id=?", (sid,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("index"))
+
+
+# ── ROUTES PROJETS ────────────────────────────────────────────────────────────
+
+@app.route("/projects")
+def list_projects():
+    conn = get_db()
+    projects = conn.execute("SELECT * FROM projects ORDER BY title").fetchall()
+    # Compter les sessions par projet
+    counts = {}
+    for p in projects:
+        n = conn.execute(
+            "SELECT COUNT(*) FROM sessions WHERE project_id=?", (p["id"],)
+        ).fetchone()[0]
+        counts[p["id"]] = n
+    conn.close()
+    return render_template("projects.html", projects=projects, counts=counts,
+                           version=VERSION, oblique=rand_oblique())
+
+
+@app.route("/projects/new", methods=["POST"])
+def new_project():
+    title = request.form.get("title", "").strip()
+    if title:
+        conn = get_db()
+        conn.execute(
+            "INSERT INTO projects (title, description, color) VALUES (?,?,?)",
+            (title, request.form.get("description","").strip(),
+             request.form.get("color","#D4380D"))
+        )
+        conn.commit()
+        conn.close()
+    return redirect(url_for("list_projects"))
+
+
+@app.route("/projects/<int:pid>")
+def view_project(pid):
+    conn = get_db()
+    project = conn.execute("SELECT * FROM projects WHERE id=?", (pid,)).fetchone()
+    if not project:
+        return redirect(url_for("list_projects"))
+    sessions = conn.execute(
+        "SELECT * FROM sessions WHERE project_id=? ORDER BY date DESC", (pid,)
+    ).fetchall()
+    conn.close()
+    return render_template("project_detail.html", project=project, sessions=sessions,
+                           version=VERSION, oblique=rand_oblique())
+
+
+@app.route("/projects/<int:pid>/delete", methods=["POST"])
+def delete_project(pid):
+    conn = get_db()
+    # Détacher les sessions liées
+    conn.execute("UPDATE sessions SET project_id=NULL WHERE project_id=?", (pid,))
+    conn.execute("DELETE FROM projects WHERE id=?", (pid,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("list_projects"))
 
 
 # ── ROUTES EXPORT ──────────────────────────────────────────────────────────────

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Projets — Robōtariis{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">◈ Projets</div>
+        <div class="page-subtitle">{{ projects|length }} projet{% if projects|length != 1 %}s{% endif %}</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+</div>
+
+<!-- NOUVEAU PROJET -->
+<div class="card">
+    <div class="card-title">∙ Nouveau projet</div>
+    <form method="POST" action="{{ url_for('new_project') }}" style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;margin-top:12px;align-items:end;">
+        <div class="form-group" style="margin:0">
+            <label>Titre</label>
+            <input type="text" name="title" placeholder="ex: EP Secteur 7, Colonne Vertebrale..." required>
+        </div>
+        <div class="form-group" style="margin:0">
+            <label>Description</label>
+            <input type="text" name="description" placeholder="Quelques mots...">
+        </div>
+        <div class="form-group" style="margin:0">
+            <label>Couleur</label>
+            <input type="color" name="color" value="#D4380D" style="height:40px;padding:4px 6px;width:60px;">
+        </div>
+        <button type="submit" class="btn btn-primary">Créer →</button>
+    </form>
+</div>
+
+{% if projects %}
+<div class="section-title">Projets actifs</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+{% for p in projects %}
+<div class="card" style="border-left:3px solid {{ p.color }};margin-bottom:0;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+        <div style="flex:1;min-width:0;">
+            <a href="{{ url_for('view_project', pid=p.id) }}" style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text);text-decoration:none;display:block;margin-bottom:4px;">
+                {{ p.title }}
+            </a>
+            {% if p.description %}
+            <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-bottom:8px;">{{ p.description }}</div>
+            {% endif %}
+            <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);">
+                {{ counts[p.id] }} session{% if counts[p.id] != 1 %}s{% endif %}
+                <span style="opacity:.4;margin:0 6px;">·</span>
+                {{ p.created_at[:10] }}
+            </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+            <a href="{{ url_for('view_project', pid=p.id) }}" class="btn btn-ghost btn-sm">→</a>
+            <form method="POST" action="{{ url_for('delete_project', pid=p.id) }}"
+                  onsubmit="return confirm('Supprimer le projet « {{ p.title }} » ? Les sessions liées seront détachées.')">
+                <button type="submit" class="btn btn-danger btn-sm">✕</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+
+{% else %}
+<div class="empty">
+    <div class="empty-icon">◈</div>
+    <h3 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Aucun projet</h3>
+    <p>Regroupe tes sessions sous un projet — EP, installation, live, BO...</p>
+</div>
+{% endif %}
+
+{% endblock %}

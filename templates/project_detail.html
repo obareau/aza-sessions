@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ project.title }} — Robōtariis{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title" style="border-left:3px solid {{ project.color }};padding-left:12px;">{{ project.title }}</div>
+        {% if project.description %}
+        <div class="page-subtitle">{{ project.description }}</div>
+        {% endif %}
+    </div>
+    <a href="{{ url_for('list_projects') }}" class="btn btn-secondary">← Projets</a>
+</div>
+
+<div style="display:flex;gap:16px;margin-bottom:28px;font-family:var(--mono);font-size:12px;color:var(--text-muted);">
+    <span>{{ sessions|length }} session{% if sessions|length != 1 %}s{% endif %}</span>
+    {% if sessions %}
+    {% set total_dur = sessions|selectattr('duration_min')|map(attribute='duration_min')|sum %}
+    {% if total_dur %}<span>· {{ total_dur }} min total</span>{% endif %}
+    {% set rated = sessions|selectattr('rating')|list %}
+    {% if rated %}<span>· Moy. {{ (rated|map(attribute='rating')|sum / rated|length)|round(1) }}★</span>{% endif %}
+    {% endif %}
+</div>
+
+{% if sessions %}
+<div id="session-list">
+{% for s in sessions %}
+<a href="{{ url_for('view_session', sid=s.id) }}" class="session-row">
+    <span class="session-date">{{ s.date[:16] }}</span>
+    <span class="session-machines">{{ s.machines or '—' }}{% if s.daws %} · {{ s.daws }}{% endif %}</span>
+    <span style="display:flex;gap:6px;align-items:center;">
+        {% if s.release_potential %}<span class="badge badge-release">Release</span>{% endif %}
+        {% if s.to_rework %}<span class="badge badge-rework">Retravailler</span>{% endif %}
+        {% if s.mode %}<span class="badge badge-neu">{{ s.mode }}</span>{% endif %}
+    </span>
+    <span class="rating-stars">{{ '★' * (s.rating or 0) }}</span>
+</a>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty">
+    <div class="empty-icon">◈</div>
+    <p>Aucune session dans ce projet pour l'instant.</p>
+    <br>
+    <a href="{{ url_for('new_session') }}" class="btn btn-primary">+ Nouvelle session</a>
+</div>
+{% endif %}
+
+{% endblock %}

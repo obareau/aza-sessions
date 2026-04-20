@@ -270,6 +270,22 @@
     </div>
 </div>
 
+{% if projects %}
+<!-- PROJET -->
+<div class="card">
+    <div class="card-title">∙ Projet</div>
+    <div class="form-grid">
+        <div class="form-group">
+            <label>Associer à un projet</label>
+            <select name="project_id">
+                <option value="">— Aucun —</option>
+                {% for p in projects %}<option value="{{ p.id }}" {% if session.project_id == p.id %}selected{% endif %}>{{ p.title }}</option>{% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- OBLIQUE -->
 <div class="card" style="border-color:var(--accent);background:var(--accent-soft);">
     <div class="card-title" style="color:var(--accent);">∴ Stratégie Robōtariis</div>

@@ -2,6 +2,18 @@
 
 > Les versions alpha sont des releases actives en développement continu.
 
+## v0.6.0-alpha — 2026-04-20
+
+### Ajouts
+- Suppression de session : bouton « ✕ Supprimer » dans la vue détail, avec confirmation
+- Copie de setup : bouton « ⎘ Copier setup » — préremplit le formulaire nouvelle session avec le même hardware/logiciels/caractère/influences
+- Vue Projets (`/projects`) : regrouper des sessions sous un titre de projet, avec couleur, description, comptage de sessions
+- Vue détail projet : liste des sessions du projet, stats rapides (durée totale, note moyenne)
+- Association de sessions à un projet (select dans new/edit)
+- Tags cliquables dans la liste des sessions — filtre automatique par tag au clic
+- Thème sombre : toggle ◐ dans le header, persisté en localStorage
+- Lien « ◈ Projets » dans la navigation
+
 ## v0.5.4-alpha — 2026-04-20
 
 ### Ajouts

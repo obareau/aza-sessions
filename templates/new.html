@@ -2,9 +2,17 @@
 {% block title %}Nouvelle Session — Robōtariis{% endblock %}
 {% block content %}
 
+{% set pf_machines   = (prefill.machines   or '').split(', ') if prefill else [] %}
+{% set pf_effects    = (prefill.effects    or '').split(', ') if prefill else [] %}
+{% set pf_daws       = (prefill.daws       or '').split(', ') if prefill else [] %}
+{% set pf_ios        = (prefill.synths_ios or '').split(', ') if prefill else [] %}
+{% set pf_plugins    = (prefill.plugins    or '').split(', ') if prefill else [] %}
+{% set pf_characters = (prefill.character  or '').split(', ') if prefill else [] %}
+{% set pf_influences = (prefill.influences or '').split(', ') if prefill else [] %}
+
 <div class="page-header">
     <div>
-        <div class="page-title">Nouvelle Session</div>
+        <div class="page-title">Nouvelle Session{% if prefill %} <span style="font-size:14px;color:var(--text-muted);font-weight:400;">— Setup copié de #{{ prefill.id }}</span>{% endif %}</div>
         <div class="page-subtitle">Documente pendant que c'est frais</div>
     </div>
     <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
@@ -57,7 +65,7 @@
     <div class="check-grid">
         {% for item in catalogue.machine %}
         <label class="chk">
-            <input type="checkbox" name="machines" value="{{ item.name }}">
+            <input type="checkbox" name="machines" value="{{ item.name }}" {% if item.name in pf_machines %}checked{% endif %}>
             <span>{{ item.name }}</span>
         </label>
         {% endfor %}
@@ -73,7 +81,7 @@
     <div class="check-grid">
         {% for item in catalogue.effet %}
         <label class="chk">
-            <input type="checkbox" name="effects" value="{{ item.name }}">
+            <input type="checkbox" name="effects" value="{{ item.name }}" {% if item.name in pf_effects %}checked{% endif %}>
             <span>{{ item.name }}</span>
         </label>
         {% endfor %}
@@ -89,7 +97,7 @@
     <div class="check-grid">
         {% for item in catalogue.daw %}
         <label class="chk">
-            <input type="checkbox" name="daws" value="{{ item.name }}">
+            <input type="checkbox" name="daws" value="{{ item.name }}" {% if item.name in pf_daws %}checked{% endif %}>
             <span>{{ item.name }}</span>
         </label>
         {% endfor %}
@@ -105,7 +113,7 @@
     <div class="check-grid">
         {% for item in catalogue.synth_ios %}
         <label class="chk">
-            <input type="checkbox" name="synths_ios" value="{{ item.name }}">
+            <input type="checkbox" name="synths_ios" value="{{ item.name }}" {% if item.name in pf_ios %}checked{% endif %}>
             <span>{{ item.name }}</span>
         </label>
         {% endfor %}
@@ -121,7 +129,7 @@
     <div class="check-grid">
         {% for item in catalogue.plugin %}
         <label class="chk">
-            <input type="checkbox" name="plugins" value="{{ item.name }}">
+            <input type="checkbox" name="plugins" value="{{ item.name }}" {% if item.name in pf_plugins %}checked{% endif %}>
             <span>{{ item.name }}</span>
         </label>
         {% endfor %}
@@ -134,7 +142,7 @@
     <div class="check-grid">
         {% for c in characters %}
         <label class="chk">
-            <input type="checkbox" name="character" value="{{ c }}">
+            <input type="checkbox" name="character" value="{{ c }}" {% if c in pf_characters %}checked{% endif %}>
             <span>{{ c }}</span>
         </label>
         {% endfor %}
@@ -201,7 +209,7 @@
     <div class="check-grid">
         {% for inf in influences %}
         <label class="chk">
-            <input type="checkbox" name="influences" value="{{ inf.name }}">
+            <input type="checkbox" name="influences" value="{{ inf.name }}" {% if inf.name in pf_influences %}checked{% endif %}>
             <span>{{ inf.name }}</span>
         </label>
         {% endfor %}
@@ -261,6 +269,22 @@
         </div>
     </div>
 </div>
+
+{% if projects %}
+<!-- PROJET -->
+<div class="card">
+    <div class="card-title">∙ Projet</div>
+    <div class="form-grid">
+        <div class="form-group">
+            <label>Associer à un projet</label>
+            <select name="project_id">
+                <option value="">— Aucun —</option>
+                {% for p in projects %}<option value="{{ p.id }}">{{ p.title }}</option>{% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- OBLIQUE -->
 <div class="card" style="border-color:var(--accent);background:var(--accent-soft);">

@@ -7,9 +7,14 @@
         <div class="page-title">Session #{{ session.id }}</div>
         <div class="page-subtitle">{{ session.date[:16] }}{% if session.duration_min %} — {{ session.duration_min }} min{% endif %}</div>
     </div>
-    <div style="display:flex;gap:10px;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <a href="{{ url_for('export_one', sid=session.id) }}" class="btn btn-ghost">↓ Export Obsidian</a>
+        <a href="{{ url_for('new_session') }}?from={{ session.id }}" class="btn btn-secondary" title="Créer une session avec le même setup">⎘ Copier setup</a>
         <a href="{{ url_for('edit_session', sid=session.id) }}" class="btn btn-secondary">✎ Éditer</a>
+        <form method="POST" action="{{ url_for('delete_session', sid=session.id) }}" style="display:inline;"
+              onsubmit="return confirm('Supprimer définitivement cette session ? Action irréversible.')">
+            <button type="submit" class="btn btn-danger">✕ Supprimer</button>
+        </form>
         <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
     </div>
 </div>
