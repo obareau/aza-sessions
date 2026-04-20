@@ -1336,16 +1336,6 @@ def about():
 
 # ── BANNER & PORT ─────────────────────────────────────────────────────────────
 
-# Codes ANSI
-_R  = "\033[0m"       # reset
-_B  = "\033[1m"       # bold
-_DIM = "\033[2m"      # dim
-_C  = "\033[38;5;208m"  # orange Robōtariis
-_G  = "\033[38;5;240m"  # gris foncé
-_W  = "\033[97m"      # blanc vif
-_GR = "\033[38;5;71m"   # vert URL
-
-
 def find_free_port(start=5001, attempts=10):
     for port in range(start, start + attempts):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -1357,33 +1347,46 @@ def find_free_port(start=5001, attempts=10):
     raise RuntimeError("Aucun port disponible entre %d et %d" % (start, start + attempts - 1))
 
 
-def _row(text, width, color=""):
-    """Ligne de cadre : │  texte<padding>  │ — padding calculé sans ANSI."""
-    inner = width - 4  # 2 espaces de chaque côté
-    pad = max(0, inner - len(text))
-    return f"{_C}{_B}│{_R}  {color}{text}{_R}{' ' * pad}  {_C}{_B}│{_R}"
-
-
 def print_banner(port):
-    url   = f"http://localhost:{port}"
-    W     = 52                      # largeur intérieure totale (entre les │)
-    hrule = "─" * W
+    url = f"http://localhost:{port}"
 
-    title    = f"ROBOTARIIS SESSIONS  v{VERSION}"
-    subtitle = "Journal de sessions musicales"
-    url_line = f"> {url}"
+    # ANSI
+    _R   = "\033[0m"
+    _B   = "\033[1m"
+    _DIM = "\033[2m"
+    _C   = "\033[38;5;208m"   # orange Robōtariis
+    _C2  = "\033[38;5;166m"   # orange foncé (ombres)
+    _GR  = "\033[38;5;71m"    # vert URL
+    _W   = "\033[97m"         # blanc vif
+    _G   = "\033[38;5;240m"   # gris foncé
+
+    # ASCII art — police "block" (figlet) — 75 chars de large
+    logo = [
+        "  ██████╗  ██████╗ ██████╗  ██████╗ ████████╗ █████╗ ██████╗ ██╗██╗███████╗",
+        "  ██╔══██╗██╔═══██╗██╔══██╗██╔═══██╗╚══██╔══╝██╔══██╗██╔══██╗██║██║██╔════╝",
+        "  ██████╔╝██║   ██║██████╔╝██║   ██║   ██║   ███████║██████╔╝██║██║███████╗",
+        "  ██╔══██╗██║   ██║██╔══██╗██║   ██║   ██║   ██╔══██║██╔══██╗██║██║╚════██║",
+        "  ██║  ██║╚██████╔╝██████╔╝╚██████╔╝   ██║   ██║  ██║██║  ██║██║██║███████║",
+        "  ╚═╝  ╚═╝ ╚═════╝ ╚═════╝  ╚═════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝╚══════╝",
+    ]
+
+    oblique = random.choice(DEFAULT_OBLIQUE)
+    sep     = "─" * 72
 
     print()
-    print(f"{_C}{_B}┌{hrule}┐{_R}")
-    print(f"{_C}{_B}│{' ' * W}│{_R}")
-    print(_row(title,    W, _W + _B))
-    print(_row(subtitle, W, _DIM))
-    print(f"{_C}{_B}│{' ' * W}│{_R}")
-    print(f"{_C}{_B}├{hrule}┤{_R}")
-    print(_row(url_line, W, _GR + _B))
-    print(f"{_C}{_B}└{hrule}┘{_R}")
+    for i, line in enumerate(logo):
+        # Dégradé orange → orange foncé sur les dernières lignes
+        col = _C if i < 3 else _C2
+        print(f"{col}{_B}{line}{_R}")
     print()
-    print(f"{_G}  Ctrl+C pour arreter{_R}")
+    print(f"  {_G}Journal de Sessions  ·  {_W}{_B}v{VERSION}{_R}")
+    print(f"  {_G}{sep}{_R}")
+    print(f"  {_GR}{_B}◉  {url}{_R}")
+    print(f"  {_G}Dark Ambient / Industriel  ·  Scaër, Bretagne{_R}")
+    print()
+    print(f"  {_DIM}∴  {oblique}{_R}")
+    print()
+    print(f"  {_G}Ctrl+C pour arrêter{_R}")
     print()
     return url
 
