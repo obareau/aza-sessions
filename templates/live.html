@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}{% if ls %}● Session en cours{% else %}Démarrer une session{% endif %} — Robōtariis{% endblock %}
+{% block content %}
+
+{% if not ls %}
+<!-- ── PRÉ-DÉMARRAGE ───────────────────────────────────────────────────────── -->
+<div style="max-width:540px;margin:60px auto 0;">
+    <div style="text-align:center;margin-bottom:40px;">
+        <div style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:var(--text-muted);margin-bottom:12px;">∴ Robōtariis</div>
+        <div style="font-family:var(--mono);font-size:32px;font-weight:700;color:var(--text);letter-spacing:-.02em;">Démarrer une session</div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--text-muted);margin-top:8px;">Le chrono démarre dès que tu cliques. Notes libres pendant, formulaire complet à la fin.</div>
+    </div>
+
+    <form method="POST" action="{{ url_for('live_start') }}">
+        <div class="card">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Mode</label>
+                    <select name="mode">
+                        <option value="">— Mode —</option>
+                        {% for m in modes %}<option>{{ m }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Intention</label>
+                    <select name="intention">
+                        <option value="">— Intention —</option>
+                        {% for i in intentions %}<option>{{ i }}</option>{% endfor %}
+                    </select>
+                </div>
+                {% if projects %}
+                <div class="form-group full">
+                    <label>Projet (optionnel)</label>
+                    <select name="project_id">
+                        <option value="">— Aucun projet —</option>
+                        {% for p in projects %}
+                        <option value="{{ p.id }}">{{ p.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="text-align:center;margin-top:8px;">
+            <button type="submit" class="btn btn-primary" style="font-size:16px;padding:16px 48px;letter-spacing:.12em;">
+                ▶ &nbsp;Démarrer
+            </button>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('index') }}" style="font-family:var(--mono);font-size:11px;color:var(--text-muted);text-decoration:none;">← Retour</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% else %}
+<!-- ── SESSION EN COURS ───────────────────────────────────────────────────── -->
+<form method="POST" action="{{ url_for('live_finish') }}" id="live-form">
+
+<!-- HEADER : TIMER -->
+<div style="text-align:center;padding:32px 0 24px;border-bottom:1px solid var(--border);margin-bottom:28px;">
+    <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.2em;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:10px;">
+        <span style="width:8px;height:8px;background:var(--accent);border-radius:50%;display:inline-block;animation:pulse 1s infinite;"></span>
+        SESSION EN COURS
+        <span style="width:8px;height:8px;background:var(--accent);border-radius:50%;display:inline-block;animation:pulse 1s infinite;"></span>
+    </div>
+    <div id="live-timer" style="font-family:var(--mono);font-size:64px;font-weight:700;letter-spacing:.04em;color:var(--text);line-height:1;">00:00</div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-top:10px;">
+        Démarré à {{ ls.started_at[11:16] }}
+        {% if ls.mode or ls.intention %}
+        &nbsp;·&nbsp;
+        {% if ls.mode %}<span style="color:var(--text);">{{ ls.mode }}</span>{% endif %}
+        {% if ls.mode and ls.intention %} / {% endif %}
+        {% if ls.intention %}<span style="color:var(--text);">{{ ls.intention }}</span>{% endif %}
+        {% endif %}
+    </div>
+    <div id="save-status" style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:6px;opacity:.4;transition:opacity .3s;"></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;">
+
+<!-- COLONNE GAUCHE : notes libres -->
+<div>
+
+    <!-- OBLIQUE -->
+    {% if ls.oblique %}
+    <div class="oblique-pill" style="margin-bottom:20px;">
+        <div class="obl-lbl">∴ Stratégie de session</div>
+        <div class="obl-txt">{{ ls.oblique }}</div>
+    </div>
+    {% endif %}
+
+    <!-- NOTES LIBRES -->
+    <div class="card" style="margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:14px;">∙ Notes libres</div>
+        <textarea id="notes-live" name="notes_live" rows="12"
+            placeholder="Patches découverts, idées, timestamps, signaux intéressants… Tout ce qui arrive pendant la session."
+            style="font-size:13px;line-height:1.8;min-height:280px;">{{ ls.notes_live or '' }}</textarea>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:8px;opacity:.6;">
+            Sauvegardé automatiquement toutes les 15 s
+        </div>
+    </div>
+
+    <!-- MACHINES (hidden inputs, valeurs récupérées en JS) -->
+    <input type="hidden" name="mode" id="mode-hidden" value="{{ ls.mode or '' }}">
+    <input type="hidden" name="intention" id="intention-hidden" value="{{ ls.intention or '' }}">
+
+</div>
+
+<!-- COLONNE DROITE : sélecteurs rapides -->
+<div style="position:sticky;top:72px;">
+
+    {% for type_key, type_label in item_types.items() %}
+    {% if catalogue[type_key] %}
+    <div class="card" style="margin-bottom:12px;padding:16px;">
+        <div class="card-title" style="margin-bottom:10px;">∙ {{ type_label }}</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+            {% for item in catalogue[type_key] %}
+            {% set checked = item.name in (ls.get(type_key if type_key != 'synth_ios' else 'synths_ios', '') or '') %}
+            <label class="chk" style="font-size:11px;padding:5px 8px;">
+                <input type="checkbox" name="{{ type_key if type_key != 'synth_ios' else 'synths_ios' }}"
+                    value="{{ item.name }}"
+                    {% if checked %}checked{% endif %}>
+                {{ item.name }}
+            </label>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+</div>
+</div>
+
+<!-- BOUTONS FIN DE SESSION -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);">
+    <form method="POST" action="{{ url_for('live_abandon') }}" onsubmit="return confirm('Abandonner et supprimer cette session ?')">
+        <button type="submit" class="btn btn-danger">✕ Abandonner</button>
+    </form>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);text-align:center;">
+        Terminer sauvegarde tes notes et ouvre le formulaire complet
+    </div>
+    <button type="submit" class="btn btn-primary" style="font-size:14px;padding:14px 32px;">
+        ✓ Terminer &amp; Documenter
+    </button>
+</div>
+
+</form>
+
+<script>
+// ── TIMER ──
+const _startedAt = new Date("{{ ls.started_at }}".replace(' ', 'T'));
+
+function updateTimer() {
+    const diff = Math.max(0, Math.floor((new Date() - _startedAt) / 1000));
+    const h = Math.floor(diff / 3600);
+    const m = Math.floor((diff % 3600) / 60);
+    const s = diff % 60;
+    const pad = n => String(n).padStart(2, '0');
+    document.getElementById('live-timer').textContent =
+        (h > 0 ? pad(h) + ':' : '') + pad(m) + ':' + pad(s);
+}
+setInterval(updateTimer, 1000);
+updateTimer();
+
+// ── AUTO-SAVE AJAX (toutes les 15 s) ──
+function collectData() {
+    return {
+        notes_live:  document.getElementById('notes-live').value,
+        machines:    [...document.querySelectorAll('input[name="machines"]:checked')].map(e => e.value).join(', '),
+        effects:     [...document.querySelectorAll('input[name="effects"]:checked')].map(e => e.value).join(', '),
+        daws:        [...document.querySelectorAll('input[name="daws"]:checked')].map(e => e.value).join(', '),
+        synths_ios:  [...document.querySelectorAll('input[name="synths_ios"]:checked')].map(e => e.value).join(', '),
+        plugins:     [...document.querySelectorAll('input[name="plugins"]:checked')].map(e => e.value).join(', '),
+        mode:        document.getElementById('mode-hidden').value,
+        intention:   document.getElementById('intention-hidden').value,
+    };
+}
+
+async function autoSave() {
+    try {
+        await fetch('/live/save', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(collectData())
+        });
+        const el = document.getElementById('save-status');
+        const now = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        el.textContent = '✓ sauvegardé à ' + now;
+        el.style.opacity = '1';
+        setTimeout(() => el.style.opacity = '.3', 2500);
+    } catch(e) {}
+}
+
+setInterval(autoSave, 15000);
+
+// Save avant de quitter la page (beforeunload)
+window.addEventListener('beforeunload', () => {
+    const data = collectData();
+    // Utiliser sendBeacon pour garantir l'envoi même si la page se ferme
+    navigator.sendBeacon('/live/save', new Blob([JSON.stringify(data)], {type:'application/json'}));
+});
+</script>
+
+{% endif %}
+{% endblock %}

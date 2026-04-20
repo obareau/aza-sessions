@@ -351,7 +351,12 @@
     <header>
         <div class="header-brand"><span class="dot"></span>Journal Robōtariis</div>
         <nav class="header-nav">
+            {% if has_live %}
+            <a href="{{ url_for('live') }}" style="color:#ff6b35;font-weight:700;opacity:1;animation:pulse 1.2s infinite;">● EN COURS</a>
+            <span class="sep">|</span>
+            {% endif %}
             <a href="{{ url_for('index') }}">Sessions</a>
+            <a href="{{ url_for('live') }}">▶ Live</a>
             <a href="{{ url_for('new_session') }}">+ Nouvelle</a>
             <span class="sep">|</span>
             <a href="{{ url_for('stats') }}">Stats</a>

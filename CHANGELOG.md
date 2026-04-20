@@ -5,6 +5,17 @@
 
 ---
 
+## v0.8.0-alpha — 2026-04-21
+
+### Ajouts
+- **Mode session en cours** (`/live`) — démarrer un chrono avant de jouer, notes libres en temps réel, sélection des machines, auto-save AJAX toutes les 15 s + `sendBeacon` au départ de page
+- **Timer live** — affichage `HH:MM:SS` qui repart correctement même après un rechargement
+- **Terminer & Documenter** — redirige vers `/new` pré-rempli : durée calculée, machines cochées, mode/intention/oblique de la session, notes libres dans le champ comments
+- **Badge ● EN COURS** dans la navigation — visible en clignotant orange sur toutes les pages si une session est active
+- **Lien ▶ Live** permanent dans la navigation
+
+---
+
 ## v0.7.0-alpha — 2026-04-21
 
 ### Ajouts

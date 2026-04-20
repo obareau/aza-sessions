@@ -13,7 +13,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-VERSION = "0.7.0-alpha"
+VERSION = "0.8.0-alpha"
 DB_PATH = os.path.join(os.path.dirname(__file__), "sessions.db")
 
 # ── DONNÉES PAR DÉFAUT ────────────────────────────────────────────────────────
@@ -265,6 +265,23 @@ def init_db():
         )
     """)
 
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS live_session (
+            id INTEGER PRIMARY KEY,
+            started_at TEXT NOT NULL,
+            notes_live TEXT DEFAULT '',
+            machines TEXT DEFAULT '',
+            effects TEXT DEFAULT '',
+            daws TEXT DEFAULT '',
+            synths_ios TEXT DEFAULT '',
+            plugins TEXT DEFAULT '',
+            mode TEXT DEFAULT '',
+            intention TEXT DEFAULT '',
+            oblique TEXT DEFAULT '',
+            project_id INTEGER
+        )
+    """)
+
     # Migrations
     for migration in [
         "ALTER TABLE sessions ADD COLUMN recap_claude TEXT",
@@ -382,6 +399,20 @@ def session_to_md(s):
 """
 
 
+# ── CONTEXT PROCESSOR ────────────────────────────────────────────────────────
+
+@app.context_processor
+def inject_globals():
+    """Injecte has_live dans tous les templates."""
+    try:
+        conn = get_db()
+        live = conn.execute("SELECT id FROM live_session LIMIT 1").fetchone()
+        conn.close()
+        return {"has_live": live is not None}
+    except Exception:
+        return {"has_live": False}
+
+
 # ── ROUTES SESSIONS ────────────────────────────────────────────────────────────
 
 @app.route("/")
@@ -446,13 +477,44 @@ def new_session():
             data.get("project_id") or None,
         ))
         conn.commit()
+        # Nettoyer la session live si elle a servi de source
+        if data.get("_from_live"):
+            conn.execute("DELETE FROM live_session")
+            conn.commit()
         conn.close()
         return redirect(url_for("index"))
 
-    # Prefill depuis une session existante (?from=ID)
+    # Prefill depuis session live en cours (?from_live=1)
     prefill = None
+    from_live = request.args.get("from_live")
+    if from_live:
+        pf_conn = get_db()
+        ls = pf_conn.execute("SELECT * FROM live_session LIMIT 1").fetchone()
+        pf_conn.close()
+        if ls:
+            started_at = datetime.strptime(ls["started_at"], "%Y-%m-%d %H:%M:%S")
+            duration_min = max(1, int((datetime.now() - started_at).total_seconds() // 60))
+            prefill = {
+                "id": None,
+                "_from_live": True,
+                "duration_min": duration_min,
+                "started_at": ls["started_at"],
+                "machines":   ls["machines"] or "",
+                "effects":    ls["effects"] or "",
+                "daws":       ls["daws"] or "",
+                "synths_ios": ls["synths_ios"] or "",
+                "plugins":    ls["plugins"] or "",
+                "mode":       ls["mode"] or "",
+                "intention":  ls["intention"] or "",
+                "oblique":    ls["oblique"] or "",
+                "project_id": ls["project_id"],
+                # champs vides à compléter
+                "character": "", "influences": "",
+            }
+
+    # Prefill depuis une session existante (?from=ID)
     from_id = request.args.get("from")
-    if from_id:
+    if from_id and not prefill:
         pf_conn = get_db()
         prefill = pf_conn.execute(
             "SELECT * FROM sessions WHERE id=?", (from_id,)
@@ -1332,6 +1394,104 @@ def spark():
 @app.route("/about")
 def about():
     return render_template("about.html", version=VERSION, oblique=rand_oblique())
+
+
+# ── ROUTES LIVE SESSION ────────────────────────────────────────────────────────
+
+@app.route("/live")
+def live():
+    conn = get_db()
+    ls = conn.execute("SELECT * FROM live_session LIMIT 1").fetchone()
+    cat = get_catalogue()
+    projects = conn.execute("SELECT * FROM projects ORDER BY title").fetchall()
+    conn.close()
+    return render_template("live.html",
+                           ls=dict(ls) if ls else None,
+                           catalogue=cat,
+                           item_types=ITEM_TYPES,
+                           modes=MODES,
+                           intentions=INTENTIONS,
+                           projects=projects,
+                           version=VERSION)
+
+
+@app.route("/live/start", methods=["POST"])
+def live_start():
+    conn = get_db()
+    conn.execute("DELETE FROM live_session")
+    oblique = rand_oblique()
+    conn.execute("""
+        INSERT INTO live_session (id, started_at, oblique, mode, intention, project_id)
+        VALUES (1, ?, ?, ?, ?, ?)
+    """, (
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        oblique,
+        request.form.get("mode", ""),
+        request.form.get("intention", ""),
+        request.form.get("project_id") or None,
+    ))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("live"))
+
+
+@app.route("/live/save", methods=["POST"])
+def live_save():
+    """AJAX — auto-sauvegarde des notes et checkboxes toutes les 15 s."""
+    data = request.get_json(silent=True) or {}
+    conn = get_db()
+    conn.execute("""
+        UPDATE live_session SET
+            notes_live=?, machines=?, effects=?, daws=?,
+            synths_ios=?, plugins=?, mode=?, intention=?
+        WHERE id=1
+    """, (
+        data.get("notes_live", ""),
+        data.get("machines", ""),
+        data.get("effects", ""),
+        data.get("daws", ""),
+        data.get("synths_ios", ""),
+        data.get("plugins", ""),
+        data.get("mode", ""),
+        data.get("intention", ""),
+    ))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
+
+
+@app.route("/live/finish", methods=["POST"])
+def live_finish():
+    """Déclenche un save final puis redirige vers /new pré-rempli."""
+    # Save depuis le form si envoyé (fallback)
+    conn = get_db()
+    conn.execute("""
+        UPDATE live_session SET
+            notes_live=?, machines=?, effects=?, daws=?,
+            synths_ios=?, plugins=?, mode=?, intention=?
+        WHERE id=1
+    """, (
+        request.form.get("notes_live", ""),
+        ", ".join(request.form.getlist("machines")),
+        ", ".join(request.form.getlist("effects")),
+        ", ".join(request.form.getlist("daws")),
+        ", ".join(request.form.getlist("synths_ios")),
+        ", ".join(request.form.getlist("plugins")),
+        request.form.get("mode", ""),
+        request.form.get("intention", ""),
+    ))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("new_session", from_live=1))
+
+
+@app.route("/live/abandon", methods=["POST"])
+def live_abandon():
+    conn = get_db()
+    conn.execute("DELETE FROM live_session")
+    conn.commit()
+    conn.close()
+    return redirect(url_for("index"))
 
 
 # ── BANNER & PORT ─────────────────────────────────────────────────────────────
