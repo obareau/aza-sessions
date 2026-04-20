@@ -5,6 +5,18 @@
 
 ---
 
+## v0.8.3-alpha — 2026-04-21
+
+### Ajouts
+- **Export PDF** — route `/session/<id>/print` — page A4 autonome (sans base.html), stylée pour l'impression
+- Design carnet de bord : en-tête Robōtariis, grille infos techniques, sections patches/notes/oblique/audio, footer signé
+- Barre d'actions en haut (écran uniquement) : bouton « ↓ Imprimer / PDF » + lien retour
+- Compatible `Cmd+P` / `Ctrl+P` → « Enregistrer en PDF » dans le navigateur (zéro dépendance Python)
+- Support `?auto=1` pour déclencher l'impression automatiquement au chargement
+- Bouton **↓ PDF** dans la vue détail de session (ouvre dans un nouvel onglet)
+
+---
+
 ## v0.8.2-alpha — 2026-04-21
 
 ### Ajouts

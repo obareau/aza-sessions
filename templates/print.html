@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Session {{ session.date[:10] }} — Robōtariis</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+    /* ── RESET & BASE ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --ink:      #0E0D0B;
+        --ink-mid:  #3A3733;
+        --ink-soft: #6B6560;
+        --ink-faint:#A09A94;
+        --paper:    #F7F4EF;
+        --paper-alt:#EFECE6;
+        --rule:     #C8C2B8;
+        --accent:   #B82E08;
+        --mono:     'IBM Plex Mono', monospace;
+        --sans:     'IBM Plex Sans', sans-serif;
+    }
+
+    html, body {
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    /* ── PAGE PRINT ── */
+    @page {
+        size: A4;
+        margin: 18mm 20mm 18mm 20mm;
+    }
+    @media print {
+        html, body { background: white; }
+        .no-print { display: none !important; }
+        .page { box-shadow: none; margin: 0; max-width: none; }
+        a { color: inherit; text-decoration: none; }
+        .break-avoid { break-inside: avoid; }
+    }
+
+    /* ── MISE EN PAGE ÉCRAN (preview) ── */
+    .page {
+        max-width: 210mm;
+        min-height: 297mm;
+        margin: 24px auto;
+        background: white;
+        padding: 18mm 20mm;
+        box-shadow: 0 4px 32px rgba(0,0,0,0.14);
+        position: relative;
+    }
+
+    /* ── HEADER ── */
+    .doc-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--ink);
+        margin-bottom: 18px;
+    }
+    .brand {
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .18em;
+        color: var(--ink-soft);
+    }
+    .brand strong {
+        font-size: 13px;
+        color: var(--ink);
+        letter-spacing: .04em;
+        display: block;
+        margin-top: 2px;
+    }
+    .doc-meta {
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--ink-soft);
+        text-align: right;
+        line-height: 1.8;
+    }
+
+    /* ── TITRE SESSION ── */
+    .session-title {
+        font-family: var(--mono);
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -.02em;
+        color: var(--ink);
+        margin-bottom: 4px;
+    }
+    .session-subtitle {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--ink-soft);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .pill {
+        display: inline-block;
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        padding: 2px 7px;
+        border: 1px solid currentColor;
+        border-radius: 2px;
+    }
+    .pill-red   { color: var(--accent); border-color: var(--accent); }
+    .pill-blue  { color: #2D4A6B; }
+    .pill-grey  { color: var(--ink-soft); }
+
+    /* ── ÉTOILES ── */
+    .stars { color: #B45309; font-size: 14px; letter-spacing: 1px; }
+    .bolts { color: #2D6A4F; font-size: 12px; }
+
+    /* ── GRILLE INFO ── */
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+        border: 1px solid var(--rule);
+        margin-bottom: 16px;
+    }
+    .info-cell {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--rule);
+        border-right: 1px solid var(--rule);
+    }
+    .info-cell:nth-child(even) { border-right: none; }
+    .info-cell.full { grid-column: 1 / -1; border-right: none; }
+    .info-cell:last-child, .info-cell:nth-last-child(2):not(.full) { border-bottom: none; }
+    .info-label {
+        font-family: var(--mono);
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: .12em;
+        color: var(--ink-faint);
+        font-weight: 700;
+        margin-bottom: 3px;
+    }
+    .info-value {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--ink);
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .info-value.empty { color: var(--ink-faint); font-style: italic; }
+
+    /* ── SÉPARATEUR SECTION ── */
+    .section-head {
+        font-family: var(--mono);
+        font-size: 8px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .18em;
+        color: var(--accent);
+        margin: 18px 0 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid var(--accent);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .section-head::after { content: ''; flex: 1; height: 1px; background: var(--rule); margin-left: 4px; }
+
+    /* ── BLOC TEXTE ── */
+    .text-block {
+        font-family: var(--mono);
+        font-size: 11px;
+        line-height: 1.8;
+        color: var(--ink-mid);
+        white-space: pre-wrap;
+        word-break: break-word;
+        padding: 10px 12px;
+        border-left: 2px solid var(--rule);
+        background: var(--paper-alt);
+        margin-bottom: 10px;
+    }
+    .text-block.oblique {
+        border-left-color: var(--accent);
+        background: #FFF1EE;
+        font-style: italic;
+        color: var(--accent);
+    }
+
+    /* ── PROJET BADGE ── */
+    .project-band {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .1em;
+        padding: 3px 10px;
+        border-radius: 2px;
+        margin-bottom: 14px;
+    }
+
+    /* ── FOOTER ── */
+    .doc-footer {
+        margin-top: 32px;
+        padding-top: 10px;
+        border-top: 1px solid var(--rule);
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--mono);
+        font-size: 8px;
+        color: var(--ink-faint);
+    }
+
+    /* ── BOUTON IMPRESSION (écran seulement) ── */
+    .print-bar {
+        max-width: 210mm;
+        margin: 0 auto 0;
+        padding: 12px 20mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #1A1814;
+        color: #E8E4DC;
+        font-family: var(--mono);
+        font-size: 11px;
+    }
+    .print-btn {
+        background: #D4380D; color: white;
+        border: none; font-family: var(--mono); font-size: 12px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .08em;
+        padding: 8px 20px; cursor: pointer; border-radius: 2px;
+        transition: background .15s;
+    }
+    .print-btn:hover { background: #B82E08; }
+    .close-btn {
+        color: rgba(255,255,255,.5); text-decoration: none;
+        font-size: 11px; font-family: var(--mono);
+    }
+    .close-btn:hover { color: white; }
+</style>
+</head>
+<body>
+
+<!-- BARRE IMPRESSION (masquée à l'impression) -->
+<div class="print-bar no-print">
+    <a href="{{ url_for('view_session', sid=session.id) }}" class="close-btn">← Retour à la session</a>
+    <div style="opacity:.6;">Cmd+P · Ctrl+P → Enregistrer en PDF</div>
+    <button class="print-btn" onclick="window.print()">↓ Imprimer / PDF</button>
+</div>
+
+<!-- PAGE -->
+<div class="page">
+
+    <!-- EN-TÊTE DOCUMENT -->
+    <div class="doc-header">
+        <div class="brand">
+            Journal de Sessions
+            <strong>Robōtariis</strong>
+        </div>
+        <div class="doc-meta">
+            Session #{{ session.id }}<br>
+            v{{ version }}<br>
+            {{ session.date[:10] }}
+        </div>
+    </div>
+
+    <!-- TITRE + BADGES -->
+    <div class="session-title">{{ session.date[:16] }}</div>
+    <div class="session-subtitle">
+        {% if session.duration_min %}<span>{{ session.duration_min }} min</span>{% endif %}
+        {% if session.rating %}<span class="stars">{{ '★' * session.rating }}{{ '☆' * (5 - session.rating) }}</span>{% endif %}
+        {% if session.energy_level %}<span class="bolts">{{ '⚡' * session.energy_level }}</span>{% endif %}
+        {% if session.mode %}<span class="pill pill-grey">{{ session.mode }}</span>{% endif %}
+        {% if session.intention %}<span class="pill pill-blue">{{ session.intention }}</span>{% endif %}
+        {% if session.release_potential %}<span class="pill pill-red">Release</span>{% endif %}
+        {% if session.to_rework %}<span class="pill pill-blue">Retravailler</span>{% endif %}
+    </div>
+
+    {% if session.project_title %}
+    <div class="project-band" style="background:{{ session.project_color }}22;color:{{ session.project_color }};border:1px solid {{ session.project_color }}66;">
+        ◈ Projet — {{ session.project_title }}
+    </div>
+    {% endif %}
+
+    <!-- INFOS TECHNIQUES -->
+    <div class="info-grid break-avoid">
+        {% set fields = [
+            ('Machines hardware', session.machines),
+            ('Effets hardware',   session.effects),
+            ('DAW',               session.daws),
+            ('Synthés iOS',       session.synths_ios),
+            ('Plugins',           session.plugins),
+            ('Caractère',         session.character),
+        ] %}
+        {% for label, value in fields %}
+        {% if value %}
+        <div class="info-cell">
+            <div class="info-label">{{ label }}</div>
+            <div class="info-value">{{ value }}</div>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% if session.tempo or session.tonality %}
+        <div class="info-cell">
+            <div class="info-label">Tempo / Tonalité</div>
+            <div class="info-value">{{ [session.tempo, session.tonality]|select|join(' · ') }}</div>
+        </div>
+        {% endif %}
+        {% if session.tags %}
+        <div class="info-cell">
+            <div class="info-label">Tags</div>
+            <div class="info-value">{{ session.tags }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if session.patches %}
+    <div class="section-head">∙ Patches &amp; Signal Routing</div>
+    <div class="text-block">{{ session.patches }}</div>
+    {% endif %}
+
+    {% if session.signal_routing %}
+    <div class="text-block">{{ session.signal_routing }}</div>
+    {% endif %}
+
+    {% if session.influences %}
+    <div class="section-head">∙ Influences</div>
+    <div class="text-block">{{ session.influences }}</div>
+    {% endif %}
+
+    {% if session.lore_link %}
+    <div class="section-head">∙ Lien Lore Robōtariis</div>
+    <div class="text-block">{{ session.lore_link }}</div>
+    {% endif %}
+
+    {% if session.comments %}
+    <div class="section-head">∙ Notes</div>
+    <div class="text-block">{{ session.comments }}</div>
+    {% endif %}
+
+    {% if session.recap_claude %}
+    <div class="section-head">∙ Récap session</div>
+    <div class="text-block">{{ session.recap_claude }}</div>
+    {% endif %}
+
+    {% if session.oblique %}
+    <div class="section-head">∴ Stratégie Oblique</div>
+    <div class="text-block oblique">{{ session.oblique }}</div>
+    {% endif %}
+
+    <!-- AUDIO -->
+    {% if session.audio_file or session.timestamps %}
+    <div class="section-head">∙ Capture audio</div>
+    <div class="info-grid break-avoid">
+        {% if session.audio_file %}
+        <div class="info-cell {% if not session.timestamps %}full{% endif %}">
+            <div class="info-label">Fichier audio</div>
+            <div class="info-value">{{ session.audio_file }}</div>
+        </div>
+        {% endif %}
+        {% if session.timestamps %}
+        <div class="info-cell {% if not session.audio_file %}full{% endif %}">
+            <div class="info-label">Timestamps</div>
+            <div class="info-value">{{ session.timestamps }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- FOOTER -->
+    <div class="doc-footer">
+        <span>Journal de Sessions Robōtariis · v{{ version }}</span>
+        <span>La machine ne ment pas. Elle déforme.</span>
+        <span>Session #{{ session.id }} · {{ session.date[:10] }}</span>
+    </div>
+
+</div>
+
+<script>
+// Auto-print si paramètre ?auto=1 dans l'URL
+if (new URLSearchParams(window.location.search).get('auto') === '1') {
+    window.addEventListener('load', () => setTimeout(() => window.print(), 400));
+}
+</script>
+</body>
+</html>

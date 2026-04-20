@@ -13,7 +13,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-VERSION = "0.8.2-alpha"
+VERSION = "0.8.3-alpha"
 DB_PATH = os.path.join(os.path.dirname(__file__), "sessions.db")
 
 # ── DONNÉES PAR DÉFAUT ────────────────────────────────────────────────────────
@@ -559,6 +559,21 @@ def view_session(sid):
     if not session:
         return redirect(url_for("index"))
     return render_template("view.html", session=session, linked=linked, version=VERSION)
+
+
+@app.route("/session/<int:sid>/print")
+def print_session(sid):
+    conn = get_db()
+    session = conn.execute("""
+        SELECT s.*, p.title AS project_title, p.color AS project_color
+        FROM sessions s
+        LEFT JOIN projects p ON s.project_id = p.id
+        WHERE s.id = ?
+    """, (sid,)).fetchone()
+    conn.close()
+    if not session:
+        return redirect(url_for("index"))
+    return render_template("print.html", session=session, version=VERSION)
 
 
 @app.route("/session/<int:sid>/edit", methods=["GET", "POST"])
