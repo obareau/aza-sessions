@@ -5,6 +5,16 @@
 
 ---
 
+## v0.9.0-alpha — 2026-04-21
+
+### Ajouts
+- **Backup automatique** — copie horodatée de `sessions.db` dans `backups/` à chaque lancement, garde les 5 derniers, chemin affiché dans le terminal
+- **Spark — Mode contrainte unique** (`/spark/focus`) — une seule suggestion affichée en grand, centrée, minimaliste ; bouton "▶ Démarrer avec ça" qui lance directement le Live ; accessible depuis Spark via "⊙ Contrainte unique"
+- **Records & badges** dans les Stats — carte avec : meilleure session (★ cliquable), session la plus longue (lien), temps de création total cumulé en heures, machine la plus utilisée
+- **MiRack — notes inline** — icône ✎ au survol de chaque module ; clic → champ texte inline ; Entrée/✓ sauvegarde, Échap/✕ annule
+
+---
+
 ## v0.8.3-alpha — 2026-04-21
 
 ### Ajouts

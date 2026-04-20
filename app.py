@@ -13,7 +13,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-VERSION = "0.8.3-alpha"
+VERSION = "0.9.0-alpha"
 DB_PATH = os.path.join(os.path.dirname(__file__), "sessions.db")
 
 # ── DONNÉES PAR DÉFAUT ────────────────────────────────────────────────────────
@@ -881,6 +881,11 @@ def stats():
         d -= timedelta(days=1)
     max_streak = max(max_streak, cur)
 
+    # Records
+    best = max(sessions, key=lambda s: (s["rating"] or 0, s["duration_min"] or 0))
+    longest = max(sessions, key=lambda s: s["duration_min"] or 0)
+    top_machine = max(count_items("machines"), key=count_items("machines").get) if count_items("machines") else None
+
     stats_data = {
         "total": total,
         "avg_duration": avg_duration,
@@ -902,6 +907,15 @@ def stats():
         "heatmap": heatmap,
         "streak": streak,
         "max_streak": max_streak,
+        "total_min": sum(durations),
+        "records": {
+            "best_id": best["id"], "best_date": best["date"][:10],
+            "best_rating": best["rating"] or 0,
+            "longest_id": longest["id"], "longest_date": longest["date"][:10],
+            "longest_min": longest["duration_min"] or 0,
+            "top_machine": top_machine,
+            "top_machine_count": count_items("machines").get(top_machine, 0) if top_machine else 0,
+        },
     }
 
     return render_template("stats.html", version=VERSION,
@@ -1432,6 +1446,74 @@ def spark():
                            total=total, version=VERSION)
 
 
+@app.route("/spark/focus")
+def spark_focus():
+    """Mode contrainte unique — une seule suggestion, affichée en grand."""
+    conn = get_db()
+    sessions = conn.execute("SELECT * FROM sessions ORDER BY date DESC").fetchall()
+    total = len(sessions)
+
+    pool = []
+
+    # Obliques (toujours dispos)
+    for _ in range(3):  # poids plus élevé pour les obliques
+        pool.append({"icon": "∴", "type": "Stratégie Robōtariis",
+                     "text": rand_oblique(), "sub": ""})
+
+    if total >= 3:
+        from collections import Counter
+        def count_field(f):
+            c = Counter()
+            for s in sessions:
+                for item in [x.strip() for x in (s[f] or "").split(",") if x.strip()]:
+                    c[item] += 1
+            return c
+
+        threshold = max(1, total * 0.25)
+        mc = count_field("machines")
+        underused = [k for k, v in mc.items() if v < threshold]
+        if underused:
+            pick = random.choice(underused)
+            pool.append({"icon": "⚙", "type": "Machine à sortir du placard",
+                         "text": pick,
+                         "sub": f"{mc[pick]} session{'s' if mc[pick]>1 else ''} sur {total}"})
+
+        used_intentions = {s["intention"] for s in sessions if s["intention"]}
+        unused = [i for i in INTENTIONS if i not in used_intentions]
+        if unused:
+            pool.append({"icon": "◎", "type": "Intention jamais explorée",
+                         "text": random.choice(unused), "sub": ""})
+
+        used_chars = set()
+        for s in sessions:
+            for c in (s["character"] or "").split(","):
+                used_chars.add(c.strip())
+        unused_c = [c for c in CHARACTERS if c not in used_chars]
+        if unused_c:
+            pool.append({"icon": "◈", "type": "Caractère sonore inexploré",
+                         "text": random.choice(unused_c), "sub": ""})
+
+    unmastered = conn.execute(
+        "SELECT * FROM mirack_modules WHERE mastered=0 ORDER BY RANDOM() LIMIT 1"
+    ).fetchone()
+    if unmastered:
+        pool.append({"icon": "⬡", "type": "Module MiRack à maîtriser",
+                     "text": unmastered["name"],
+                     "sub": unmastered["category"] or ""})
+
+    inspi = conn.execute("SELECT * FROM inspirations ORDER BY RANDOM() LIMIT 1").fetchone()
+    if inspi:
+        pool.append({"icon": "∴", "type": f"Inspiration — {inspi['type']}",
+                     "text": f"« {inspi['content']} »",
+                     "sub": inspi["source"] or ""})
+
+    conn.close()
+    focus = random.choice(pool) if pool else {
+        "icon": "∴", "type": "Stratégie", "text": "La machine ne ment pas. Elle déforme.", "sub": ""
+    }
+    return render_template("spark_focus.html", focus=focus, version=VERSION)
+
+
 # ── ROUTE ABOUT ───────────────────────────────────────────────────────────────
 
 @app.route("/about")
@@ -1597,10 +1679,25 @@ def print_banner(port):
 # ── MAIN ───────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    import logging
+    import logging, shutil, glob
     port = find_free_port(5001)
     url  = print_banner(port)
     init_db()
+
+    # ── Backup automatique (garde les 5 derniers) ──────────────────────────────
+    if os.path.exists(DB_PATH):
+        backup_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backups")
+        os.makedirs(backup_dir, exist_ok=True)
+        existing = sorted(glob.glob(os.path.join(backup_dir, "sessions_*.db")))
+        while len(existing) >= 5:
+            os.remove(existing.pop(0))
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        dest = os.path.join(backup_dir, f"sessions_{ts}.db")
+        shutil.copy2(DB_PATH, dest)
+
+        _R  = "\033[0m"; _DIM = "\033[2m"; _G = "\033[38;5;240m"
+        print(f"  {_G}Backup → backups/sessions_{ts}.db{_R}")
+        print()
 
     # Supprimer les logs Flask verbeux pour garder le terminal propre
     log = logging.getLogger("werkzeug")

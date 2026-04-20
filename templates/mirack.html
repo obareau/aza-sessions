@@ -73,9 +73,28 @@
                 <span style="font-family:var(--mono);font-size:12px;font-weight:{% if m.favorite %}600{% else %}400{% endif %};">{{ m.name }}</span>
                 {% if m.mastered %}<span class="badge" style="background:var(--success-soft);color:var(--success);border:1px solid var(--success);font-size:9px;">✓ Maîtrisé</span>{% endif %}
             </div>
-            {% if m.notes %}
-            <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:2px;padding-left:{% if m.favorite %}20px{% else %}0{% endif %};">{{ m.notes }}</div>
-            {% endif %}
+            <!-- Notes : affichage + edit inline -->
+            <div id="notes-view-{{ m.id }}" style="display:flex;align-items:center;gap:6px;margin-top:3px;padding-left:{% if m.favorite %}20px{% else %}0{% endif %};">
+                <span style="font-family:var(--mono);font-size:10px;color:var(--text-muted);">{{ m.notes or '' }}</span>
+                <button onclick="toggleNotes({{ m.id }})" title="Éditer les notes"
+                    style="background:none;border:none;cursor:pointer;font-family:var(--mono);font-size:10px;color:var(--text-muted);opacity:0;transition:opacity .15s;padding:0 4px;"
+                    class="notes-edit-btn">✎</button>
+            </div>
+            <form id="notes-form-{{ m.id }}" method="POST" action="{{ url_for('manage_mirack') }}"
+                  style="display:none;margin-top:4px;padding-left:{% if m.favorite %}20px{% else %}0{% endif %};">
+                <input type="hidden" name="action" value="edit">
+                <input type="hidden" name="id" value="{{ m.id }}">
+                <input type="hidden" name="name" value="{{ m.name }}">
+                <input type="hidden" name="category" value="{{ m.category or '' }}">
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <input type="text" name="notes" value="{{ m.notes or '' }}"
+                        placeholder="Usage, patches, trucs à explorer…"
+                        style="font-family:var(--mono);font-size:11px;flex:1;min-width:0;width:auto;padding:4px 8px;"
+                        onkeydown="if(event.key==='Escape')toggleNotes({{ m.id }})">
+                    <button type="submit" class="btn btn-secondary btn-sm">✓</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="toggleNotes({{ m.id }})">✕</button>
+                </div>
+            </form>
         </div>
         <!-- ACTIONS -->
         <div style="display:flex;gap:6px;flex-shrink:0;">
@@ -110,4 +129,18 @@
 </div>
 {% endif %}
 
+<style>
+.cat-row:hover .notes-edit-btn { opacity: .6 !important; }
+.cat-row:hover .notes-edit-btn:hover { opacity: 1 !important; color: var(--accent2) !important; }
+</style>
+<script>
+function toggleNotes(id) {
+    const view = document.getElementById('notes-view-' + id);
+    const form = document.getElementById('notes-form-' + id);
+    const hidden = view.style.display !== 'none';
+    view.style.display = hidden ? 'none' : 'flex';
+    form.style.display = hidden ? 'flex' : 'none';
+    if (hidden) form.querySelector('input[name="notes"]').focus();
+}
+</script>
 {% endblock %}

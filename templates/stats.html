@@ -274,6 +274,48 @@ window.addEventListener('DOMContentLoaded', () => {
     {% endif %}
 </div>
 
+<!-- RECORDS -->
+{% if stats.records %}
+{% set r = stats.records %}
+<div class="card" style="margin-bottom:24px;">
+    <div class="card-title" style="margin-bottom:16px;">∙ Records</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+        {% if r.best_rating %}
+        <a href="/session/{{ r.best_id }}" style="text-decoration:none;">
+            <div style="padding:14px;background:var(--bg);border:1px solid var(--warning);border-radius:var(--radius);transition:box-shadow .15s;" onmouseenter="this.style.boxShadow='var(--shadow)'" onmouseleave="this.style.boxShadow='none'">
+                <div style="font-family:var(--mono);font-size:18px;color:var(--warning);">{{ '★' * r.best_rating }}</div>
+                <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-top:4px;">Meilleure session</div>
+                <div style="font-family:var(--mono);font-size:11px;color:var(--text);margin-top:2px;">{{ r.best_date }}</div>
+            </div>
+        </a>
+        {% endif %}
+        {% if r.longest_min %}
+        <a href="/session/{{ r.longest_id }}" style="text-decoration:none;">
+            <div style="padding:14px;background:var(--bg);border:1px solid var(--accent2);border-radius:var(--radius);transition:box-shadow .15s;" onmouseenter="this.style.boxShadow='var(--shadow)'" onmouseleave="this.style.boxShadow='none'">
+                <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--accent2);">{{ r.longest_min }}<span style="font-size:13px;font-weight:400;"> min</span></div>
+                <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-top:4px;">Session la plus longue</div>
+                <div style="font-family:var(--mono);font-size:11px;color:var(--text);margin-top:2px;">{{ r.longest_date }}</div>
+            </div>
+        </a>
+        {% endif %}
+        {% if stats.total_min %}
+        <div style="padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);">
+            <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--text);">{{ (stats.total_min / 60)|round(1) }}<span style="font-size:13px;font-weight:400;"> h</span></div>
+            <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-top:4px;">Temps de création total</div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-top:2px;">{{ stats.total_min }} min cumulées</div>
+        </div>
+        {% endif %}
+        {% if r.top_machine %}
+        <div style="padding:14px;background:var(--bg);border:1px solid var(--accent);border-radius:var(--radius);">
+            <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);">{{ r.top_machine }}</div>
+            <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-top:4px;">Machine la plus utilisée</div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-top:2px;">{{ r.top_machine_count }} session{% if r.top_machine_count > 1 %}s{% endif %}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 <!-- HEATMAP -->
 <div class="card" style="margin-bottom:24px;">
     <div class="card-title" style="margin-bottom:16px;">∙ Activité — 52 semaines</div>
