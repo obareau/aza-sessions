@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Banques de Samples — Robōtariis{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">◎ Banques de Samples</div>
+        <div class="page-subtitle">{{ samples|length }} banque{% if samples|length != 1 %}s{% endif %}</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+</div>
+
+<!-- AJOUTER -->
+<div class="card">
+    <div class="card-title">∙ Ajouter une banque</div>
+    <form method="POST" action="{{ url_for('manage_samples') }}"
+          style="display:grid;grid-template-columns:2fr 1fr 60px 2fr auto;gap:10px;margin-top:12px;align-items:end;">
+        <input type="hidden" name="action" value="add">
+        <div class="form-group" style="margin:0">
+            <label>Nom</label>
+            <input type="text" name="name" placeholder="ex: NOIZ Industrial Pack v2..." required>
+        </div>
+        <div class="form-group" style="margin:0">
+            <label>Type</label>
+            <select name="type">
+                <option value="">— Type —</option>
+                {% for t in sample_types %}<option>{{ t }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin:0">
+            <label>Note</label>
+            <div class="star-group" style="font-size:16px;">
+                <input type="radio" name="rating" id="sr5" value="5"><label for="sr5">★</label>
+                <input type="radio" name="rating" id="sr4" value="4"><label for="sr4">★</label>
+                <input type="radio" name="rating" id="sr3" value="3"><label for="sr3">★</label>
+                <input type="radio" name="rating" id="sr2" value="2"><label for="sr2">★</label>
+                <input type="radio" name="rating" id="sr1" value="1"><label for="sr1">★</label>
+            </div>
+        </div>
+        <div class="form-group" style="margin:0">
+            <label>Source / Lien</label>
+            <input type="text" name="source" placeholder="ex: Bandcamp, splice, fait maison...">
+        </div>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+    </form>
+</div>
+
+{% if samples %}
+{% set grouped = {} %}
+{% for s in samples %}{% set _ = grouped.update({s.type or 'Autre': grouped.get(s.type or 'Autre', []) + [s]}) %}{% endfor %}
+
+{% for type_name, items in grouped.items() %}
+<div class="type-section">
+    <div class="section-title">
+        <span class="type-badge" style="background:var(--bg-alt);border:1px solid var(--border);color:var(--text-muted);">{{ type_name or 'Non classé' }}</span>
+        <span style="font-size:10px;color:var(--text-muted)">{{ items|length }}</span>
+    </div>
+    {% for item in items %}
+    <div class="cat-row">
+        <form method="POST" action="{{ url_for('manage_samples') }}"
+              style="flex:1;display:flex;gap:8px;align-items:center;min-width:0;">
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="id" value="{{ item.id }}">
+            <input type="text" name="name" value="{{ item.name }}"
+                   style="font-family:var(--mono);font-size:12px;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;flex:1;min-width:0;width:auto;">
+            <select name="type" style="font-family:var(--mono);font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 6px;color:var(--text);width:110px;flex-shrink:0;">
+                {% for t in sample_types %}<option {% if t == item.type %}selected{% endif %}>{{ t }}</option>{% endfor %}
+            </select>
+            <span style="font-family:var(--mono);font-size:13px;color:var(--warning);flex-shrink:0;">{{ '★' * (item.rating or 0) }}</span>
+            <input type="text" name="source" value="{{ item.source or '' }}" placeholder="source..."
+                   style="font-family:var(--mono);font-size:11px;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;width:140px;flex-shrink:0;opacity:0;transition:opacity .15s;" class="inf-notes">
+            <input type="text" name="notes" value="{{ item.notes or '' }}" placeholder="notes..."
+                   style="font-family:var(--mono);font-size:11px;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;width:140px;flex-shrink:0;opacity:0;transition:opacity .15s;" class="inf-notes">
+            <button type="submit" class="btn btn-secondary btn-sm">✓</button>
+        </form>
+        <form method="POST" action="{{ url_for('manage_samples') }}" onsubmit="return confirm('Supprimer ?')">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="id" value="{{ item.id }}">
+            <button type="submit" class="btn btn-secondary btn-sm" style="color:var(--accent)">✕</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% endfor %}
+
+{% else %}
+<div class="empty">
+    <div class="empty-icon">◎</div>
+    <h3 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Aucune banque</h3>
+    <p>Commence à référencer tes banques de samples.</p>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Spark — En panne d'inspiration — Robōtariis{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">⚡ Spark</div>
+        <div class="page-subtitle">Générateur créatif personnalisé — basé sur {{ total }} session{% if total != 1 %}s{% endif %}</div>
+    </div>
+    <a href="{{ url_for('spark') }}" class="btn btn-primary">↺ Regénérer</a>
+</div>
+
+{% if total < 3 %}
+<div class="card" style="border-color:var(--warning);background:var(--warning-soft);">
+    <div style="font-family:var(--mono);font-size:12px;color:var(--warning);">
+        ⚠ Enregistre au moins 3 sessions pour que Spark puisse analyser tes habitudes et proposer des suggestions personnalisées.
+    </div>
+</div>
+{% endif %}
+
+{% if suggestions %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-top:8px;">
+{% for s in suggestions %}
+<div class="card" style="margin-bottom:0;border-left:3px solid var(--accent);">
+    <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.14em;color:var(--accent);font-weight:700;margin-bottom:10px;">
+        {{ s.icon }} {{ s.type }}
+    </div>
+    <div style="font-family:var(--mono);font-size:14px;line-height:1.6;margin-bottom:{% if s.sub %}8px{% else %}0{% endif %};">
+        {{ s.text|safe }}
+    </div>
+    {% if s.sub %}
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);line-height:1.5;">{{ s.sub }}</div>
+    {% endif %}
+</div>
+{% endfor %}
+</div>
+
+<div style="text-align:center;margin-top:32px;padding:24px;font-family:var(--mono);font-size:11px;color:var(--text-muted);">
+    Ces suggestions sont générées à partir de tes données.<br>
+    <a href="{{ url_for('spark') }}" style="color:var(--accent2);">↺ Nouvelles suggestions</a>
+    &nbsp;·&nbsp;
+    <a href="{{ url_for('new_session') }}" style="color:var(--accent);">+ Nouvelle session</a>
+</div>
+
+{% else %}
+<div class="empty">
+    <div class="empty-icon">⚡</div>
+    <h3 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Pas encore de données</h3>
+    <p>Enregistre des sessions, ajoute des modules MiRack et des sources d'inspiration<br>pour que Spark puisse générer des suggestions personnalisées.</p>
+    <br>
+    <a href="{{ url_for('new_session') }}" class="btn btn-primary">+ Première session</a>
+</div>
+{% endif %}
+
+{% endblock %}

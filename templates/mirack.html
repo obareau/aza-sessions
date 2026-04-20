@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}MiRack — Robōtariis{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">⬡ MiRack</div>
+        {% set total_mod = modules|length %}
+        {% set mastered = modules|selectattr('mastered')|list|length %}
+        <div class="page-subtitle">{{ total_mod }} module{% if total_mod != 1 %}s{% endif %}
+            {% if total_mod %} · {{ mastered }} maîtrisé{% if mastered != 1 %}s{% endif %} ({{ (mastered/total_mod*100)|round|int }}%){% endif %}
+        </div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+</div>
+
+<!-- AJOUTER -->
+<div class="card">
+    <div class="card-title">∙ Ajouter un module</div>
+    <form method="POST" action="{{ url_for('manage_mirack') }}"
+          style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;margin-top:12px;align-items:end;">
+        <input type="hidden" name="action" value="add">
+        <div class="form-group" style="margin:0">
+            <label>Nom du module *</label>
+            <input type="text" name="name" placeholder="ex: VCO, ADSR, Reverb..." required>
+        </div>
+        <div class="form-group" style="margin:0">
+            <label>Catégorie</label>
+            <select name="category">
+                <option value="">— Catégorie —</option>
+                {% for c in mirack_cats %}<option>{{ c }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin:0">
+            <label>Notes</label>
+            <input type="text" name="notes" placeholder="usage, patches, trucs à explorer...">
+        </div>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+    </form>
+</div>
+
+<!-- PROGRESSION -->
+{% if modules %}
+{% set total_mod = modules|length %}
+{% set mastered = modules|selectattr('mastered')|list|length %}
+<div class="card" style="padding:16px 20px;margin-bottom:20px;">
+    <div style="display:flex;align-items:center;gap:16px;">
+        <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;">
+                <span>Progression</span>
+                <span>{{ mastered }} / {{ total_mod }}</span>
+            </div>
+            <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+                <div style="height:100%;width:{{ (mastered/total_mod*100)|round|int }}%;background:var(--success);border-radius:3px;transition:width .3s;"></div>
+            </div>
+        </div>
+        <div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--success);">{{ (mastered/total_mod*100)|round|int }}%</div>
+    </div>
+</div>
+
+{% for cat_name, cat_modules in grouped.items() %}
+<div class="type-section">
+    <div class="section-title">
+        <span class="type-badge" style="background:var(--accent2-soft);color:var(--accent2);border:1px solid var(--accent2);">⬡ {{ cat_name }}</span>
+        <span style="font-size:10px;color:var(--text-muted)">{{ cat_modules|length }}</span>
+    </div>
+    {% for m in cat_modules %}
+    <div class="cat-row {% if m.mastered %}{% endif %}" style="{% if m.mastered %}opacity:0.6;{% endif %}border-left:3px solid {% if m.favorite %}var(--warning){% elif m.mastered %}var(--success){% else %}var(--border){% endif %};">
+        <!-- NOM + NOTES -->
+        <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;">
+                {% if m.favorite %}<span title="Favori" style="color:var(--warning);font-size:12px;">★</span>{% endif %}
+                <span style="font-family:var(--mono);font-size:12px;font-weight:{% if m.favorite %}600{% else %}400{% endif %};">{{ m.name }}</span>
+                {% if m.mastered %}<span class="badge" style="background:var(--success-soft);color:var(--success);border:1px solid var(--success);font-size:9px;">✓ Maîtrisé</span>{% endif %}
+            </div>
+            {% if m.notes %}
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:2px;padding-left:{% if m.favorite %}20px{% else %}0{% endif %};">{{ m.notes }}</div>
+            {% endif %}
+        </div>
+        <!-- ACTIONS -->
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+            <form method="POST" action="{{ url_for('manage_mirack') }}">
+                <input type="hidden" name="action" value="toggle_mastered">
+                <input type="hidden" name="id" value="{{ m.id }}">
+                <button type="submit" class="btn btn-secondary btn-sm" title="{{ 'Marquer non maîtrisé' if m.mastered else 'Marquer maîtrisé' }}"
+                        style="{% if m.mastered %}color:var(--success){% endif %}">{{ '✓' if m.mastered else '○' }}</button>
+            </form>
+            <form method="POST" action="{{ url_for('manage_mirack') }}">
+                <input type="hidden" name="action" value="toggle_favorite">
+                <input type="hidden" name="id" value="{{ m.id }}">
+                <button type="submit" class="btn btn-secondary btn-sm" title="{{ 'Retirer favori' if m.favorite else 'Ajouter aux favoris' }}"
+                        style="{% if m.favorite %}color:var(--warning){% endif %}">★</button>
+            </form>
+            <form method="POST" action="{{ url_for('manage_mirack') }}" onsubmit="return confirm('Supprimer ?')">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="id" value="{{ m.id }}">
+                <button type="submit" class="btn btn-secondary btn-sm" style="color:var(--accent)">✕</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endfor %}
+
+{% else %}
+<div class="empty">
+    <div class="empty-icon">⬡</div>
+    <h3 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Aucun module</h3>
+    <p>Référence les modules MiRack que tu possèdes et suis ta progression.</p>
+</div>
+{% endif %}
+
+{% endblock %}

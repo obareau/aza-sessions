@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Morceaux Inspirants — Robōtariis{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">♪ Morceaux Inspirants</div>
+        <div class="page-subtitle">{{ tracks|length }} morceau{% if tracks|length != 1 %}x{% endif %}</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+</div>
+
+<!-- AJOUTER -->
+<div class="card">
+    <div class="card-title">∙ Ajouter un morceau</div>
+    <form method="POST" action="{{ url_for('manage_tracks') }}"
+          style="display:grid;grid-template-columns:2fr 2fr 1fr 60px;gap:10px;margin-top:12px;">
+        <input type="hidden" name="action" value="add">
+        <div class="form-group" style="margin:0">
+            <label>Titre *</label>
+            <input type="text" name="title" placeholder="ex: Kieselbach" required>
+        </div>
+        <div class="form-group" style="margin:0">
+            <label>Artiste</label>
+            <input type="text" name="artist" placeholder="ex: PanSonic">
+        </div>
+        <div class="form-group" style="margin:0">
+            <label>Album</label>
+            <input type="text" name="album" placeholder="ex: Aaltopiiri">
+        </div>
+        <div class="form-group" style="margin:0">
+            <label>Année</label>
+            <input type="text" name="year" placeholder="2001">
+        </div>
+        <div class="form-group" style="margin:0;grid-column:1/3">
+            <label>Pourquoi ça inspire — notes</label>
+            <input type="text" name="notes" placeholder="ex: Textures sub basses incroyables, structure répétitive hypnotique...">
+        </div>
+        <div class="form-group" style="margin:0">
+            <label>Tags</label>
+            <input type="text" name="tags" placeholder="drone, noise, minimaliste">
+        </div>
+        <div class="form-group" style="margin:0;display:flex;align-items:end;">
+            <button type="submit" class="btn btn-primary" style="width:100%">Ajouter</button>
+        </div>
+    </form>
+</div>
+
+{% if tracks %}
+<div id="tracks-list">
+{% for t in tracks %}
+<div class="card" style="margin-bottom:10px;padding:16px 20px;">
+    <div style="display:flex;align-items:flex-start;gap:16px;">
+        <div style="flex:1;min-width:0;">
+            <div style="font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:2px;">
+                {{ t.title }}
+            </div>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--text-muted);margin-bottom:8px;">
+                {% if t.artist %}{{ t.artist }}{% endif %}
+                {% if t.album %} — <em>{{ t.album }}</em>{% endif %}
+                {% if t.year %} ({{ t.year }}){% endif %}
+            </div>
+            {% if t.notes %}
+            <div style="font-family:var(--mono);font-size:11px;color:var(--text);line-height:1.6;margin-bottom:8px;padding:8px 12px;background:var(--bg);border-radius:var(--radius);border-left:2px solid var(--accent2);">
+                {{ t.notes }}
+            </div>
+            {% endif %}
+            {% if t.tags %}
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                {% for tag in t.tags.split(',') %}{% set tag = tag.strip() %}{% if tag %}
+                <span class="badge badge-neu">{{ tag }}</span>
+                {% endif %}{% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        <form method="POST" action="{{ url_for('manage_tracks') }}" onsubmit="return confirm('Supprimer ?')" style="flex-shrink:0;">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="id" value="{{ t.id }}">
+            <button type="submit" class="btn btn-secondary btn-sm" style="color:var(--accent)">✕</button>
+        </form>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty">
+    <div class="empty-icon">♪</div>
+    <h3 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Aucun morceau</h3>
+    <p>Référence les morceaux qui t'influencent ou t'obsèdent en ce moment.</p>
+</div>
+{% endif %}
+
+{% endblock %}

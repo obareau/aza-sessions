@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Sources d'Inspiration — Robōtariis{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">∴ Sources d'Inspiration</div>
+        <div class="page-subtitle">{{ inspirations|length }} source{% if inspirations|length != 1 %}s{% endif %} · hors musique</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+</div>
+
+<!-- AJOUTER -->
+<div class="card">
+    <div class="card-title">∙ Ajouter une source</div>
+    <form method="POST" action="{{ url_for('manage_inspirations') }}"
+          style="display:grid;grid-template-columns:120px 1fr 1fr auto;gap:10px;margin-top:12px;align-items:end;">
+        <input type="hidden" name="action" value="add">
+        <div class="form-group" style="margin:0">
+            <label>Type</label>
+            <select name="type">
+                {% for t in inspi_types %}<option>{{ t }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin:0">
+            <label>Contenu *</label>
+            <input type="text" name="content" placeholder="La phrase, l'extrait, le concept..." required>
+        </div>
+        <div class="form-group" style="margin:0">
+            <label>Source</label>
+            <input type="text" name="source" placeholder="ex: Tarkovsky — Stalker, 1979">
+        </div>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+    </form>
+</div>
+
+{% set type_icons = {'Phrase': '"', 'Extrait film': '▶', 'Livre': '◻', 'Image/Photo': '◼', 'Architecture': '⌂', 'Concept': '◎', 'Autre': '·'} %}
+{% set type_colors = {'Phrase': 'var(--accent)', 'Extrait film': 'var(--accent2)', 'Livre': 'var(--warning)', 'Image/Photo': 'var(--success)', 'Architecture': '#6B2D9E', 'Concept': '#0D6B8E', 'Autre': 'var(--text-muted)'} %}
+
+{% if inspirations %}
+{% set grouped = {} %}
+{% for i in inspirations %}{% set _ = grouped.update({i.type or 'Autre': grouped.get(i.type or 'Autre', []) + [i]}) %}{% endfor %}
+
+{% for type_name, items in grouped.items() %}
+<div class="type-section">
+    <div class="section-title">
+        <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:{{ type_colors.get(type_name, 'var(--text-muted)') }};">
+            {{ type_icons.get(type_name, '·') }} {{ type_name }}
+        </span>
+        <span style="font-size:10px;color:var(--text-muted)">{{ items|length }}</span>
+    </div>
+    {% for item in items %}
+    <div class="card" style="margin-bottom:8px;padding:14px 18px;border-left:3px solid {{ type_colors.get(type_name, 'var(--border)') }};">
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+            <div style="flex:1;min-width:0;">
+                <div style="font-family:var(--mono);font-size:13px;font-style:italic;line-height:1.7;margin-bottom:6px;">
+                    {{ item.content }}
+                </div>
+                {% if item.source %}
+                <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;">
+                    — {{ item.source }}
+                </div>
+                {% endif %}
+                {% if item.notes %}
+                <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-top:6px;">{{ item.notes }}</div>
+                {% endif %}
+            </div>
+            <form method="POST" action="{{ url_for('manage_inspirations') }}" onsubmit="return confirm('Supprimer ?')" style="flex-shrink:0;">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="id" value="{{ item.id }}">
+                <button type="submit" class="btn btn-secondary btn-sm" style="color:var(--accent)">✕</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endfor %}
+
+{% else %}
+<div class="empty">
+    <div class="empty-icon">∴</div>
+    <h3 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Aucune source</h3>
+    <p>Ajoute les phrases, extraits, architectures ou concepts qui nourrissent ton univers.</p>
+</div>
+{% endif %}
+
+{% endblock %}
