@@ -11,7 +11,7 @@ from collections import Counter
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
-VERSION = "0.5.2-alpha"
+VERSION = "0.5.3-alpha"
 DB_PATH = os.path.join(os.path.dirname(__file__), "sessions.db")
 
 # ── DONNÉES PAR DÉFAUT ────────────────────────────────────────────────────────

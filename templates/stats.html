@@ -118,8 +118,8 @@ window.addEventListener('DOMContentLoaded', () => {
     if (Object.keys(S.synths_ios).length) hBar(document.getElementById('cSynths'), S.synths_ios, 'Sessions', COLORS.blueSoft);
     if (Object.keys(S.plugins).length) hBar(document.getElementById('cPlugins'), S.plugins, 'Sessions', COLORS.purpleSoft);
     if (Object.keys(S.influences).length) hBar(document.getElementById('cInfluences'), S.influences, 'Sessions', COLORS.warnSoft);
-    if (Object.keys(S.characters).length) doughnut(document.getElementById('cChars'));
-    if (Object.keys(S.modes).length) doughnut(document.getElementById('cModes'));
+    if (Object.keys(S.characters).length) doughnut(document.getElementById('cChars'), S.characters);
+    if (Object.keys(S.modes).length) doughnut(document.getElementById('cModes'), S.modes);
     if (Object.keys(S.rating_dist).length) {
         new Chart(document.getElementById('cRatings'), {
             type: 'bar',

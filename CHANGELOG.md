@@ -2,6 +2,23 @@
 
 > Les versions alpha sont des releases actives en développement continu.
 
+## v0.5.3-alpha — 2026-04-20
+
+### Corrections
+- Stats : fix crash JS `doughnut(cChars/cModes)` appelé sans data — bloquait le rendu des graphiques énergie, notes et caractère
+- Influences/Catalogue : noms des items maintenant visibles (background explicite sur input[name="name"])
+- Notes des items : masquées par défaut, visibles au hover (catalogue + influences)
+
+### Ajouts
+- Pomodoro persistant : état sauvegardé dans localStorage, restauré au changement de page (temps écoulé compensé)
+- Auto-save formulaires : brouillon sauvegardé automatiquement toutes les modifications (new + edit), banner de restauration si données non soumises
+
+### Roadmap future
+- Reset base de données (remettre à zéro sans données)
+- Import de base SQLite existante
+
+---
+
 ## v0.5.2-alpha — 2026-04-20
 
 ### Ajouts

@@ -158,8 +158,20 @@
 
         .cat-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); margin-bottom: 6px; }
         .cat-row.inactive { opacity: 0.45; background: var(--bg-alt); }
+        .cat-row input[name="name"] { background: var(--bg) !important; border-color: var(--border) !important; }
         .cat-row input[name="notes"] { opacity: 0; transition: opacity .15s; }
         .cat-row:hover input[name="notes"], .cat-row input[name="notes"]:focus { opacity: 1; }
+
+        /* ── AUTOSAVE BANNER ── */
+        .autosave-banner {
+            background: var(--warning-soft); border: 1px solid var(--warning);
+            border-radius: var(--radius); padding: 10px 16px;
+            display: flex; align-items: center; gap: 12px;
+            font-family: var(--mono); font-size: 12px; color: var(--warning);
+            margin-bottom: 16px;
+        }
+        .autosave-banner button { font-family: var(--mono); font-size: 11px; padding: 4px 10px; border-radius: var(--radius); border: 1px solid var(--warning); cursor: pointer; background: none; color: var(--warning); }
+        .autosave-banner button.restore { background: var(--warning); color: white; }
 
         .type-section { margin-bottom: 28px; }
         .type-badge { display: inline-flex; align-items: center; font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 3px 10px; border-radius: 10px; }
@@ -300,6 +312,12 @@
         const p = document.getElementById('pomo-panel');
         p.style.display = p.style.display === 'none' ? 'block' : 'none';
     }
+    function pomoSave() {
+        localStorage.setItem('pomo_state', JSON.stringify({
+            total: pomoTotal, left: pomoLeft, running: pomoRunning,
+            mode: pomoMode, ts: Date.now()
+        }));
+    }
     function pomoRender() {
         const m = String(Math.floor(pomoLeft / 60)).padStart(2, '0');
         const s = String(pomoLeft % 60).padStart(2, '0');
@@ -309,6 +327,7 @@
         document.getElementById('pomo-label').textContent = pomoMode;
         document.getElementById('pomo-bar').style.width = (pomoLeft / pomoTotal * 100) + '%';
         document.getElementById('pomo-pp').textContent = pomoRunning ? '‖ Pause' : '▶ Start';
+        pomoSave();
     }
     function pomoPP() {
         if (pomoRunning) {
@@ -318,7 +337,6 @@
             pomoTimer = setInterval(() => {
                 if (pomoLeft <= 0) {
                     clearInterval(pomoTimer); pomoRunning = false;
-                    new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAA==').play().catch(()=>{});
                     pomoRender(); return;
                 }
                 pomoLeft--; pomoRender();
@@ -335,7 +353,71 @@
         pomoTotal = min * 60; pomoLeft = pomoTotal; pomoMode = mode;
         pomoRender();
     }
-    pomoRender();
+    // Restaurer depuis localStorage
+    (function() {
+        const saved = localStorage.getItem('pomo_state');
+        if (!saved) { pomoRender(); return; }
+        try {
+            const d = JSON.parse(saved);
+            const elapsed = Math.floor((Date.now() - d.ts) / 1000);
+            pomoTotal = d.total; pomoMode = d.mode;
+            if (d.running && d.left - elapsed > 0) {
+                pomoLeft = d.left - elapsed;
+                pomoPP(); // relancer
+            } else {
+                pomoLeft = Math.max(0, d.left);
+                pomoRender();
+            }
+        } catch(e) { pomoRender(); }
+    })();
+
+    // ── FORM AUTO-SAVE ──
+    (function() {
+        const form = document.querySelector('form[data-autosave]');
+        if (!form) return;
+        const KEY = 'autosave_' + location.pathname;
+        const MAX_AGE = 30 * 60 * 1000;
+
+        function formSerialize() {
+            const out = {};
+            form.querySelectorAll('input[type="text"], input[type="number"], input[type="datetime-local"], textarea, select').forEach(el => {
+                if (el.name) out[el.name] = el.value;
+            });
+            return out;
+        }
+        function formRestore(data) {
+            Object.entries(data).forEach(([k, v]) => {
+                const el = form.querySelector(`[name="${k}"]:not([type="hidden"])`);
+                if (el && el.tagName !== 'SELECT') el.value = v;
+                else if (el && el.tagName === 'SELECT') el.value = v;
+            });
+        }
+
+        // Vérifier si données sauvegardées
+        const saved = localStorage.getItem(KEY);
+        if (saved) {
+            try {
+                const {data, ts} = JSON.parse(saved);
+                if (Date.now() - ts < MAX_AGE) {
+                    const banner = document.createElement('div');
+                    banner.className = 'autosave-banner';
+                    banner.innerHTML = `⚠ Brouillon non sauvegardé détecté (${new Date(ts).toLocaleTimeString()})
+                        &nbsp;<button class="restore" onclick="(function(){${JSON.stringify(data)};})()">Restaurer</button>
+                        <button onclick="localStorage.removeItem('${KEY}');this.parentNode.remove()">Ignorer</button>`;
+                    banner.querySelector('.restore').onclick = () => { formRestore(data); banner.remove(); };
+                    form.parentNode.insertBefore(banner, form);
+                } else {
+                    localStorage.removeItem(KEY);
+                }
+            } catch(e) { localStorage.removeItem(KEY); }
+        }
+
+        // Sauvegarder à chaque modification
+        form.addEventListener('input', () => localStorage.setItem(KEY, JSON.stringify({data: formSerialize(), ts: Date.now()})));
+        form.addEventListener('change', () => localStorage.setItem(KEY, JSON.stringify({data: formSerialize(), ts: Date.now()})));
+        // Effacer au submit
+        form.addEventListener('submit', () => localStorage.removeItem(KEY));
+    })();
     </script>
 </body>
 </html>
