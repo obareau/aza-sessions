@@ -1,5 +1,21 @@
 # CHANGELOG — Journal de Sessions Robōtariis
 
+> Les versions alpha sont des releases actives en développement continu.
+
+## v0.5.1-alpha — 2026-04-20
+
+### Ajouts
+- Widget Pomodoro flottant (25/5/15 min, barre de progression, style Robōtariis)
+- Bannière terminal ANSI + détection automatique du port libre au démarrage
+- `os.chdir()` au démarrage — lancement stable depuis n'importe quel chemin
+
+### Corrections
+- Champ "notes…" dans le catalogue masqué par défaut (visible au hover)
+- build_mac.sh : compatibilité Python 3.9, `mkdir -p static`, mode `--onedir`
+- Port 5001 par défaut (5000 occupé par AirPlay sur macOS)
+
+---
+
 ## v0.4.0 — 2026-04-20
 
 ### Ajouts
