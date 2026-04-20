@@ -158,6 +158,8 @@
 
         .cat-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); margin-bottom: 6px; }
         .cat-row.inactive { opacity: 0.45; background: var(--bg-alt); }
+        .cat-row input[name="notes"] { opacity: 0; transition: opacity .15s; }
+        .cat-row:hover input[name="notes"], .cat-row input[name="notes"]:focus { opacity: 1; }
 
         .type-section { margin-bottom: 28px; }
         .type-badge { display: inline-flex; align-items: center; font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 3px 10px; border-radius: 10px; }
@@ -176,6 +178,58 @@
         footer { border-top: 1px solid var(--border); padding: 16px 24px; text-align: center; font-family: var(--mono); font-size: 10px; color: var(--text-muted); letter-spacing: 0.06em; }
 
         @media(max-width:600px) { .form-grid,.detail-grid { grid-template-columns: 1fr; } .session-row { grid-template-columns: 1fr auto; } }
+
+        /* ── POMODORO ── */
+        .pomo {
+            position: fixed; bottom: 20px; right: 20px; z-index: 200;
+            font-family: var(--mono);
+            background: var(--text); color: var(--bg);
+            border-radius: var(--radius);
+            border: 1px solid var(--accent);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+            min-width: 120px;
+            user-select: none;
+        }
+        .pomo-head {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 12px; cursor: pointer;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .pomo-head:hover { background: rgba(255,255,255,0.05); }
+        .pomo-time {
+            font-size: 18px; font-weight: 600; letter-spacing: .06em;
+            color: var(--bg); flex: 1;
+        }
+        .pomo-time.running { color: var(--accent); }
+        .pomo-time.break   { color: #4ade80; }
+        .pomo-label {
+            font-size: 9px; text-transform: uppercase; letter-spacing: .12em;
+            color: rgba(255,255,255,.4);
+        }
+        .pomo-panel { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+        .pomo-row { display: flex; gap: 6px; }
+        .pomo-btn {
+            flex: 1; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+            color: var(--bg); font-family: var(--mono); font-size: 11px;
+            text-transform: uppercase; letter-spacing: .06em;
+            padding: 5px 0; border-radius: var(--radius); cursor: pointer;
+            transition: all .15s;
+        }
+        .pomo-btn:hover { background: rgba(255,255,255,.18); }
+        .pomo-btn.active { background: var(--accent); border-color: var(--accent); }
+        .pomo-presets { display: flex; gap: 4px; }
+        .pomo-preset {
+            flex: 1; background: transparent; border: 1px solid rgba(255,255,255,.15);
+            color: rgba(255,255,255,.5); font-family: var(--mono); font-size: 10px;
+            padding: 3px 0; border-radius: var(--radius); cursor: pointer;
+            transition: all .15s;
+        }
+        .pomo-preset:hover { border-color: var(--accent); color: var(--accent); }
+        .pomo-progress {
+            height: 2px; background: rgba(255,255,255,.1);
+            border-radius: 0 0 var(--radius) var(--radius); overflow: hidden;
+        }
+        .pomo-progress-bar { height: 100%; background: var(--accent); transition: width .5s linear; width: 100%; }
     </style>
 </head>
 <body>
@@ -208,12 +262,80 @@
 
     <footer>Robōtariis Session Journal v{{ version }} — La machine ne ment pas. Elle déforme.</footer>
 
+    <!-- POMODORO WIDGET -->
+    <div class="pomo" id="pomo">
+        <div class="pomo-head" onclick="pomoTogglePanel()">
+            <div>
+                <div class="pomo-time" id="pomo-time">25:00</div>
+                <div class="pomo-label" id="pomo-label">Focus</div>
+            </div>
+        </div>
+        <div id="pomo-panel" style="display:none">
+            <div class="pomo-panel">
+                <div class="pomo-row">
+                    <button class="pomo-btn" id="pomo-pp" onclick="pomoPP()">▶ Start</button>
+                    <button class="pomo-btn" onclick="pomoReset()">↺</button>
+                </div>
+                <div class="pomo-presets">
+                    <button class="pomo-preset" onclick="pomoSet(25,'Focus')" title="25 min">25</button>
+                    <button class="pomo-preset" onclick="pomoSet(5,'Pause')" title="5 min">5</button>
+                    <button class="pomo-preset" onclick="pomoSet(15,'Longue')" title="15 min">15</button>
+                </div>
+            </div>
+        </div>
+        <div class="pomo-progress"><div class="pomo-progress-bar" id="pomo-bar"></div></div>
+    </div>
+
     <script>
     async function refreshOblique() {
         const r = await fetch('/oblique');
         const d = await r.json();
         document.getElementById('oblique-text').textContent = d.text;
     }
+
+    // ── POMODORO ──
+    let pomoTotal = 25 * 60, pomoLeft = 25 * 60, pomoRunning = false, pomoTimer = null, pomoMode = 'Focus';
+
+    function pomoTogglePanel() {
+        const p = document.getElementById('pomo-panel');
+        p.style.display = p.style.display === 'none' ? 'block' : 'none';
+    }
+    function pomoRender() {
+        const m = String(Math.floor(pomoLeft / 60)).padStart(2, '0');
+        const s = String(pomoLeft % 60).padStart(2, '0');
+        const el = document.getElementById('pomo-time');
+        el.textContent = `${m}:${s}`;
+        el.className = 'pomo-time' + (pomoRunning ? (pomoMode === 'Focus' ? ' running' : ' break') : '');
+        document.getElementById('pomo-label').textContent = pomoMode;
+        document.getElementById('pomo-bar').style.width = (pomoLeft / pomoTotal * 100) + '%';
+        document.getElementById('pomo-pp').textContent = pomoRunning ? '‖ Pause' : '▶ Start';
+    }
+    function pomoPP() {
+        if (pomoRunning) {
+            clearInterval(pomoTimer); pomoRunning = false;
+        } else {
+            pomoRunning = true;
+            pomoTimer = setInterval(() => {
+                if (pomoLeft <= 0) {
+                    clearInterval(pomoTimer); pomoRunning = false;
+                    new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAA==').play().catch(()=>{});
+                    pomoRender(); return;
+                }
+                pomoLeft--; pomoRender();
+            }, 1000);
+        }
+        pomoRender();
+    }
+    function pomoReset() {
+        clearInterval(pomoTimer); pomoRunning = false;
+        pomoLeft = pomoTotal; pomoRender();
+    }
+    function pomoSet(min, mode) {
+        clearInterval(pomoTimer); pomoRunning = false;
+        pomoTotal = min * 60; pomoLeft = pomoTotal; pomoMode = mode;
+        pomoRender();
+    }
+    pomoRender();
     </script>
 </body>
 </html>
