@@ -5,6 +5,18 @@
 
 ---
 
+## v0.8.2-alpha — 2026-04-21
+
+### Ajouts
+- **Heatmap calendrier** dans les Stats — grille 53 semaines × 7 jours style GitHub contributions, rendu en JS pur (sans lib supplémentaire)
+- 5 niveaux d'intensité couleur basés sur la variable CSS `--accent` du thème actif (compatible tous les thèmes)
+- Labels mois en haut des colonnes, labels jours L/M/J/D à gauche
+- Tooltip au survol : jour, date ISO, nombre de sessions
+- Compteur « X jours avec session sur 52 semaines »
+- **Streak actuel** et **record streak** dans les KPIs (calculés en Python côté serveur)
+
+---
+
 ## v0.8.1-alpha — 2026-04-21
 
 ### Ajouts

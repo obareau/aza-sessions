@@ -13,7 +13,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-VERSION = "0.8.1-alpha"
+VERSION = "0.8.2-alpha"
 DB_PATH = os.path.join(os.path.dirname(__file__), "sessions.db")
 
 # ── DONNÉES PAR DÉFAUT ────────────────────────────────────────────────────────
@@ -841,6 +841,31 @@ def stats():
     durations = [s["duration_min"] for s in sessions if s["duration_min"]]
     avg_duration = round(sum(durations) / len(durations)) if durations else 0
 
+    # Heatmap — {YYYY-MM-DD: count} pour les 53 dernières semaines
+    heatmap = {}
+    for s in sessions:
+        if s["date"]:
+            day = s["date"][:10]
+            heatmap[day] = heatmap.get(day, 0) + 1
+
+    # Streak courant et max streak
+    from datetime import date as _date, timedelta
+    today_d = _date.today()
+    streak, max_streak, cur = 0, 0, 0
+    d = today_d
+    while True:
+        if heatmap.get(d.isoformat(), 0) > 0:
+            cur += 1
+            if d == today_d or d == today_d - timedelta(days=1):
+                streak = cur
+        else:
+            max_streak = max(max_streak, cur)
+            cur = 0
+            if d < today_d - timedelta(days=365):
+                break
+        d -= timedelta(days=1)
+    max_streak = max(max_streak, cur)
+
     stats_data = {
         "total": total,
         "avg_duration": avg_duration,
@@ -859,6 +884,9 @@ def stats():
         "modes": dict(modes.most_common()),
         "intentions": dict(intentions.most_common()),
         "projects": projects_dist,
+        "heatmap": heatmap,
+        "streak": streak,
+        "max_streak": max_streak,
     }
 
     return render_template("stats.html", version=VERSION,

@@ -111,7 +111,104 @@ function lineMonth(ctx, data) {
     });
 }
 
+function buildHeatmap(data) {
+    const WEEKS = 53, CELL = 13, GAP = 3;
+    const MONTHS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    const DAYS   = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    const todayDow = (today.getDay() + 6) % 7; // Lun=0
+
+    // Lundi de la semaine courante
+    const mondayNow = new Date(today);
+    mondayNow.setDate(today.getDate() - todayDow);
+
+    // Premier lundi de la grille
+    const gridStart = new Date(mondayNow);
+    gridStart.setDate(mondayNow.getDate() - (WEEKS - 1) * 7);
+
+    // Couleurs thème
+    const st = getComputedStyle(document.documentElement);
+    function cssVar(v) { return st.getPropertyValue(v).trim(); }
+    const borderClr = cssVar('--border');
+    const accentHex = cssVar('--accent');
+    function hexRgb(h) { return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]; }
+    const [ar,ag,ab] = hexRgb(accentHex);
+    const ALPHAS = [0, .22, .45, .70, 1.0];
+    function cellBg(count, future) {
+        if (future) return 'transparent';
+        if (count === 0) return borderClr;
+        return `rgba(${ar},${ag},${ab},${ALPHAS[Math.min(count, 4)]})`;
+    }
+
+    const grid = document.getElementById('heatmap-grid');
+    const tip  = document.getElementById('hm-tip');
+    if (!grid) return;
+
+    let activeDays = 0, lastMonth = -1;
+
+    for (let w = 0; w < WEEKS; w++) {
+        const col = document.createElement('div');
+        col.style.cssText = `display:flex;flex-direction:column;gap:${GAP}px;`;
+
+        // Label mois
+        const wMon = new Date(gridStart);
+        wMon.setDate(gridStart.getDate() + w * 7);
+        const mo = wMon.getMonth();
+        const lbl = document.createElement('div');
+        lbl.style.cssText = `height:14px;font-family:var(--mono);font-size:9px;color:var(--text-muted);white-space:nowrap;`;
+        if (mo !== lastMonth) { lbl.textContent = MONTHS[mo]; lastMonth = mo; }
+        col.appendChild(lbl);
+
+        // 7 cellules
+        for (let d = 0; d < 7; d++) {
+            const date = new Date(gridStart);
+            date.setDate(gridStart.getDate() + w * 7 + d);
+            const iso    = date.toISOString().slice(0, 10);
+            const count  = data[iso] || 0;
+            const future = date > today;
+
+            if (count > 0) activeDays++;
+
+            const cell = document.createElement('div');
+            cell.style.cssText = `width:${CELL}px;height:${CELL}px;border-radius:2px;background:${cellBg(count,future)};cursor:${count>0?'pointer':'default'};transition:opacity .1s;`;
+
+            if (!future) {
+                cell.addEventListener('mouseenter', e => {
+                    tip.textContent = count === 0
+                        ? `${DAYS[date.getDay()]} ${iso} — aucune session`
+                        : `${DAYS[date.getDay()]} ${iso} — ${count} session${count>1?'s':''}`;
+                    tip.style.display = 'block';
+                });
+                cell.addEventListener('mousemove', e => {
+                    tip.style.left = (e.clientX + 14) + 'px';
+                    tip.style.top  = (e.clientY  - 34) + 'px';
+                });
+                cell.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+                if (count > 0) cell.style.opacity = '.9';
+                if (count > 0) cell.addEventListener('mouseenter', () => cell.style.opacity = '1');
+                if (count > 0) cell.addEventListener('mouseleave', () => { cell.style.opacity = '.9'; tip.style.display = 'none'; });
+            }
+            col.appendChild(cell);
+        }
+        grid.appendChild(col);
+    }
+
+    // Légende
+    const leg = document.getElementById('hm-legend');
+    if (leg) [0,1,2,3,4].forEach(l => {
+        const lc = document.createElement('div');
+        lc.style.cssText = `width:${CELL}px;height:${CELL}px;border-radius:2px;background:${cellBg(l,false)};`;
+        leg.appendChild(lc);
+    });
+
+    // Compteur
+    const cnt = document.getElementById('hm-count');
+    if (cnt) cnt.textContent = `${activeDays} jour${activeDays>1?'s':''} avec session sur 52 semaines`;
+}
+
 window.addEventListener('DOMContentLoaded', () => {
+    if (S.heatmap) buildHeatmap(S.heatmap);
     if (Object.keys(S.machines).length) hBar(document.getElementById('cMachines'), S.machines, 'Sessions', COLORS.redSoft);
     if (Object.keys(S.effects).length) hBar(document.getElementById('cEffects'), S.effects, 'Sessions', 'rgba(136,14,79,0.15)');
     if (Object.keys(S.daws).length) hBar(document.getElementById('cDaws'), S.daws, 'Sessions', COLORS.greenSoft);
@@ -163,6 +260,44 @@ window.addEventListener('DOMContentLoaded', () => {
         <div class="stat-num" style="color:var(--accent2)">{{ stats.rework_count }}</div>
         <div class="stat-lbl">À retravailler</div>
     </div>
+    {% if stats.streak > 0 %}
+    <div class="stat-card">
+        <div class="stat-num" style="color:var(--warning)">{{ stats.streak }}</div>
+        <div class="stat-lbl">Streak actuel (j)</div>
+    </div>
+    {% endif %}
+    {% if stats.max_streak > 1 %}
+    <div class="stat-card">
+        <div class="stat-num">{{ stats.max_streak }}</div>
+        <div class="stat-lbl">Record streak (j)</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- HEATMAP -->
+<div class="card" style="margin-bottom:24px;">
+    <div class="card-title" style="margin-bottom:16px;">∙ Activité — 52 semaines</div>
+    <div style="overflow-x:auto;">
+        <div style="display:flex;gap:4px;align-items:flex-start;min-width:fit-content;">
+            <!-- Labels jours -->
+            <div style="display:flex;flex-direction:column;gap:3px;padding-top:18px;margin-right:2px;">
+                {% for d in ['L','','M','','J','','D'] %}
+                <div style="height:13px;width:10px;font-family:var(--mono);font-size:9px;color:var(--text-muted);display:flex;align-items:center;">{{ d }}</div>
+                {% endfor %}
+            </div>
+            <!-- Grille générée en JS -->
+            <div id="heatmap-grid" style="display:flex;gap:3px;"></div>
+        </div>
+    </div>
+    <!-- Légende + compteur -->
+    <div style="display:flex;align-items:center;gap:6px;margin-top:14px;font-family:var(--mono);font-size:10px;color:var(--text-muted);">
+        <span>Moins</span>
+        <div id="hm-legend" style="display:flex;gap:3px;"></div>
+        <span>Plus</span>
+        <span style="margin-left:auto;" id="hm-count"></span>
+    </div>
+    <!-- Tooltip -->
+    <div id="hm-tip" style="position:fixed;display:none;background:var(--text);color:var(--bg);font-family:var(--mono);font-size:11px;padding:5px 10px;border-radius:3px;pointer-events:none;z-index:400;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.3);"></div>
 </div>
 
 <!-- TIMELINE -->
