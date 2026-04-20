@@ -7,6 +7,9 @@ import socket
 from datetime import datetime
 from collections import Counter
 
+# Se placer dans le dossier du script — évite PermissionError quand lancé via chemin absolu
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 app = Flask(__name__)
 VERSION = "0.4.0"
 DB_PATH = os.path.join(os.path.dirname(__file__), "sessions.db")
