@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
+        /* ── THÈME : BÉTON (défaut) ── */
         :root {
             --bg: #F4F1EC;
             --bg-alt: #EDEAE3;
@@ -28,7 +29,8 @@
             --radius: 2px;
             --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
         }
-        body.dark {
+        /* ── THÈME : MACHINE (dark) ── */
+        body.t-machine {
             --bg: #111210;
             --bg-alt: #1A1917;
             --surface: #1F1E1C;
@@ -46,6 +48,85 @@
             --warning-soft: #201500;
             --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
         }
+        /* ── THÈME : NORD ── */
+        body.t-nord {
+            --bg: #2E3440;
+            --bg-alt: #3B4252;
+            --surface: #434C5E;
+            --border: #4C566A;
+            --border-strong: #6B7A96;
+            --text: #ECEFF4;
+            --text-muted: #9099AA;
+            --accent: #BF616A;
+            --accent-soft: #3B2E30;
+            --accent2: #81A1C1;
+            --accent2-soft: #2A3445;
+            --success: #A3BE8C;
+            --success-soft: #2A3428;
+            --warning: #EBCB8B;
+            --warning-soft: #3A3020;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+        }
+        /* ── THÈME : SOLARIZED DARK ── */
+        body.t-solarized-dark {
+            --bg: #002B36;
+            --bg-alt: #073642;
+            --surface: #073642;
+            --border: #115060;
+            --border-strong: #586E75;
+            --text: #93A1A1;
+            --text-muted: #657B83;
+            --accent: #DC322F;
+            --accent-soft: #1A0E0D;
+            --accent2: #268BD2;
+            --accent2-soft: #062033;
+            --success: #859900;
+            --success-soft: #0D1A00;
+            --warning: #B58900;
+            --warning-soft: #1A1200;
+            --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.3);
+        }
+        /* ── THÈME : SOLARIZED LIGHT ── */
+        body.t-solarized-light {
+            --bg: #FDF6E3;
+            --bg-alt: #EEE8D5;
+            --surface: #FDF6E3;
+            --border: #D3CBBA;
+            --border-strong: #93A1A1;
+            --text: #586E75;
+            --text-muted: #93A1A1;
+            --accent: #DC322F;
+            --accent-soft: #FDF0EF;
+            --accent2: #268BD2;
+            --accent2-soft: #EBF4FC;
+            --success: #859900;
+            --success-soft: #F3F7E6;
+            --warning: #B58900;
+            --warning-soft: #FBF4E0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+        }
+        /* ── THÈME : GRUVBOX ── */
+        body.t-gruvbox {
+            --bg: #282828;
+            --bg-alt: #3C3836;
+            --surface: #32302F;
+            --border: #504945;
+            --border-strong: #7C6F64;
+            --text: #EBDBB2;
+            --text-muted: #A89984;
+            --accent: #FB4934;
+            --accent-soft: #2D1A18;
+            --accent2: #83A598;
+            --accent2-soft: #1A2B28;
+            --success: #B8BB26;
+            --success-soft: #252708;
+            --warning: #FABD2F;
+            --warning-soft: #2D2400;
+            --shadow: 0 1px 3px rgba(0,0,0,0.35), 0 4px 16px rgba(0,0,0,0.25);
+        }
+        /* Transitions douces entre thèmes */
+        body { transition: background .2s, color .2s; }
+        .card, header, footer { transition: background .2s, border-color .2s; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; min-height: 100vh; }
 
@@ -290,10 +371,31 @@
             <a href="{{ url_for('settings') }}">Paramètres</a>
             <a href="{{ url_for('about') }}">About</a>
             <span class="version-badge">v{{ version }}</span>
-            <button id="dark-toggle" onclick="toggleDark()" title="Thème sombre"
-                style="background:none;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:var(--radius);cursor:pointer;transition:all .15s;margin-left:4px;">
-                ◐
-            </button>
+            <!-- THEME PICKER -->
+            <div id="theme-picker" style="display:flex;align-items:center;gap:4px;margin-left:6px;position:relative;">
+                <button onclick="toggleThemePicker()" title="Thème"
+                    style="background:none;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:var(--radius);cursor:pointer;letter-spacing:.04em;">
+                    ◐ Thème
+                </button>
+                <div id="theme-dropdown" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:#1A1814;border:1px solid #2E2C29;border-radius:var(--radius);padding:8px;z-index:300;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+                    <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#857F78;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #2E2C29;">Thème</div>
+                    {% set themes = [
+                        ('beton',           '#F4F1EC', '#D4380D', 'Béton'),
+                        ('t-machine',       '#111210', '#E84B1A', 'Machine'),
+                        ('t-nord',          '#2E3440', '#BF616A', 'Nord'),
+                        ('t-solarized-dark','#002B36', '#DC322F', 'Solarized Dark'),
+                        ('t-solarized-light','#FDF6E3','#DC322F', 'Solarized Light'),
+                        ('t-gruvbox',       '#282828', '#FB4934', 'Gruvbox'),
+                    ] %}
+                    {% for key, bg, accent, label in themes %}
+                    <button onclick="setTheme('{{ key }}')" id="th-{{ key }}"
+                        style="display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;cursor:pointer;padding:5px 6px;border-radius:var(--radius);color:#E8E4DC;font-family:var(--mono);font-size:11px;text-align:left;transition:background .1s;">
+                        <span style="width:24px;height:14px;border-radius:2px;background:{{ bg }};border:2px solid {{ accent }};flex-shrink:0;display:inline-block;"></span>
+                        {{ label }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
         </nav>
     </header>
 
@@ -334,14 +436,35 @@
     </div>
 
     <script>
-    // ── DARK MODE ──
-    (function() {
-        if (localStorage.getItem('dark') === '1') document.body.classList.add('dark');
-    })();
-    function toggleDark() {
-        document.body.classList.toggle('dark');
-        localStorage.setItem('dark', document.body.classList.contains('dark') ? '1' : '0');
+    // ── THEMES ──
+    const THEMES = ['t-machine','t-nord','t-solarized-dark','t-solarized-light','t-gruvbox'];
+    function applyTheme(t) {
+        THEMES.forEach(c => document.body.classList.remove(c));
+        if (t && t !== 'beton') document.body.classList.add(t);
+        // Marquer actif dans le dropdown
+        document.querySelectorAll('#theme-dropdown button[id^="th-"]').forEach(btn => {
+            btn.style.background = btn.id === 'th-' + t ? 'rgba(255,255,255,0.1)' : 'none';
+        });
     }
+    function setTheme(t) {
+        localStorage.setItem('theme', t);
+        applyTheme(t);
+        document.getElementById('theme-dropdown').style.display = 'none';
+    }
+    function toggleThemePicker() {
+        const d = document.getElementById('theme-dropdown');
+        d.style.display = d.style.display === 'none' ? 'block' : 'none';
+    }
+    // Fermer en cliquant ailleurs
+    document.addEventListener('click', e => {
+        if (!document.getElementById('theme-picker').contains(e.target))
+            document.getElementById('theme-dropdown').style.display = 'none';
+    });
+    // Restaurer au chargement
+    (function() {
+        const saved = localStorage.getItem('theme') || 'beton';
+        applyTheme(saved);
+    })();
 
     async function refreshOblique() {
         const r = await fetch('/oblique');
