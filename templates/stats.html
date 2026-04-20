@@ -120,6 +120,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (Object.keys(S.influences).length) hBar(document.getElementById('cInfluences'), S.influences, 'Sessions', COLORS.warnSoft);
     if (Object.keys(S.characters).length) doughnut(document.getElementById('cChars'), S.characters);
     if (Object.keys(S.modes).length) doughnut(document.getElementById('cModes'), S.modes);
+    if (S.projects && Object.keys(S.projects).length) hBar(document.getElementById('cProjects'), S.projects, 'Sessions', COLORS.blueSoft);
     if (Object.keys(S.rating_dist).length) {
         new Chart(document.getElementById('cRatings'), {
             type: 'bar',
@@ -240,12 +241,18 @@ window.addEventListener('DOMContentLoaded', () => {
     {% endif %}
 </div>
 
-<!-- MODES + INTENTIONS -->
+<!-- MODES + PROJETS -->
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
     {% if stats.modes %}
     <div class="card">
         <div class="card-title">∙ Modes de travail</div>
         <canvas id="cModes" height="200"></canvas>
+    </div>
+    {% endif %}
+    {% if stats.projects %}
+    <div class="card">
+        <div class="card-title">∙ Sessions par projet</div>
+        <canvas id="cProjects" height="{{ [stats.projects|length * 32, 80]|max }}"></canvas>
     </div>
     {% endif %}
 </div>

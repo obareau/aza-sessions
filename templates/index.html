@@ -14,8 +14,12 @@
 
 {% if sessions %}
 <!-- BARRE DE FILTRES -->
-<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:10px;margin-bottom:20px;align-items:center;">
+<div style="display:grid;grid-template-columns:1fr auto auto auto auto;gap:10px;margin-bottom:20px;align-items:center;">
     <input type="text" id="search" placeholder="Rechercher — machines, tags, notes..." oninput="filterSessions()" style="margin:0;">
+    <select id="filter-project" onchange="filterSessions()" style="margin:0;width:auto;">
+        <option value="">Tous les projets</option>
+        {% for s in sessions %}{% if s.project_title %}<option>{{ s.project_title }}</option>{% endif %}{% endfor %}
+    </select>
     <select id="filter-mode" onchange="filterSessions()" style="margin:0;width:auto;">
         <option value="">Tous les modes</option>
         {% for s in sessions %}{% if s.mode %}<option>{{ s.mode }}</option>{% endif %}{% endfor %}
@@ -37,7 +41,8 @@
 <a href="{{ url_for('view_session', sid=s.id) }}" class="session-row"
    data-text="{{ [s.machines, s.daws, s.tags, s.comments, s.intention, s.mode, s.character]|select|join(' ')|lower }}"
    data-mode="{{ s.mode or '' }}"
-   data-rating="{{ s.rating or 0 }}">
+   data-rating="{{ s.rating or 0 }}"
+   data-project="{{ s.project_title or '' }}">
     <span class="session-date">{{ s.date[:16] }}</span>
     <span class="session-machines">{{ s.machines or '—' }}{% if s.daws %} · {{ s.daws }}{% endif %}</span>
     <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
@@ -74,31 +79,32 @@
 {% endif %}
 
 <script>
-// Dédupliquer les options du select mode
+// Dédupliquer les options des selects
 (function() {
-    const sel = document.getElementById('filter-mode');
-    if (!sel) return;
-    const seen = new Set();
-    Array.from(sel.options).forEach(o => {
-        if (o.value && seen.has(o.value)) o.remove();
-        else seen.add(o.value);
+    ['filter-mode','filter-project'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const seen = new Set();
+        Array.from(sel.options).forEach(o => {
+            if (o.value && seen.has(o.value)) o.remove();
+            else seen.add(o.value);
+        });
     });
 })();
 
 function filterSessions() {
-    const q     = document.getElementById('search').value.toLowerCase().trim();
-    const mode  = document.getElementById('filter-mode').value;
-    const rating = document.getElementById('filter-rating').value;
-    const rows  = document.querySelectorAll('#session-list .session-row');
+    const q       = document.getElementById('search').value.toLowerCase().trim();
+    const mode    = document.getElementById('filter-mode').value;
+    const rating  = document.getElementById('filter-rating').value;
+    const project = document.getElementById('filter-project').value;
+    const rows    = document.querySelectorAll('#session-list .session-row');
     let visible = 0;
     rows.forEach(row => {
-        const text   = row.dataset.text || '';
-        const rMode  = row.dataset.mode || '';
-        const rRating = parseInt(row.dataset.rating) || 0;
-        const matchQ = !q || text.includes(q);
-        const matchM = !mode || rMode === mode;
-        const matchR = !rating || rRating >= parseInt(rating);
-        const show = matchQ && matchM && matchR;
+        const matchQ = !q       || (row.dataset.text || '').includes(q);
+        const matchM = !mode    || row.dataset.mode === mode;
+        const matchR = !rating  || (parseInt(row.dataset.rating) || 0) >= parseInt(rating);
+        const matchP = !project || row.dataset.project === project;
+        const show = matchQ && matchM && matchR && matchP;
         row.style.display = show ? '' : 'none';
         if (show) visible++;
     });
@@ -110,6 +116,7 @@ function resetFilters() {
     document.getElementById('search').value = '';
     document.getElementById('filter-mode').value = '';
     document.getElementById('filter-rating').value = '';
+    document.getElementById('filter-project').value = '';
     filterSessions();
 }
 function filterByTag(tag) {

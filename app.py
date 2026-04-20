@@ -246,13 +246,14 @@ def get_influences_active():
 
 
 def session_to_md(s):
+    project_line = f"\n**Projet:** {s['project_title']}" if s.get('project_title') else ""
     return f"""# Session {s['date']}
 
 **Mode:** {s['mode'] or '—'}
 **Intention:** {s['intention'] or '—'}
 **Durée:** {s['duration_min'] or '—'} min
 **Énergie:** {'⚡' * (s['energy_level'] or 0)}
-**Note:** {'★' * (s['rating'] or 0)}
+**Note:** {'★' * (s['rating'] or 0)}{project_line}
 
 ## Machines
 {s['machines'] or '—'}
@@ -604,7 +605,11 @@ def delete_project(pid):
 @app.route("/export/<int:sid>")
 def export_one(sid):
     conn = get_db()
-    s = conn.execute("SELECT * FROM sessions WHERE id = ?", (sid,)).fetchone()
+    s = conn.execute("""
+        SELECT s.*, p.title AS project_title
+        FROM sessions s LEFT JOIN projects p ON s.project_id = p.id
+        WHERE s.id = ?
+    """, (sid,)).fetchone()
     conn.close()
     if not s:
         return "Session introuvable", 404
@@ -618,9 +623,11 @@ def export_one(sid):
 @app.route("/export/all")
 def export_all():
     conn = get_db()
-    sessions = conn.execute(
-        "SELECT * FROM sessions ORDER BY date DESC"
-    ).fetchall()
+    sessions = conn.execute("""
+        SELECT s.*, p.title AS project_title
+        FROM sessions s LEFT JOIN projects p ON s.project_id = p.id
+        ORDER BY s.date DESC
+    """).fetchall()
     conn.close()
     if not sessions:
         return "Aucune session", 404
@@ -683,6 +690,17 @@ def stats():
     # Intentions
     intentions = Counter(s["intention"] for s in sessions if s["intention"])
 
+    # Projets
+    conn2 = get_db()
+    projects_rows = conn2.execute("""
+        SELECT p.title, COUNT(s.id) as cnt
+        FROM projects p
+        JOIN sessions s ON s.project_id = p.id
+        GROUP BY p.id ORDER BY cnt DESC
+    """).fetchall()
+    conn2.close()
+    projects_dist = {r["title"]: r["cnt"] for r in projects_rows}
+
     # Taux release / rework
     release_count = sum(1 for s in sessions if s["release_potential"])
     rework_count = sum(1 for s in sessions if s["to_rework"])
@@ -708,6 +726,7 @@ def stats():
         "monthly": monthly_sorted,
         "modes": dict(modes.most_common()),
         "intentions": dict(intentions.most_common()),
+        "projects": projects_dist,
     }
 
     return render_template("stats.html", version=VERSION,
