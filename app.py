@@ -915,6 +915,13 @@ def settings_reset_sessions():
                            msg="Toutes les sessions ont été supprimées.")
 
 
+# ── ROUTE ABOUT ───────────────────────────────────────────────────────────────
+
+@app.route("/about")
+def about():
+    return render_template("about.html", version=VERSION, oblique=rand_oblique())
+
+
 # ── BANNER & PORT ─────────────────────────────────────────────────────────────
 
 # Codes ANSI

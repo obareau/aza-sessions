@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}À propos — Robōtariis{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">∴ À propos</div>
+        <div class="page-subtitle">Journal de Sessions Robōtariis — v{{ version }}</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+</div>
+
+<!-- PROJET -->
+<div class="card">
+    <div class="card-title">∙ Le projet</div>
+    <div style="font-family:var(--mono);font-size:13px;line-height:1.9;margin-top:12px;color:var(--text);">
+        <p style="margin-bottom:12px;">
+            <strong>Journal de Sessions Robōtariis</strong> est un outil de documentation musicale personnel —
+            un carnet de bord numérique pour tracer chaque session de création sonore en temps réel.
+        </p>
+        <p style="margin-bottom:12px;">
+            L'application fonctionne <strong>100 % en local</strong> : pas de cloud, pas de compte,
+            pas de connexion. Les données restent dans un fichier SQLite sur ta machine.
+        </p>
+        <p>
+            Chaque session documentée peut correspondre à une scène, un lieu ou une ambiance
+            particulière du lore <strong>Robōtariis</strong> — univers de fiction dystopique
+            dont ces enregistrements constituent la bande originale.
+        </p>
+    </div>
+</div>
+
+<!-- UNIVERS -->
+<div class="card" style="border-color:var(--accent);background:var(--accent-soft);">
+    <div class="card-title" style="color:var(--accent);">∙ L'univers Robōtariis</div>
+    <div style="font-family:var(--mono);font-size:13px;line-height:1.9;margin-top:12px;">
+        <p style="margin-bottom:12px;">
+            Robōtariis est une dystopie de fiction personnelle — un monde où les machines
+            ont développé leur propre langage sonore, quelque part entre mémoire industrielle
+            et transmission cryptée.
+        </p>
+        <p style="margin-bottom:12px;">
+            Style musical visé : <strong>Dark Ambient / Industriel</strong> —
+            dans la tradition de PanSonic, Vromb, Synapscape, P·A·L, Raison d'Être,
+            avec une affinité particulière pour les labels
+            <strong>Hands Productions</strong> et <strong>Ant-Zen</strong>.
+        </p>
+        <p>
+            Les <strong>Stratégies Obliques Robōtariis</strong> sont des contraintes créatives
+            inspirées des <em>Oblique Strategies</em> de Brian Eno — elles apparaissent
+            aléatoirement pour déstabiliser, guider ou forcer une rupture dans le processus.
+        </p>
+    </div>
+</div>
+
+<!-- TECHNIQUE -->
+<div class="card">
+    <div class="card-title">∙ Stack technique</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:12px;">
+        {% for label, value in [
+            ('Backend', 'Python 3 / Flask'),
+            ('Base de données', 'SQLite'),
+            ('Templates', 'Jinja2'),
+            ('CSS', 'Vanilla — zéro framework'),
+            ('Graphiques', 'Chart.js'),
+            ('Typographie', 'IBM Plex Mono / Sans'),
+            ('Port', '5001 (auto-détection)'),
+            ('Persistance', 'localStorage (Pomodoro, dark mode)')
+        ] %}
+        <div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);">
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:700;margin-bottom:4px;">{{ label }}</div>
+            <div style="font-size:12px;color:var(--text);">{{ value }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- VERSIONS -->
+<div class="card">
+    <div class="card-title">∙ Historique des versions</div>
+    <div style="margin-top:12px;">
+        {% for v, date, desc in [
+            ('v0.6.0-alpha', '2026-04-20', 'Suppression sessions, projets, copie setup, tags cliquables, dark mode'),
+            ('v0.5.4-alpha', '2026-04-20', 'Page Paramètres — import DB, backup, reset'),
+            ('v0.5.3-alpha', '2026-04-20', 'Fix stats Chart.js, Pomodoro persistant, auto-save formulaires'),
+            ('v0.5.2-alpha', '2026-04-20', 'Filtres sessions, liaison entre sessions, copie fichier audio'),
+            ('v0.5.1-alpha', '2026-04-20', 'Widget Pomodoro, bannière terminal ANSI, détection port auto'),
+            ('v0.4.0',       '2026-04-20', 'Édition de sessions existantes'),
+            ('v0.3.1',       '2026-04-20', 'Initial — Flask complet, stats Chart.js, export Markdown'),
+        ] %}
+        <div style="display:grid;grid-template-columns:110px 100px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center;">
+            <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:{% if loop.first %}var(--accent){% else %}var(--text){% endif %};">{{ v }}</span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text-muted);">{{ date }}</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--text-muted);">{{ desc }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    <div style="margin-top:12px;">
+        <a href="https://github.com/obareau/robotariis-sessions" target="_blank"
+           style="font-family:var(--mono);font-size:11px;color:var(--accent2);text-decoration:none;">
+            → Voir le CHANGELOG complet sur GitHub
+        </a>
+    </div>
+</div>
+
+<!-- AUTEUR -->
+<div class="card">
+    <div class="card-title">∙ Auteur</div>
+    <div style="font-family:var(--mono);font-size:13px;line-height:1.8;margin-top:12px;color:var(--text-muted);">
+        Projet personnel — <strong style="color:var(--text);">Olivier</strong>, Scaër, Bretagne — 2026<br>
+        Développé avec Flask et une dose de noise industrielle.<br>
+        <span style="font-size:11px;opacity:.6;">La machine ne ment pas. Elle déforme.</span>
+    </div>
+</div>
+
+{% endblock %}

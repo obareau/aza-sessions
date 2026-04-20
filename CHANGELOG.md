@@ -1,18 +1,26 @@
 # CHANGELOG — Journal de Sessions Robōtariis
 
 > Les versions alpha sont des releases actives en développement continu.
+> Chaque version est datée du jour de développement effectif.
+
+---
 
 ## v0.6.0-alpha — 2026-04-20
 
 ### Ajouts
-- Suppression de session : bouton « ✕ Supprimer » dans la vue détail, avec confirmation
-- Copie de setup : bouton « ⎘ Copier setup » — préremplit le formulaire nouvelle session avec le même hardware/logiciels/caractère/influences
-- Vue Projets (`/projects`) : regrouper des sessions sous un titre de projet, avec couleur, description, comptage de sessions
-- Vue détail projet : liste des sessions du projet, stats rapides (durée totale, note moyenne)
-- Association de sessions à un projet (select dans new/edit)
-- Tags cliquables dans la liste des sessions — filtre automatique par tag au clic
-- Thème sombre : toggle ◐ dans le header, persisté en localStorage
-- Lien « ◈ Projets » dans la navigation
+- **Suppression de session** — bouton « ✕ Supprimer » dans la vue détail, avec confirmation JS, route POST `/session/<id>/delete`
+- **Copie de setup** — bouton « ⎘ Copier setup » dans la vue détail, préremplit le formulaire nouvelle session avec le même hardware, logiciels, caractère et influences (`/new?from=<id>`)
+- **Vue Projets** — regrouper des sessions sous un projet avec titre, couleur et description (`/projects`)
+- **Détail projet** — liste des sessions liées, stats rapides (durée totale, note moyenne)
+- **Association session ↔ projet** — select dans les formulaires new et edit, colonne `project_id` en DB
+- **Tags cliquables** — clic sur un tag dans la liste des sessions filtre automatiquement par ce tag
+- **Thème sombre** — variables CSS dark complètes, toggle ◐ dans le header, persisté en localStorage
+- **Lien ◈ Projets** dans la navigation principale
+
+### Corrections
+- Noms des artistes/machines enfin visibles dans catalogue et influences : remplacement des styles inline `background:transparent` + `onblur` JS (qui écrasaient le CSS) par des classes CSS dédiées `.inf-name`, `.cat-name`, `.inf-notes`, `.cat-notes`
+
+---
 
 ## v0.5.4-alpha — 2026-04-20
 
@@ -28,16 +36,12 @@
 
 ### Corrections
 - Stats : fix crash JS `doughnut(cChars/cModes)` appelé sans data — bloquait le rendu des graphiques énergie, notes et caractère
-- Influences/Catalogue : noms des items maintenant visibles (background explicite sur input[name="name"])
+- Influences/Catalogue : noms des items maintenant visibles (background explicite sur `input[name="name"]`)
 - Notes des items : masquées par défaut, visibles au hover (catalogue + influences)
 
 ### Ajouts
 - Pomodoro persistant : état sauvegardé dans localStorage, restauré au changement de page (temps écoulé compensé)
-- Auto-save formulaires : brouillon sauvegardé automatiquement toutes les modifications (new + edit), banner de restauration si données non soumises
-
-### Roadmap future
-- Reset base de données (remettre à zéro sans données)
-- Import de base SQLite existante
+- Auto-save formulaires : brouillon sauvegardé automatiquement à chaque modification (new + edit), banner de restauration si données non soumises
 
 ---
 
@@ -59,7 +63,7 @@
 
 ### Corrections
 - Champ "notes…" dans le catalogue masqué par défaut (visible au hover)
-- build_mac.sh : compatibilité Python 3.9, `mkdir -p static`, mode `--onedir`
+- `build_mac.sh` : compatibilité Python 3.9, `mkdir -p static`, mode `--onedir`
 - Port 5001 par défaut (5000 occupé par AirPlay sur macOS)
 
 ---
@@ -69,11 +73,11 @@
 ### Ajouts
 - Édition d'une session existante — route `/session/<id>/edit` (GET/POST)
 - Template `edit.html` — formulaire pré-rempli avec toutes les valeurs existantes
-- Bouton "✎ Éditer" dans la vue détail de session
+- Bouton « ✎ Éditer » dans la vue détail de session
 
 ---
 
-## v0.3.1 — Initial commit
+## v0.3.1 — 2026-04-20 — Initial commit
 
 ### Ajouts
 - Application Flask complète : sessions, catalogue, influences, obliques
