@@ -47,11 +47,22 @@
     {% for item in items %}
     <div class="cat-row {{ 'inactive' if not item.active }}">
         <!-- EDIT -->
-        <form method="POST" action="{{ url_for('manage_catalogue') }}" style="flex:1;display:flex;gap:8px;align-items:center;">
+        <form method="POST" action="{{ url_for('manage_catalogue') }}"
+              style="flex:1;display:flex;gap:8px;align-items:center;min-width:0;">
             <input type="hidden" name="action" value="edit">
             <input type="hidden" name="id" value="{{ item.id }}">
-            <input type="text" name="name" value="{{ item.name }}" class="cat-name">
-            <input type="text" name="notes" value="{{ item.notes or '' }}" placeholder="notes..." class="cat-notes">
+            <input type="text" name="name" value="{{ item.name }}"
+                   style="font-family:var(--mono);font-size:12px;color:var(--text);
+                          background:var(--bg);border:1px solid var(--border);
+                          border-radius:var(--radius);padding:4px 8px;
+                          flex:1;min-width:0;width:auto;">
+            <input type="text" name="notes" value="{{ item.notes or '' }}" placeholder="notes..."
+                   style="font-family:var(--mono);font-size:11px;color:var(--text-muted);
+                          background:var(--bg);border:1px solid var(--border);
+                          border-radius:var(--radius);padding:4px 8px;
+                          width:160px;flex-shrink:0;
+                          opacity:0;transition:opacity .15s;"
+                   class="inf-notes">
             <button type="submit" class="btn btn-secondary btn-sm">✓</button>
         </form>
         <!-- TOGGLE -->
