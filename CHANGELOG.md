@@ -2,6 +2,16 @@
 
 > Les versions alpha sont des releases actives en développement continu.
 
+## v0.5.4-alpha — 2026-04-20
+
+### Ajouts
+- Page Paramètres (`/settings`) accessible depuis la nav
+- Import de base SQLite : upload d'un ancien `sessions.db`, fusion intelligente (doublons ignorés, colonnes manquantes gérées)
+- Backup : téléchargement de la base courante en `.db` horodaté
+- Reset sessions : vide toutes les sessions (conserve catalogue, influences, obliques)
+
+---
+
 ## v0.5.3-alpha — 2026-04-20
 
 ### Corrections

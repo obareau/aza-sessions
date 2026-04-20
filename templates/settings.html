@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Paramètres — Robōtariis{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">⚙ Paramètres</div>
+        <div class="page-subtitle">Base de données — v{{ version }}</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+</div>
+
+{% if msg %}
+<div style="background:var(--success-soft);border:1px solid var(--success);border-radius:var(--radius);padding:12px 16px;font-family:var(--mono);font-size:12px;color:var(--success);margin-bottom:20px;">
+    ✓ {{ msg }}
+</div>
+{% endif %}
+{% if error %}
+<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--radius);padding:12px 16px;font-family:var(--mono);font-size:12px;color:var(--accent);margin-bottom:20px;">
+    ✕ {{ error }}
+</div>
+{% endif %}
+
+<!-- ÉTAT ACTUEL -->
+<div class="card">
+    <div class="card-title">∙ Base de données actuelle</div>
+    <div style="display:flex;align-items:center;gap:20px;margin-top:12px;flex-wrap:wrap;">
+        <div>
+            <div style="font-family:var(--mono);font-size:32px;font-weight:600;">{{ nb_sessions }}</div>
+            <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-top:4px;">Session{% if nb_sessions > 1 %}s{% endif %}</div>
+        </div>
+        <div style="flex:1"></div>
+        <a href="{{ url_for('settings_backup') }}" class="btn btn-ghost">↓ Télécharger la base (backup)</a>
+    </div>
+</div>
+
+<!-- IMPORT -->
+<div class="card">
+    <div class="card-title">∙ Importer une ancienne base</div>
+    <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);margin:12px 0;">
+        Upload un fichier <code>sessions.db</code> d'une version précédente.<br>
+        Les sessions seront <strong>fusionnées</strong> avec la base actuelle — les doublons (même date + machines) sont ignorés automatiquement.<br>
+        Les colonnes manquantes dans l'ancienne base sont gérées silencieusement.
+    </p>
+    <form method="POST" action="{{ url_for('settings_import') }}" enctype="multipart/form-data"
+          style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px;">
+        <input type="file" name="db_file" accept=".db" required
+               style="font-family:var(--mono);font-size:12px;flex:1;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);">
+        <button type="submit" class="btn btn-primary">Importer →</button>
+    </form>
+</div>
+
+<!-- DANGER ZONE -->
+<div class="card" style="border-color:var(--accent);">
+    <div class="card-title" style="color:var(--accent);">∙ Zone dangereuse</div>
+    <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);margin:12px 0;">
+        Ces actions sont irréversibles. Fais un backup avant.
+    </p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;">
+        <form method="POST" action="{{ url_for('settings_reset_sessions') }}"
+              onsubmit="return confirm('Supprimer TOUTES les sessions ? Cette action est irréversible.')">
+            <button type="submit" class="btn btn-danger">✕ Vider les sessions</button>
+        </form>
+    </div>
+    <p style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:10px;">
+        « Vider les sessions » supprime toutes les sessions mais conserve le catalogue, les influences et les stratégies Obliques.
+    </p>
+</div>
+
+{% endblock %}
