@@ -3,6 +3,7 @@ import sqlite3
 import os
 import random
 import json
+import socket
 from datetime import datetime
 from collections import Counter
 
@@ -683,9 +684,72 @@ def manage_influences():
                            version=VERSION, oblique=rand_oblique())
 
 
+# ── BANNER & PORT ─────────────────────────────────────────────────────────────
+
+# Codes ANSI
+_R  = "\033[0m"       # reset
+_B  = "\033[1m"       # bold
+_DIM = "\033[2m"      # dim
+_C  = "\033[38;5;208m"  # orange Robōtariis
+_G  = "\033[38;5;240m"  # gris foncé
+_W  = "\033[97m"      # blanc vif
+_GR = "\033[38;5;71m"   # vert URL
+
+
+def find_free_port(start=5001, attempts=10):
+    for port in range(start, start + attempts):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(("0.0.0.0", port))
+                return port
+            except OSError:
+                continue
+    raise RuntimeError("Aucun port disponible entre %d et %d" % (start, start + attempts - 1))
+
+
+def print_banner(port):
+    url = f"http://localhost:{port}"
+    width = 48
+    line = "─" * width
+
+    print()
+    print(f"{_C}{_B}┌{line}┐{_R}")
+    print(f"{_C}{_B}│{_R}{'':^{width}}{_C}{_B}│{_R}")
+
+    title = f"  ROBŌTARIIS SESSIONS  v{VERSION}"
+    pad = width - len(title) - 2
+    print(f"{_C}{_B}│  {_W}{title}{_R}{' ' * pad}{_C}{_B}  │{_R}")
+
+    subtitle = "Journal de sessions musicales"
+    pad2 = width - len(subtitle) - 2
+    print(f"{_C}{_B}│  {_DIM}{subtitle}{_R}{' ' * pad2}{_C}{_B}  │{_R}")
+
+    print(f"{_C}{_B}│{_R}{'':^{width}}{_C}{_B}│{_R}")
+    print(f"{_C}{_B}├{line}┤{_R}")
+
+    url_label = "▶  " + url
+    pad3 = width - len(url_label) - 2
+    print(f"{_C}{_B}│  {_GR}{_B}{url_label}{_R}{' ' * pad3}{_C}{_B}  │{_R}")
+
+    print(f"{_C}{_B}└{line}┘{_R}")
+    print()
+    print(f"{_G}  Ctrl+C pour arrêter{_R}")
+    print()
+
+    # Ligne persistante — réaffichée après le démarrage de Flask
+    return url
+
+
 # ── MAIN ───────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    import logging
+    port = find_free_port(5001)
+    url  = print_banner(port)
     init_db()
-    print(f"🤖 Journal de Sessions Robōtariis v{VERSION} — http://localhost:5001")
-    app.run(debug=True, host="0.0.0.0", port=5001)
+
+    # Supprimer les logs Flask verbeux pour garder le terminal propre
+    log = logging.getLogger("werkzeug")
+    log.setLevel(logging.ERROR)
+
+    app.run(debug=False, host="0.0.0.0", port=port, use_reloader=False)
