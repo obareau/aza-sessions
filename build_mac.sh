@@ -15,11 +15,14 @@ echo "✓ $(python3 --version)"
 
 # Installer dépendances
 echo "→ Installation Flask + PyInstaller..."
-pip3 install flask pyinstaller --break-system-packages -q
+pip3 install flask pyinstaller -q 2>/dev/null || pip3 install flask pyinstaller --user -q
 echo "✓ Dépendances OK"
 
 # Nettoyer les builds précédents
 rm -rf build/ dist/ *.spec
+
+# Créer static/ si absent (dossier vide non versionné)
+mkdir -p static
 
 # Compiler
 echo "→ Compilation en cours..."
