@@ -27,7 +27,7 @@ mkdir -p static
 # Compiler
 echo "→ Compilation en cours..."
 pyinstaller \
-    --onefile \
+    --onedir \
     --name "RobotariisSessions" \
     --add-data "templates:templates" \
     --add-data "static:static" \
@@ -37,13 +37,13 @@ pyinstaller \
     --hidden-import sqlite3 \
     app.py
 
-if [ -f "dist/RobotariisSessions" ]; then
+if [ -f "dist/RobotariisSessions/RobotariisSessions" ]; then
     echo ""
-    echo "✅ Binaire créé : dist/RobotariisSessions"
+    echo "✅ App créée : dist/RobotariisSessions/"
     echo "   Taille : $(du -sh dist/RobotariisSessions | cut -f1)"
     echo ""
-    echo "→ Pour lancer : ./dist/RobotariisSessions"
-    echo "→ Puis ouvrir http://localhost:5000"
+    echo "→ Pour lancer : ./dist/RobotariisSessions/RobotariisSessions"
+    echo "→ Puis ouvrir http://localhost:5001"
 else
     echo "❌ Échec de la compilation"
     exit 1
