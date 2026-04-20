@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Éditer {{ project.title }} — Robōtariis{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title" style="border-left:3px solid {{ project.color }};padding-left:12px;">
+            ✎ Éditer le projet
+        </div>
+        <div class="page-subtitle">{{ project.title }}</div>
+    </div>
+    <a href="{{ url_for('view_project', pid=project.id) }}" class="btn btn-secondary">← Annuler</a>
+</div>
+
+<div class="card">
+    <form method="POST" action="{{ url_for('edit_project', pid=project.id) }}">
+        <div class="form-grid">
+            <div class="form-group full">
+                <label>Titre</label>
+                <input type="text" name="title" value="{{ project.title }}" required>
+            </div>
+            <div class="form-group full">
+                <label>Description</label>
+                <input type="text" name="description" value="{{ project.description or '' }}" placeholder="Quelques mots...">
+            </div>
+            <div class="form-group">
+                <label>Couleur</label>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <input type="color" name="color" value="{{ project.color or '#D4380D' }}"
+                           style="height:40px;padding:4px 6px;width:60px;border:1px solid var(--border);border-radius:var(--radius);">
+                    <span style="font-family:var(--mono);font-size:11px;color:var(--text-muted);">
+                        Couleur de l'étiquette projet
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:space-between;margin-top:24px;padding-top:16px;border-top:1px solid var(--border);">
+            <form method="POST" action="{{ url_for('delete_project', pid=project.id) }}"
+                  onsubmit="return confirm('Supprimer « {{ project.title }} » ? Les sessions liées seront détachées.')">
+                <button type="submit" class="btn btn-danger">✕ Supprimer le projet</button>
+            </form>
+            <div style="display:flex;gap:10px;">
+                <a href="{{ url_for('view_project', pid=project.id) }}" class="btn btn-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary">Enregistrer →</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

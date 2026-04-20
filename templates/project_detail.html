@@ -9,7 +9,11 @@
         <div class="page-subtitle">{{ project.description }}</div>
         {% endif %}
     </div>
-    <a href="{{ url_for('list_projects') }}" class="btn btn-secondary">← Projets</a>
+    <div style="display:flex;gap:8px;">
+        <a href="{{ url_for('new_session') }}" class="btn btn-primary btn-sm">+ Session</a>
+        <a href="{{ url_for('edit_project', pid=project.id) }}" class="btn btn-secondary">✎ Éditer</a>
+        <a href="{{ url_for('list_projects') }}" class="btn btn-secondary">← Projets</a>
+    </div>
 </div>
 
 <div style="display:flex;gap:16px;margin-bottom:28px;font-family:var(--mono);font-size:12px;color:var(--text-muted);">

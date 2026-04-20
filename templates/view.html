@@ -26,6 +26,12 @@
     {% if session.intention %}<span class="badge badge-neu">{{ session.intention }}</span>{% endif %}
     {% if session.release_potential %}<span class="badge badge-release">Release</span>{% endif %}
     {% if session.to_rework %}<span class="badge badge-rework">Retravailler</span>{% endif %}
+    {% if session.project_title %}
+    <a href="{{ url_for('view_project', pid=session.project_id_val) }}"
+       class="badge" style="background:{{ session.project_color }}22;color:{{ session.project_color }};border:1px solid {{ session.project_color }}66;text-decoration:none;">
+        ◈ {{ session.project_title }}
+    </a>
+    {% endif %}
 </div>
 
 {% if session.oblique %}

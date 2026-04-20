@@ -41,6 +41,9 @@
     <span class="session-date">{{ s.date[:16] }}</span>
     <span class="session-machines">{{ s.machines or '—' }}{% if s.daws %} · {{ s.daws }}{% endif %}</span>
     <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        {% if s.project_title %}
+        <span class="badge" style="background:{{ s.project_color }}22;color:{{ s.project_color }};border:1px solid {{ s.project_color }}66;">◈ {{ s.project_title }}</span>
+        {% endif %}
         {% if s.release_potential %}<span class="badge badge-release">Release</span>{% endif %}
         {% if s.to_rework %}<span class="badge badge-rework">Retravailler</span>{% endif %}
         {% if s.mode %}<span class="badge badge-neu">{{ s.mode }}</span>{% endif %}

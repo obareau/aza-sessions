@@ -316,9 +316,12 @@ def session_to_md(s):
 @app.route("/")
 def index():
     conn = get_db()
-    sessions = conn.execute(
-        "SELECT * FROM sessions ORDER BY date DESC"
-    ).fetchall()
+    sessions = conn.execute("""
+        SELECT s.*, p.title AS project_title, p.color AS project_color
+        FROM sessions s
+        LEFT JOIN projects p ON s.project_id = p.id
+        ORDER BY s.date DESC
+    """).fetchall()
     conn.close()
     return render_template("index.html",
                            sessions=sessions,
@@ -408,9 +411,12 @@ def new_session():
 @app.route("/session/<int:sid>")
 def view_session(sid):
     conn = get_db()
-    session = conn.execute(
-        "SELECT * FROM sessions WHERE id = ?", (sid,)
-    ).fetchone()
+    session = conn.execute("""
+        SELECT s.*, p.title AS project_title, p.color AS project_color, p.id AS project_id_val
+        FROM sessions s
+        LEFT JOIN projects p ON s.project_id = p.id
+        WHERE s.id = ?
+    """, (sid,)).fetchone()
     linked = None
     if session and session["linked_session"]:
         linked = conn.execute(
@@ -554,6 +560,31 @@ def view_project(pid):
     ).fetchall()
     conn.close()
     return render_template("project_detail.html", project=project, sessions=sessions,
+                           version=VERSION, oblique=rand_oblique())
+
+
+@app.route("/projects/<int:pid>/edit", methods=["GET", "POST"])
+def edit_project(pid):
+    conn = get_db()
+    project = conn.execute("SELECT * FROM projects WHERE id=?", (pid,)).fetchone()
+    conn.close()
+    if not project:
+        return redirect(url_for("list_projects"))
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        if title:
+            conn = get_db()
+            conn.execute(
+                "UPDATE projects SET title=?, description=?, color=? WHERE id=?",
+                (title,
+                 request.form.get("description", "").strip(),
+                 request.form.get("color", "#D4380D"),
+                 pid)
+            )
+            conn.commit()
+            conn.close()
+        return redirect(url_for("view_project", pid=pid))
+    return render_template("project_edit.html", project=project,
                            version=VERSION, oblique=rand_oblique())
 
 
