@@ -65,7 +65,8 @@
             ('Graphiques', 'Chart.js'),
             ('Typographie', 'IBM Plex Mono / Sans'),
             ('Port', '5001 (auto-détection)'),
-            ('Persistance', 'localStorage (Pomodoro, dark mode)')
+            ('Persistance', 'localStorage (Pomodoro, thèmes)'),
+            ('Thèmes', 'Béton · Machine · Nord · Solarized · Gruvbox'),
         ] %}
         <div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);">
             <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:700;margin-bottom:4px;">{{ label }}</div>
@@ -80,6 +81,7 @@
     <div class="card-title">∙ Historique des versions</div>
     <div style="margin-top:12px;">
         {% for v, date, desc in [
+            ('v0.7.0-alpha', '2026-04-21', 'Samples, Morceaux, Wishlist, Inspirations, MiRack, Spark, 6 thèmes terminal'),
             ('v0.6.0-alpha', '2026-04-20', 'Suppression sessions, projets, copie setup, tags cliquables, dark mode'),
             ('v0.5.4-alpha', '2026-04-20', 'Page Paramètres — import DB, backup, reset'),
             ('v0.5.3-alpha', '2026-04-20', 'Fix stats Chart.js, Pomodoro persistant, auto-save formulaires'),

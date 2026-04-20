@@ -8,12 +8,13 @@
 ## v0.7.0-alpha — 2026-04-21
 
 ### Ajouts
-- **Banques de samples** (`/samples`) — référencer les packs et banques : nom, type, note, source
+- **Banques de samples** (`/samples`) — référencer les packs et banques : nom, type, note ★, source
 - **Morceaux inspirants** (`/tracks`) — titre, artiste, album, année, tags, notes d'écoute
 - **Wishlist matos** (`/wishlist`) — fabricant, nom, type, prix, priorité (Urgent/Bientôt/Un jour/Rêve), toggle Acquis
 - **Sources d'inspiration hors musique** (`/inspirations`) — phrases, extraits film, livres, concepts — groupées par type avec codes couleur
-- **⬡ MiRack** (`/mirack`) — catalogue des modules du synthé modulaire virtuel : catégorie, toggle maîtrisé/favori, barre de progression globale
+- **⬡ MiRack** (`/mirack`) — catalogue des modules du synthé modulaire virtuel : catégorie, toggle maîtrisé/favori, barre de progression globale (%)
 - **⚡ Spark** (`/spark`) — générateur créatif personnalisé : analyse la base de sessions pour suggérer machines sous-utilisées, intentions jamais explorées, caractères inexploités, modules MiRack non maîtrisés, inspiration et morceau aléatoires, stratégie Oblique
+- **Sélecteur de thèmes** — 6 thèmes inspirés des palettes terminaux : Béton (défaut), Machine (dark), Nord (arctic blue), Solarized Dark, Solarized Light, Gruvbox (warm retro) — dropdown avec swatches colorés, persisté en localStorage
 - Navigation restructurée en groupes logiques (sessions / outils / ressources / config)
 - 5 nouvelles tables SQLite : `sample_banks`, `inspiring_tracks`, `gear_wishlist`, `inspirations`, `mirack_modules`
 
