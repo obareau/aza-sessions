@@ -12,6 +12,7 @@ from collections import Counter
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
+app.config["TEMPLATES_AUTO_RELOAD"] = True
 VERSION = "0.6.0-alpha"
 DB_PATH = os.path.join(os.path.dirname(__file__), "sessions.db")
 
