@@ -15,7 +15,7 @@
     <div>
         <div class="page-title">
             {% if prefill %}
-                {% if prefill.get('_from_live') if prefill is mapping else false %}
+                {% if prefill is mapping and prefill.get('_from_live') %}
                     Documenter la session
                     <span style="font-size:14px;color:var(--accent);font-weight:400;">— {{ (prefill.duration_min or 0)|int }} min enregistrées</span>
                 {% else %}
@@ -45,7 +45,7 @@
         <div class="form-group">
             <label>Durée (min)</label>
             <input type="number" name="duration_min" placeholder="30" min="1"
-                value="{{ prefill.duration_min if prefill and prefill.get('_from_live') if prefill is mapping else '' }}">
+                value="{{ prefill.duration_min if (prefill is mapping and prefill and prefill.get('_from_live')) else '' }}">
         </div>
         <div class="form-group">
             <label>Mode</label>
@@ -279,7 +279,7 @@
         </div>
         <div class="form-group full">
             <label>Notes libres</label>
-            <textarea name="comments" rows="4" placeholder="Observations, happy accidents, idées...">{% if prefill and prefill.get('notes_live') if prefill is mapping %}{{ prefill.notes_live }}{% endif %}</textarea>
+            <textarea name="comments" rows="4" placeholder="Observations, happy accidents, idées...">{% if prefill is mapping and prefill and prefill.get('notes_live') %}{{ prefill.notes_live }}{% endif %}</textarea>
         </div>
         <div class="form-group full">
             <label>Récap session Claude (optionnel)</label>
@@ -307,7 +307,7 @@
 <!-- OBLIQUE -->
 <div class="card" style="border-color:var(--accent);background:var(--accent-soft);">
     <div class="card-title" style="color:var(--accent);">∴ Stratégie Robōtariis</div>
-    {% set effective_oblique = (prefill.oblique if prefill and prefill.get('_from_live') if prefill is mapping else none) or oblique %}
+    {% set effective_oblique = (prefill.oblique if (prefill is mapping and prefill and prefill.get('_from_live')) else none) or oblique %}
     <p style="font-family:var(--mono);font-size:13px;font-style:italic;margin-top:12px;">{{ effective_oblique }}</p>
     <input type="hidden" name="oblique" value="{{ effective_oblique }}">
 </div>

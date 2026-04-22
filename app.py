@@ -13,8 +13,24 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-VERSION = "0.9.0-alpha"
-DB_PATH = os.path.join(os.path.dirname(__file__), "sessions.db")
+VERSION = "0.9.1-alpha"
+DB_PATH      = os.path.join(os.path.dirname(__file__), "sessions.db")
+CONFIG_PATH  = os.path.join(os.path.dirname(__file__), "config.json")
+
+
+def get_config():
+    if os.path.exists(CONFIG_PATH):
+        try:
+            with open(CONFIG_PATH, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
+def save_config(data):
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
 
 # ── DONNÉES PAR DÉFAUT ────────────────────────────────────────────────────────
 
@@ -403,14 +419,18 @@ def session_to_md(s):
 
 @app.context_processor
 def inject_globals():
-    """Injecte has_live dans tous les templates."""
+    """Injecte has_live + obsidian_vault dans tous les templates."""
     try:
         conn = get_db()
         live = conn.execute("SELECT id FROM live_session LIMIT 1").fetchone()
         conn.close()
-        return {"has_live": live is not None}
+        cfg = get_config()
+        return {
+            "has_live": live is not None,
+            "obsidian_vault": cfg.get("obsidian_vault", ""),
+        }
     except Exception:
-        return {"has_live": False}
+        return {"has_live": False, "obsidian_vault": ""}
 
 
 # ── ROUTES SESSIONS ────────────────────────────────────────────────────────────
@@ -792,6 +812,74 @@ def export_all():
         mimetype="text/plain",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+
+@app.route("/export/csv")
+def export_csv():
+    """Export toutes les sessions en CSV."""
+    import csv, io
+    conn = get_db()
+    sessions = conn.execute("""
+        SELECT s.*, p.title AS project_title
+        FROM sessions s LEFT JOIN projects p ON s.project_id = p.id
+        ORDER BY s.date DESC
+    """).fetchall()
+    conn.close()
+
+    cols = [
+        "id","date","duration_min","mode","intention","energy_level",
+        "machines","effects","daws","synths_ios","plugins",
+        "patches","audio_file","timestamps","rating","tags",
+        "character","lore_link","to_rework","release_potential",
+        "tempo","tonality","signal_routing","microfreak_algo",
+        "influences","oblique","comments","recap_claude","project_title",
+    ]
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(cols)
+    for s in sessions:
+        w.writerow([s[c] if c in s.keys() else "" for c in cols])
+    buf.seek(0)
+    filename = f"robotariis_{datetime.now().strftime('%Y%m%d')}.csv"
+    return Response(
+        "\ufeff" + buf.getvalue(),   # BOM UTF-8 pour Excel
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@app.route("/session/<int:sid>/obsidian", methods=["POST"])
+def export_obsidian(sid):
+    """Copie le fichier Markdown de la session dans le vault Obsidian configuré."""
+    cfg = get_config()
+    vault = cfg.get("obsidian_vault", "").strip()
+    if not vault:
+        return jsonify({"error": "Chemin vault non configuré dans les Paramètres"}), 400
+    conn = get_db()
+    s = conn.execute("""
+        SELECT s.*, p.title AS project_title
+        FROM sessions s LEFT JOIN projects p ON s.project_id = p.id
+        WHERE s.id = ?
+    """, (sid,)).fetchone()
+    conn.close()
+    if not s:
+        return jsonify({"error": "Session introuvable"}), 404
+    try:
+        os.makedirs(vault, exist_ok=True)
+        fname = f"session_{s['date'][:10].replace('-','')}_{sid}.md"
+        with open(os.path.join(vault, fname), "w", encoding="utf-8") as f:
+            f.write(session_to_md(s))
+        return jsonify({"status": "ok", "file": fname})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/settings/obsidian", methods=["POST"])
+def settings_obsidian():
+    cfg = get_config()
+    cfg["obsidian_vault"] = request.form.get("obsidian_vault", "").strip()
+    save_config(cfg)
+    return redirect(url_for("settings", msg="Chemin Obsidian sauvegardé"))
 
 
 # ── ROUTE STATS ────────────────────────────────────────────────────────────────

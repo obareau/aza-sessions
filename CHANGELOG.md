@@ -5,6 +5,13 @@
 
 ---
 
+## v0.9.1-alpha — 2026-04-23
+
+### Corrections
+- **Bug Jinja2 dans formulaire nouvelle session** — syntaxe ternaire imbriquée invalide dans `templates/new.html` (lignes 18, 48, 282, 310) causant une erreur 500 ; corrigé en normalisant la syntaxe des conditions multiples
+
+---
+
 ## v0.9.0-alpha — 2026-04-21
 
 ### Ajouts
