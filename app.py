@@ -13,7 +13,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-VERSION = "0.9.7-alpha"
+VERSION = "0.9.8-alpha"
 DB_PATH      = os.path.join(os.path.dirname(__file__), "sessions.db")
 CONFIG_PATH  = os.path.join(os.path.dirname(__file__), "config.json")
 
@@ -115,7 +115,7 @@ INSPI_TYPES     = ["Phrase","Extrait film","Livre","Image/Photo","Architecture",
 # ── DB ────────────────────────────────────────────────────────────────────────
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=10.0)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -159,61 +159,15 @@ def init_db():
         )
     """)
 
-    # FTS index for sessions search
+    # Nettoyage FTS5 — table et triggers supprimés (causaient des erreurs sur DELETE/UPDATE)
     try:
-        conn.execute("""
-            CREATE VIRTUAL TABLE IF NOT EXISTS sessions_fts USING fts5(
-                machines, effects, daws, synths_ios, plugins,
-                tags, comments, intention, mode, character,
-                patches, influences, project_title,
-                content=''
-            )
-        """)
-
         conn.executescript("""
-            CREATE TRIGGER IF NOT EXISTS sessions_ai AFTER INSERT ON sessions BEGIN
-                INSERT INTO sessions_fts(rowid, machines, effects, daws, synths_ios, plugins, tags,
-                    comments, intention, mode, character, patches, influences, project_title)
-                VALUES (
-                    new.id, new.machines, new.effects, new.daws, new.synths_ios, new.plugins,
-                    new.tags, new.comments, new.intention, new.mode, new.character,
-                    new.patches, new.influences,
-                    COALESCE((SELECT title FROM projects WHERE id=new.project_id), '')
-                );
-            END;
-            CREATE TRIGGER IF NOT EXISTS sessions_ad AFTER DELETE ON sessions BEGIN
-                DELETE FROM sessions_fts WHERE rowid = old.id;
-            END;
-            CREATE TRIGGER IF NOT EXISTS sessions_au AFTER UPDATE ON sessions BEGIN
-                UPDATE sessions_fts SET
-                    machines = new.machines,
-                    effects = new.effects,
-                    daws = new.daws,
-                    synths_ios = new.synths_ios,
-                    plugins = new.plugins,
-                    tags = new.tags,
-                    comments = new.comments,
-                    intention = new.intention,
-                    mode = new.mode,
-                    character = new.character,
-                    patches = new.patches,
-                    influences = new.influences,
-                    project_title = COALESCE((SELECT title FROM projects WHERE id=new.project_id), '')
-                WHERE rowid = new.id;
-            END;
-        """)
-
-        conn.execute("""
-            INSERT INTO sessions_fts(rowid, machines, effects, daws, synths_ios, plugins, tags,
-                comments, intention, mode, character, patches, influences, project_title)
-            SELECT id, machines, effects, daws, synths_ios, plugins, tags,
-                comments, intention, mode, character, patches, influences,
-                COALESCE((SELECT title FROM projects WHERE id=project_id), '')
-            FROM sessions
-            WHERE id NOT IN (SELECT rowid FROM sessions_fts)
+            DROP TRIGGER IF EXISTS sessions_ai;
+            DROP TRIGGER IF EXISTS sessions_ad;
+            DROP TRIGGER IF EXISTS sessions_au;
+            DROP TABLE IF EXISTS sessions_fts;
         """)
     except sqlite3.OperationalError:
-        # FTS5 may not be available in this SQLite build; fallback search will still work.
         pass
 
     conn.execute("""

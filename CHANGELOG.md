@@ -3,6 +3,13 @@
 > Les versions alpha sont des releases actives en développement continu.
 > Chaque version est datée du jour de développement effectif.
 
+## v0.9.8-alpha — 2026-04-23
+
+### Corrections
+- **Suppression de session** — correction de l'erreur 500 (`cannot DELETE from contentless fts5 table: sessions_fts`) causée par des triggers FTS5 utilisant une syntaxe invalide sur table contentless ; la table `sessions_fts` et ses triggers (`sessions_ai`, `sessions_ad`, `sessions_au`) sont désormais supprimés au démarrage — la recherche FTS5 avait déjà été retirée, ces objets DB étaient orphelins
+
+---
+
 ## v0.9.7-alpha — 2026-04-23
 
 ### Nettoyage
