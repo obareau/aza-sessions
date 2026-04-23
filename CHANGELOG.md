@@ -5,6 +5,13 @@
 
 ---
 
+## v0.9.5-alpha — 2026-04-23
+
+### Corrections
+- **Recherche sessions** — correction du crash JavaScript causé par la génération incorrecte de l'attribut `data-text` dans le template ; `s.character` était traité comme une liste alors que c'est une string en base de données
+
+---
+
 ## v0.9.4-alpha — 2026-04-23
 
 ### Corrections

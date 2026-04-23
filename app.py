@@ -13,7 +13,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-VERSION = "0.9.4-alpha"
+VERSION = "0.9.5-alpha"
 DB_PATH      = os.path.join(os.path.dirname(__file__), "sessions.db")
 CONFIG_PATH  = os.path.join(os.path.dirname(__file__), "config.json")
 
@@ -1780,7 +1780,11 @@ def print_banner(port):
 
 if __name__ == "__main__":
     import logging, shutil, glob
-    port = find_free_port(5001)
+    port_env = os.environ.get("PORT")
+    if port_env:
+        port = int(port_env)
+    else:
+        port = find_free_port(5001)
     url  = print_banner(port)
     init_db()
 
