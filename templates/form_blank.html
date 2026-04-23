@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Formulaire Vierge — Robōtariis</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --ink:       #0E0D0B;
+        --ink-mid:   #3A3733;
+        --ink-soft:  #6B6560;
+        --ink-faint: #A09A94;
+        --paper:     #F7F4EF;
+        --paper-alt: #EFECE6;
+        --rule:      #C8C2B8;
+        --accent:    #B82E08;
+        --mono:      'IBM Plex Mono', monospace;
+        --sans:      'IBM Plex Sans', sans-serif;
+    }
+
+    html, body {
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    @page {
+        size: A4;
+        margin: 14mm 18mm 14mm 18mm;
+    }
+    @media print {
+        html, body { background: white; }
+        .no-print { display: none !important; }
+        .page { box-shadow: none; margin: 0; max-width: none; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+        .break-avoid { break-inside: avoid; }
+        .page-break { break-before: page; }
+    }
+
+    /* ── BARRE IMPRESSION ── */
+    .print-bar {
+        max-width: 210mm;
+        margin: 0 auto;
+        padding: 12px 20mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #1A1814;
+        color: #E8E4DC;
+        font-family: var(--mono);
+        font-size: 11px;
+    }
+    .print-btn {
+        background: #D4380D; color: white;
+        border: none; font-family: var(--mono); font-size: 12px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .08em;
+        padding: 8px 20px; cursor: pointer; border-radius: 2px;
+    }
+    .print-btn:hover { background: #B82E08; }
+    .close-btn { color: rgba(255,255,255,.5); text-decoration: none; font-family: var(--mono); font-size: 11px; }
+    .close-btn:hover { color: white; }
+
+    /* ── PAGE ── */
+    .page {
+        max-width: 210mm;
+        margin: 24px auto;
+        background: white;
+        padding: 14mm 18mm;
+        box-shadow: 0 4px 32px rgba(0,0,0,0.14);
+    }
+
+    /* ── EN-TÊTE ── */
+    .doc-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--ink);
+        margin-bottom: 14px;
+    }
+    .brand {
+        font-family: var(--mono);
+        font-size: 8px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .18em;
+        color: var(--ink-soft);
+    }
+    .brand strong {
+        font-size: 16px;
+        color: var(--ink);
+        letter-spacing: .04em;
+        display: block;
+        margin-top: 2px;
+    }
+    .doc-meta {
+        font-family: var(--mono);
+        font-size: 8px;
+        color: var(--ink-soft);
+        text-align: right;
+        line-height: 2;
+    }
+    .doc-meta .blank-line {
+        display: inline-block;
+        width: 60px;
+        border-bottom: 1px solid var(--ink-soft);
+        vertical-align: bottom;
+    }
+
+    /* ── SECTION HEAD ── */
+    .section-head {
+        font-family: var(--mono);
+        font-size: 7.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .18em;
+        color: var(--accent);
+        margin: 12px 0 7px;
+        padding-bottom: 3px;
+        border-bottom: 1px solid var(--accent);
+    }
+
+    /* ── GRILLE CONTEXTE ── */
+    .ctx-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 16px;
+        margin-bottom: 10px;
+    }
+    .ctx-grid.cols3 {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+    .field-label {
+        font-family: var(--mono);
+        font-size: 7.5px;
+        text-transform: uppercase;
+        letter-spacing: .12em;
+        color: var(--ink-faint);
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+    .write-line {
+        border-bottom: 1px solid var(--rule);
+        min-height: 18px;
+        width: 100%;
+    }
+
+    /* ── OPTIONS À ENTOURER ── */
+    .options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px 8px;
+        margin-top: 2px;
+    }
+    .opt {
+        font-family: var(--mono);
+        font-size: 9px;
+        padding: 1px 7px;
+        border: 1px solid var(--rule);
+        border-radius: 20px;
+        color: var(--ink-mid);
+        white-space: nowrap;
+    }
+
+    /* ── ÉTOILES / ÉNERGIE ── */
+    .rate-row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-top: 2px;
+    }
+    .rate-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .rate-label {
+        font-family: var(--mono);
+        font-size: 7.5px;
+        text-transform: uppercase;
+        letter-spacing: .1em;
+        color: var(--ink-faint);
+    }
+    .rate-circles {
+        display: flex;
+        gap: 4px;
+    }
+    .rate-circle {
+        width: 14px;
+        height: 14px;
+        border: 1px solid var(--ink-soft);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 8px;
+        color: var(--ink-soft);
+    }
+
+    /* ── CHECKBOXES CATALOGUE ── */
+    .check-section {
+        margin-bottom: 8px;
+        break-inside: avoid;
+    }
+    .check-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 3px 8px;
+        margin-top: 4px;
+    }
+    .chk-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--ink-mid);
+    }
+    .chk-box {
+        width: 10px;
+        height: 10px;
+        border: 1px solid var(--ink-soft);
+        border-radius: 1px;
+        flex-shrink: 0;
+        display: inline-block;
+    }
+    /* Ajout manuel */
+    .chk-item.add {
+        color: var(--ink-faint);
+        font-style: italic;
+    }
+    .add-line {
+        flex: 1;
+        border-bottom: 1px dotted var(--rule);
+        min-width: 60px;
+        height: 10px;
+    }
+
+    /* ── ZONE TEXTE LIBRE ── */
+    .text-lines {
+        margin-top: 4px;
+    }
+    .text-lines .tl {
+        border-bottom: 1px solid var(--rule);
+        height: 18px;
+        margin-bottom: 3px;
+    }
+
+    /* ── TIMESTAMPS ── */
+    .ts-grid {
+        display: grid;
+        grid-template-columns: 60px 1fr;
+        gap: 2px 8px;
+        margin-top: 4px;
+    }
+    .ts-time { border-bottom: 1px solid var(--rule); height: 16px; }
+    .ts-desc { border-bottom: 1px solid var(--rule); height: 16px; }
+
+    /* ── ROUTING ── */
+    .routing-box {
+        border: 1px solid var(--rule);
+        min-height: 32px;
+        padding: 4px 6px;
+        margin-top: 4px;
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--ink-faint);
+        font-style: italic;
+        display: flex;
+        align-items: center;
+    }
+
+    /* ── OBLIQUE ── */
+    .oblique-box {
+        border: 1.5px solid var(--accent);
+        background: #FFF1EE;
+        padding: 10px 14px;
+        margin-top: 10px;
+        break-inside: avoid;
+    }
+    .oblique-label {
+        font-family: var(--mono);
+        font-size: 7.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .16em;
+        color: var(--accent);
+        margin-bottom: 6px;
+    }
+    .oblique-text {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-style: italic;
+        color: var(--accent);
+        line-height: 1.6;
+    }
+
+    /* ── FOOTER ── */
+    .doc-footer {
+        margin-top: 16px;
+        padding-top: 8px;
+        border-top: 1px solid var(--rule);
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--mono);
+        font-size: 7.5px;
+        color: var(--ink-faint);
+    }
+
+    /* ── PAGE 2 ── */
+    .page2-header {
+        font-family: var(--mono);
+        font-size: 8px;
+        color: var(--ink-faint);
+        text-align: right;
+        margin-bottom: 12px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--rule);
+    }
+</style>
+</head>
+<body>
+
+<!-- BARRE IMPRESSION -->
+<div class="print-bar no-print">
+    <a href="{{ url_for('index') }}" class="close-btn">← Retour</a>
+    <div style="opacity:.6;">Cmd+P · Ctrl+P → Enregistrer en PDF</div>
+    <button class="print-btn" onclick="window.print()">↓ Imprimer / PDF</button>
+</div>
+
+<!-- ═══════════════════════════ PAGE 1 ═══════════════════════════ -->
+<div class="page">
+
+    <!-- EN-TÊTE -->
+    <div class="doc-header">
+        <div class="brand">
+            Journal de Sessions — Formulaire terrain
+            <strong>Robōtariis</strong>
+        </div>
+        <div class="doc-meta">
+            Date <span class="blank-line"></span><br>
+            Durée <span class="blank-line"></span> min<br>
+            v{{ version }}
+        </div>
+    </div>
+
+    <!-- CONTEXTE -->
+    <div class="section-head">∙ Contexte</div>
+    <div class="ctx-grid cols3">
+        <div>
+            <div class="field-label">Mode</div>
+            <div class="options">
+                {% for m in modes %}<span class="opt">{{ m }}</span>{% endfor %}
+            </div>
+        </div>
+        <div>
+            <div class="field-label">Intention</div>
+            <div class="options">
+                {% for i in intentions %}<span class="opt">{{ i }}</span>{% endfor %}
+            </div>
+        </div>
+        <div>
+            <div class="rate-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
+                <div class="rate-item">
+                    <div class="rate-label">Note</div>
+                    <div class="rate-circles">
+                        {% for n in range(1,6) %}<span class="rate-circle">★</span>{% endfor %}
+                    </div>
+                </div>
+                <div class="rate-item">
+                    <div class="rate-label">Énergie</div>
+                    <div class="rate-circles">
+                        {% for n in range(1,4) %}<span class="rate-circle">⚡</span>{% endfor %}
+                    </div>
+                </div>
+                <div class="rate-item" style="gap:10px;">
+                    <div style="display:flex;align-items:center;gap:4px;">
+                        <span class="chk-box"></span>
+                        <span style="font-family:var(--mono);font-size:8px;color:var(--ink-mid);">À retravailler</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:4px;">
+                        <span class="chk-box"></span>
+                        <span style="font-family:var(--mono);font-size:8px;color:var(--ink-mid);">Release</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HARDWARE -->
+    {% if catalogue.machine %}
+    <div class="check-section">
+        <div class="section-head">∙ Hardware / Machines</div>
+        <div class="check-grid">
+            {% for item in catalogue.machine %}
+            <div class="chk-item"><span class="chk-box"></span>{{ item.name }}</div>
+            {% endfor %}
+            <div class="chk-item add"><span class="chk-box"></span><span class="add-line"></span></div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if catalogue.effet %}
+    <div class="check-section">
+        <div class="section-head">∙ Effets Hardware</div>
+        <div class="check-grid">
+            {% for item in catalogue.effet %}
+            <div class="chk-item"><span class="chk-box"></span>{{ item.name }}</div>
+            {% endfor %}
+            <div class="chk-item add"><span class="chk-box"></span><span class="add-line"></span></div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- DAW + iOS + Plugins -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 16px;">
+        {% if catalogue.daw %}
+        <div class="check-section">
+            <div class="section-head">∙ DAW</div>
+            {% for item in catalogue.daw %}
+            <div class="chk-item" style="margin-bottom:3px;"><span class="chk-box"></span>{{ item.name }}</div>
+            {% endfor %}
+            <div class="chk-item add"><span class="chk-box"></span><span class="add-line"></span></div>
+        </div>
+        {% endif %}
+        {% if catalogue.synth_ios %}
+        <div class="check-section">
+            <div class="section-head">∙ Synthés iOS</div>
+            {% for item in catalogue.synth_ios %}
+            <div class="chk-item" style="margin-bottom:3px;"><span class="chk-box"></span>{{ item.name }}</div>
+            {% endfor %}
+            <div class="chk-item add"><span class="chk-box"></span><span class="add-line"></span></div>
+        </div>
+        {% endif %}
+        {% if catalogue.plugin %}
+        <div class="check-section">
+            <div class="section-head">∙ Plugins</div>
+            {% for item in catalogue.plugin %}
+            <div class="chk-item" style="margin-bottom:3px;"><span class="chk-box"></span>{{ item.name }}</div>
+            {% endfor %}
+            <div class="chk-item add"><span class="chk-box"></span><span class="add-line"></span></div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- CARACTÈRE -->
+    <div class="section-head">∙ Caractère sonore</div>
+    <div class="options" style="margin-bottom:8px;">
+        {% for c in characters %}<span class="opt">{{ c }}</span>{% endfor %}
+        <span class="opt" style="min-width:70px;border-style:dashed;"></span>
+    </div>
+
+    <!-- TECHNIQUE -->
+    <div class="section-head">∙ Technique</div>
+    <div class="ctx-grid" style="margin-bottom:6px;">
+        <div>
+            <div class="field-label">Algo MicroFreak</div>
+            <div class="write-line"></div>
+        </div>
+        <div>
+            <div class="field-label">Tempo</div>
+            <div class="write-line"></div>
+        </div>
+        <div>
+            <div class="field-label">Tonalité / Mode</div>
+            <div class="write-line"></div>
+        </div>
+        <div>
+            <div class="field-label">Patches / Presets</div>
+            <div class="write-line"></div>
+        </div>
+    </div>
+    <div>
+        <div class="field-label">Signal routing</div>
+        <div class="routing-box">→ → →</div>
+    </div>
+
+    <!-- FOOTER PAGE 1 -->
+    <div class="doc-footer">
+        <span>Journal de Sessions Robōtariis · v{{ version }}</span>
+        <span>→ suite au verso</span>
+    </div>
+
+</div>
+
+<!-- ═══════════════════════════ PAGE 2 ═══════════════════════════ -->
+<div class="page page-break">
+
+    <div class="page2-header">Robōtariis — Formulaire terrain (suite)</div>
+
+    <!-- INFLUENCES -->
+    {% if influences %}
+    <div class="check-section">
+        <div class="section-head">∙ Influences de session</div>
+        <div class="check-grid" style="grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));">
+            {% for inf in influences %}
+            <div class="chk-item"><span class="chk-box"></span>{{ inf.name }}</div>
+            {% endfor %}
+            <div class="chk-item add"><span class="chk-box"></span><span class="add-line"></span></div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- CAPTURE -->
+    <div class="section-head">∙ Capture</div>
+    <div class="ctx-grid" style="margin-bottom:8px;">
+        <div>
+            <div class="field-label">Fichier audio</div>
+            <div class="write-line"></div>
+        </div>
+        <div>
+            <div class="field-label">Lien avec le lore</div>
+            <div class="write-line"></div>
+        </div>
+    </div>
+    <div>
+        <div class="field-label">Timestamps intéressants</div>
+        <div class="ts-grid">
+            {% for i in range(5) %}
+            <div class="ts-time"></div>
+            <div class="ts-desc"></div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- TAGS -->
+    <div class="section-head">∙ Tags</div>
+    <div class="write-line" style="margin-bottom:8px;"></div>
+
+    <!-- NOTES LIBRES -->
+    <div class="section-head">∙ Notes libres</div>
+    <div class="text-lines">
+        {% for i in range(7) %}<div class="tl"></div>{% endfor %}
+    </div>
+
+    <!-- RÉCAP CLAUDE -->
+    <div class="section-head">∙ Récap session Claude</div>
+    <div class="text-lines">
+        {% for i in range(5) %}<div class="tl"></div>{% endfor %}
+    </div>
+
+    <!-- OBLIQUE -->
+    <div class="oblique-box break-avoid">
+        <div class="oblique-label">∴ Stratégie Robōtariis</div>
+        <div class="oblique-text">{{ oblique }}</div>
+    </div>
+
+    <!-- FOOTER PAGE 2 -->
+    <div class="doc-footer">
+        <span>Journal de Sessions Robōtariis · v{{ version }}</span>
+        <span>La machine ne ment pas. Elle déforme.</span>
+        <span>robotariis.local</span>
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -13,7 +13,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-VERSION = "0.9.8-alpha"
+VERSION = "0.9.9-alpha"
 DB_PATH      = os.path.join(os.path.dirname(__file__), "sessions.db")
 CONFIG_PATH  = os.path.join(os.path.dirname(__file__), "config.json")
 
@@ -592,6 +592,28 @@ def view_session(sid):
     if not session:
         return redirect(url_for("index"))
     return render_template("view.html", session=session, linked=linked, version=VERSION)
+
+
+@app.route("/form/blank")
+def form_blank():
+    """Formulaire vierge imprimable — mode dégradé papier."""
+    conn = get_db()
+    catalogue = {}
+    for t in ITEM_TYPES:
+        catalogue[t] = conn.execute(
+            "SELECT name FROM catalogue WHERE type=? ORDER BY name", (t,)
+        ).fetchall()
+    influences = conn.execute("SELECT name FROM influences ORDER BY name").fetchall()
+    oblique = rand_oblique()
+    conn.close()
+    return render_template("form_blank.html",
+                           catalogue=catalogue,
+                           influences=influences,
+                           characters=CHARACTERS,
+                           modes=MODES,
+                           intentions=INTENTIONS,
+                           oblique=oblique,
+                           version=VERSION)
 
 
 @app.route("/session/<int:sid>/print")

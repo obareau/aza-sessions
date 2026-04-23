@@ -3,6 +3,13 @@
 > Les versions alpha sont des releases actives en développement continu.
 > Chaque version est datée du jour de développement effectif.
 
+## v0.9.9-alpha — 2026-04-23
+
+### Ajouts
+- **Formulaire papier** (`/form/blank`) — mode dégradé terrain : formulaire A4 vierge imprimable avec checkboxes catalogue réels (machines, effets, DAW, iOS, plugins), caractère à entourer, modes/intentions en bulles, étoiles/énergie à cocher, lignes pour notes libres, timestamps, routing, et stratégie Oblique aléatoire ; lien ⎙ Form dans la navigation
+
+---
+
 ## v0.9.8-alpha — 2026-04-23
 
 ### Corrections
