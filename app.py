@@ -13,7 +13,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-VERSION = "0.9.5-alpha"
+VERSION = "0.9.6-alpha"
 DB_PATH      = os.path.join(os.path.dirname(__file__), "sessions.db")
 CONFIG_PATH  = os.path.join(os.path.dirname(__file__), "config.json")
 
@@ -154,9 +154,67 @@ def init_db():
             oblique TEXT,
             comments TEXT,
             recap_claude TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            project_id INTEGER
         )
     """)
+
+    # FTS index for sessions search
+    try:
+        conn.execute("""
+            CREATE VIRTUAL TABLE IF NOT EXISTS sessions_fts USING fts5(
+                machines, effects, daws, synths_ios, plugins,
+                tags, comments, intention, mode, character,
+                patches, influences, project_title,
+                content=''
+            )
+        """)
+
+        conn.executescript("""
+            CREATE TRIGGER IF NOT EXISTS sessions_ai AFTER INSERT ON sessions BEGIN
+                INSERT INTO sessions_fts(rowid, machines, effects, daws, synths_ios, plugins, tags,
+                    comments, intention, mode, character, patches, influences, project_title)
+                VALUES (
+                    new.id, new.machines, new.effects, new.daws, new.synths_ios, new.plugins,
+                    new.tags, new.comments, new.intention, new.mode, new.character,
+                    new.patches, new.influences,
+                    COALESCE((SELECT title FROM projects WHERE id=new.project_id), '')
+                );
+            END;
+            CREATE TRIGGER IF NOT EXISTS sessions_ad AFTER DELETE ON sessions BEGIN
+                DELETE FROM sessions_fts WHERE rowid = old.id;
+            END;
+            CREATE TRIGGER IF NOT EXISTS sessions_au AFTER UPDATE ON sessions BEGIN
+                UPDATE sessions_fts SET
+                    machines = new.machines,
+                    effects = new.effects,
+                    daws = new.daws,
+                    synths_ios = new.synths_ios,
+                    plugins = new.plugins,
+                    tags = new.tags,
+                    comments = new.comments,
+                    intention = new.intention,
+                    mode = new.mode,
+                    character = new.character,
+                    patches = new.patches,
+                    influences = new.influences,
+                    project_title = COALESCE((SELECT title FROM projects WHERE id=new.project_id), '')
+                WHERE rowid = new.id;
+            END;
+        """)
+
+        conn.execute("""
+            INSERT INTO sessions_fts(rowid, machines, effects, daws, synths_ios, plugins, tags,
+                comments, intention, mode, character, patches, influences, project_title)
+            SELECT id, machines, effects, daws, synths_ios, plugins, tags,
+                comments, intention, mode, character, patches, influences,
+                COALESCE((SELECT title FROM projects WHERE id=project_id), '')
+            FROM sessions
+            WHERE id NOT IN (SELECT rowid FROM sessions_fts)
+        """)
+    except sqlite3.OperationalError:
+        # FTS5 may not be available in this SQLite build; fallback search will still work.
+        pass
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS obliques (
@@ -326,6 +384,17 @@ def rand_oblique():
     return random.choice(rows)["text"]
 
 
+def has_search_index(conn):
+    row = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='sessions_fts'"
+    ).fetchone()
+    return row is not None
+
+
+def normalize_search_query(text):
+    return " ".join(text.replace('"', ' ').replace("'", ' ').split())
+
+
 def get_catalogue():
     conn = get_db()
     rows = conn.execute(
@@ -448,7 +517,91 @@ def index():
     return render_template("index.html",
                            sessions=sessions,
                            oblique=rand_oblique(),
-                           version=VERSION)
+                           version=VERSION,
+                           is_search=False)
+
+
+@app.route("/search")
+def search_sessions():
+    """Recherche côté serveur pour éviter les problèmes de performance côté client."""
+    query = request.args.get('q', '').strip().lower()
+    mode_filter = request.args.get('mode', '').strip()
+    rating_filter = request.args.get('rating', '').strip()
+    project_filter = request.args.get('project', '').strip()
+
+    conn = get_db()
+    
+    # Construction de la requête SQL avec filtres
+    where_clauses = []
+    params = []
+    
+    if query:
+        if has_search_index(conn):
+            normalized_query = normalize_search_query(query)
+            if normalized_query:
+                where_clauses.append("sessions_fts MATCH ?")
+                params.append(normalized_query)
+        else:
+            # Fallback when FTS is unavailable
+            search_fields = [
+                "s.machines", "s.effects", "s.daws", "s.synths_ios", "s.plugins",
+                "s.tags", "s.comments", "s.intention", "s.mode", "s.character",
+                "s.patches", "s.influences", "p.title"
+            ]
+            search_conditions = [f"LOWER({field}) LIKE ?" for field in search_fields]
+            where_clauses.append("(" + " OR ".join(search_conditions) + ")")
+            params.extend([f"%{query}%"] * len(search_fields))
+    
+    if mode_filter:
+        where_clauses.append("s.mode = ?")
+        params.append(mode_filter)
+    
+    if rating_filter:
+        try:
+            rating_val = int(rating_filter)
+            where_clauses.append("s.rating >= ?")
+            params.append(rating_val)
+        except ValueError:
+            pass
+    
+    if project_filter:
+        where_clauses.append("p.title = ?")
+        params.append(project_filter)
+    
+    where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
+    
+    if query and has_search_index(conn):
+        sessions = conn.execute(f"""
+            SELECT s.*, p.title AS project_title, p.color AS project_color
+            FROM sessions s
+            JOIN sessions_fts f ON s.id = f.rowid
+            LEFT JOIN projects p ON s.project_id = p.id
+            WHERE {where_sql}
+            ORDER BY s.date DESC
+        """, params).fetchall()
+    else:
+        sessions = conn.execute(f"""
+            SELECT s.*, p.title AS project_title, p.color AS project_color
+            FROM sessions s
+            LEFT JOIN projects p ON s.project_id = p.id
+            WHERE {where_sql}
+            ORDER BY s.date DESC
+        """, params).fetchall()
+    
+    conn.close()
+    
+    # Calcul du nombre total pour le compteur
+    total_sessions = len(sessions)
+    
+    return render_template("index.html",
+                           sessions=sessions,
+                           oblique=rand_oblique(),
+                           version=VERSION,
+                           search_query=query,
+                           search_mode=mode_filter,
+                           search_rating=rating_filter,
+                           search_project=project_filter,
+                           is_search=True)
 
 
 @app.route("/new", methods=["GET", "POST"])

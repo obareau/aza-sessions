@@ -3,6 +3,11 @@
 > Les versions alpha sont des releases actives en développement continu.
 > Chaque version est datée du jour de développement effectif.
 
+## v0.9.6-alpha — 2026-04-23
+
+### Nouvelles fonctionnalités
+- **Recherche côté serveur** — remplacement du filtrage JavaScript côté client par une route `/search` dédiée pour éviter les problèmes de performance et les crashes Chrome avec de gros volumes de données ; la recherche fonctionne maintenant sur machines, effets, DAW, plugins, tags, commentaires, intention, mode et titre de projet
+
 ---
 
 ## v0.9.5-alpha — 2026-04-23

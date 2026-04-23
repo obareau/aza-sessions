@@ -3,7 +3,7 @@
 App Flask + SQLite de reporting de sessions musicales pour Olivier (Scaër, Bretagne).
 Fait partie du projet **Robōtariis** — univers de fiction dystopique dont la musique constitue la B.O.
 
-## Version actuelle : v0.9.5-alpha
+## Version actuelle : v0.9.6-alpha
 
 ---
 
@@ -58,6 +58,7 @@ influences  -- Artistes et labels : type IN (artiste, label, autre)
 | Route | Méthode | Description |
 |---|---|---|
 | `/` | GET | Liste sessions |
+| `/search` | GET | Recherche et filtrage sessions (côté serveur) |
 | `/new` | GET/POST | Formulaire nouvelle session |
 | `/session/<id>` | GET | Détail session |
 | `/export/<id>` | GET | Export Markdown individuel (Obsidian) |

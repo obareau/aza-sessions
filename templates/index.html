@@ -15,36 +15,37 @@
 {% if sessions %}
 <!-- BARRE DE FILTRES -->
 <div class="filters-bar">
-    <input type="text" id="search" placeholder="Rechercher — machines, tags, notes..." oninput="filterSessions()">
-    <div class="filter-selects">
-        <select id="filter-project" onchange="filterSessions()">
-            <option value="">Tous les projets</option>
-            {% for s in sessions %}{% if s.project_title %}<option>{{ s.project_title }}</option>{% endif %}{% endfor %}
-        </select>
-        <select id="filter-mode" onchange="filterSessions()">
-            <option value="">Tous les modes</option>
-            {% for s in sessions %}{% if s.mode %}<option>{{ s.mode }}</option>{% endif %}{% endfor %}
-        </select>
-        <select id="filter-rating" onchange="filterSessions()">
-            <option value="">Toutes les notes</option>
-            <option value="5">★★★★★</option>
-            <option value="4">★★★★</option>
-            <option value="3">★★★</option>
-            <option value="2">★★</option>
-            <option value="1">★</option>
-        </select>
-        <button onclick="resetFilters()" class="btn btn-secondary btn-sm" title="Réinitialiser">✕</button>
-    </div>
+    <form method="GET" action="{{ url_for('search_sessions') }}" id="search-form">
+        <input type="text" name="q" id="search" placeholder="Rechercher — machines, tags, notes..." value="{{ search_query or '' }}">
+        <div class="filter-selects">
+            <select name="project" id="filter-project">
+                <option value="">Tous les projets</option>
+                {% for s in sessions %}{% if s.project_title %}<option value="{{ s.project_title }}" {% if search_project == s.project_title %}selected{% endif %}>{{ s.project_title }}</option>{% endif %}{% endfor %}
+            </select>
+            <select name="mode" id="filter-mode">
+                <option value="">Tous les modes</option>
+                {% for s in sessions %}{% if s.mode %}<option value="{{ s.mode }}" {% if search_mode == s.mode %}selected{% endif %}>{{ s.mode }}</option>{% endif %}{% endfor %}
+            </select>
+            <select name="rating" id="filter-rating">
+                <option value="">Toutes les notes</option>
+                <option value="5" {% if search_rating == '5' %}selected{% endif %}>★★★★★</option>
+                <option value="4" {% if search_rating == '4' %}selected{% endif %}>★★★★</option>
+                <option value="3" {% if search_rating == '3' %}selected{% endif %}>★★★</option>
+                <option value="2" {% if search_rating == '2' %}selected{% endif %}>★★</option>
+                <option value="1" {% if search_rating == '1' %}selected{% endif %}>★</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">🔍</button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary btn-sm" title="Réinitialiser">✕</a>
+        </div>
+    </form>
 </div>
 
-<div class="section-title" id="list-label">Toutes les sessions</div>
+<div class="section-title" id="list-label">
+    {% if is_search %}Résultats de recherche{% else %}Toutes les sessions{% endif %}
+</div>
 <div id="session-list">
 {% for s in sessions %}
-<a href="{{ url_for('view_session', sid=s.id) }}" class="session-row"
-   data-text="{{ [s.machines, s.daws, s.tags, s.comments, s.intention, s.mode, s.project_title]|select|join(' ')|lower }}{% if s.character %} {{ s.character }}{% endif %}"
-   data-mode="{{ s.mode or '' }}"
-   data-rating="{{ s.rating or 0 }}"
-   data-project="{{ s.project_title or '' }}">
+<a href="{{ url_for('view_session', sid=s.id) }}" class="session-row">
     <span class="session-date">{{ s.date[:16] }}</span>
     <span class="session-machines">{{ s.machines or '—' }}{% if s.daws %} · {{ s.daws }}{% endif %}</span>
     <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
@@ -57,7 +58,7 @@
         {% if s.tags %}
             {% for tag in s.tags.split(',') %}
             {% set t = tag.strip() %}{% if t %}
-            <span class="badge badge-tag" onclick="event.preventDefault();filterByTag('{{ t }}')">{{ t }}</span>
+            <span class="badge badge-tag">{{ t }}</span>
             {% endif %}{% endfor %}
         {% endif %}
     </span>
@@ -66,8 +67,13 @@
 {% endfor %}
 </div>
 
-<div id="no-results" style="display:none;text-align:center;padding:40px;font-family:var(--mono);font-size:12px;color:var(--text-muted);">
-    Aucune session ne correspond aux filtres.
+{% elif is_search %}
+<div class="empty">
+    <div class="empty-icon">🔎</div>
+    <h3 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Aucun résultat</h3>
+    <p>Aucune session ne correspond aux filtres de recherche.</p>
+    <br>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Retour à toutes les sessions</a>
 </div>
 
 {% else %}
@@ -94,37 +100,13 @@
     });
 })();
 
-function filterSessions() {
-    const q       = document.getElementById('search').value.toLowerCase().trim();
-    const mode    = document.getElementById('filter-mode').value;
-    const rating  = document.getElementById('filter-rating').value;
-    const project = document.getElementById('filter-project').value;
-    const rows    = document.querySelectorAll('#session-list .session-row');
-    let visible = 0;
-    rows.forEach(row => {
-        const matchQ = !q       || (row.dataset.text || '').includes(q);
-        const matchM = !mode    || row.dataset.mode === mode;
-        const matchR = !rating  || (parseInt(row.dataset.rating) || 0) >= parseInt(rating);
-        const matchP = !project || row.dataset.project === project;
-        const show = matchQ && matchM && matchR && matchP;
-        row.style.display = show ? '' : 'none';
-        if (show) visible++;
-    });
-    document.getElementById('count-label').textContent = visible + ' session' + (visible !== 1 ? 's' : '');
-    document.getElementById('no-results').style.display = visible === 0 ? 'block' : 'none';
-}
-
-function resetFilters() {
-    document.getElementById('search').value = '';
-    document.getElementById('filter-mode').value = '';
-    document.getElementById('filter-rating').value = '';
-    document.getElementById('filter-project').value = '';
-    filterSessions();
-}
-function filterByTag(tag) {
-    document.getElementById('search').value = tag;
-    filterSessions();
-    document.getElementById('search').focus();
-}
+// Soumission automatique du formulaire après un délai pour éviter trop de requêtes
+let searchTimeout;
+document.getElementById('search').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        document.getElementById('search-form').submit();
+    }, 500); // Délai de 500ms pour éviter les soumissions trop fréquentes
+});
 </script>
 {% endblock %}
