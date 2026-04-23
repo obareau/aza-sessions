@@ -3,7 +3,7 @@
 App Flask + SQLite de reporting de sessions musicales pour Olivier (Scaër, Bretagne).
 Fait partie du projet **Robōtariis** — univers de fiction dystopique dont la musique constitue la B.O.
 
-## Version actuelle : v0.9.2-alpha
+## Version actuelle : v0.9.3-alpha
 
 ---
 

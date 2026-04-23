@@ -14,25 +14,27 @@
 
 {% if sessions %}
 <!-- BARRE DE FILTRES -->
-<div style="display:grid;grid-template-columns:1fr auto auto auto auto;gap:10px;margin-bottom:20px;align-items:center;">
-    <input type="text" id="search" placeholder="Rechercher — machines, tags, notes..." oninput="filterSessions()" style="margin:0;">
-    <select id="filter-project" onchange="filterSessions()" style="margin:0;width:auto;">
-        <option value="">Tous les projets</option>
-        {% for s in sessions %}{% if s.project_title %}<option>{{ s.project_title }}</option>{% endif %}{% endfor %}
-    </select>
-    <select id="filter-mode" onchange="filterSessions()" style="margin:0;width:auto;">
-        <option value="">Tous les modes</option>
-        {% for s in sessions %}{% if s.mode %}<option>{{ s.mode }}</option>{% endif %}{% endfor %}
-    </select>
-    <select id="filter-rating" onchange="filterSessions()" style="margin:0;width:auto;">
-        <option value="">Toutes les notes</option>
-        <option value="5">★★★★★</option>
-        <option value="4">★★★★</option>
-        <option value="3">★★★</option>
-        <option value="2">★★</option>
-        <option value="1">★</option>
-    </select>
-    <button onclick="resetFilters()" class="btn btn-secondary btn-sm" title="Réinitialiser">✕</button>
+<div class="filters-bar">
+    <input type="text" id="search" placeholder="Rechercher — machines, tags, notes..." oninput="filterSessions()">
+    <div class="filter-selects">
+        <select id="filter-project" onchange="filterSessions()">
+            <option value="">Tous les projets</option>
+            {% for s in sessions %}{% if s.project_title %}<option>{{ s.project_title }}</option>{% endif %}{% endfor %}
+        </select>
+        <select id="filter-mode" onchange="filterSessions()">
+            <option value="">Tous les modes</option>
+            {% for s in sessions %}{% if s.mode %}<option>{{ s.mode }}</option>{% endif %}{% endfor %}
+        </select>
+        <select id="filter-rating" onchange="filterSessions()">
+            <option value="">Toutes les notes</option>
+            <option value="5">★★★★★</option>
+            <option value="4">★★★★</option>
+            <option value="3">★★★</option>
+            <option value="2">★★</option>
+            <option value="1">★</option>
+        </select>
+        <button onclick="resetFilters()" class="btn btn-secondary btn-sm" title="Réinitialiser">✕</button>
+    </div>
 </div>
 
 <div class="section-title" id="list-label">Toutes les sessions</div>

@@ -5,6 +5,13 @@
 
 ---
 
+## v0.9.3-alpha — 2026-04-23
+
+### Ajouts
+- **Responsive Design** — Adaptation complète pour mobiles et tablettes avec media queries, layouts adaptatifs, et optimisation tactile
+
+---
+
 ## v0.9.2-alpha — 2026-04-23
 
 ### Corrections
