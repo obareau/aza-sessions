@@ -6,76 +6,38 @@
         <div class="page-title">Sessions</div>
         <div class="page-subtitle" id="count-label">{{ sessions|length }} session{% if sessions|length != 1 %}s{% endif %}</div>
     </div>
-    <div style="display:flex;gap:10px;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <a href="{{ url_for('export_all') }}" class="btn btn-secondary">↓ Export tout</a>
         <a href="{{ url_for('new_session') }}" class="btn btn-primary">+ Nouvelle session</a>
     </div>
 </div>
 
+<div class="section-title" id="list-label">Toutes les sessions</div>
+
 {% if sessions %}
-<!-- BARRE DE FILTRES -->
-<div class="filters-bar">
-    <form method="GET" action="{{ url_for('search_sessions') }}" id="search-form">
-        <input type="text" name="q" id="search" placeholder="Rechercher — machines, tags, notes..." value="{{ search_query or '' }}">
-        <div class="filter-selects">
-            <select name="project" id="filter-project">
-                <option value="">Tous les projets</option>
-                {% for s in sessions %}{% if s.project_title %}<option value="{{ s.project_title }}" {% if search_project == s.project_title %}selected{% endif %}>{{ s.project_title }}</option>{% endif %}{% endfor %}
-            </select>
-            <select name="mode" id="filter-mode">
-                <option value="">Tous les modes</option>
-                {% for s in sessions %}{% if s.mode %}<option value="{{ s.mode }}" {% if search_mode == s.mode %}selected{% endif %}>{{ s.mode }}</option>{% endif %}{% endfor %}
-            </select>
-            <select name="rating" id="filter-rating">
-                <option value="">Toutes les notes</option>
-                <option value="5" {% if search_rating == '5' %}selected{% endif %}>★★★★★</option>
-                <option value="4" {% if search_rating == '4' %}selected{% endif %}>★★★★</option>
-                <option value="3" {% if search_rating == '3' %}selected{% endif %}>★★★</option>
-                <option value="2" {% if search_rating == '2' %}selected{% endif %}>★★</option>
-                <option value="1" {% if search_rating == '1' %}selected{% endif %}>★</option>
-            </select>
-            <button type="submit" class="btn btn-primary btn-sm">🔍</button>
-            <a href="{{ url_for('index') }}" class="btn btn-secondary btn-sm" title="Réinitialiser">✕</a>
-        </div>
-    </form>
-</div>
-
-<div class="section-title" id="list-label">
-    {% if is_search %}Résultats de recherche{% else %}Toutes les sessions{% endif %}
-</div>
 <div id="session-list">
-{% for s in sessions %}
-<a href="{{ url_for('view_session', sid=s.id) }}" class="session-row">
-    <span class="session-date">{{ s.date[:16] }}</span>
-    <span class="session-machines">{{ s.machines or '—' }}{% if s.daws %} · {{ s.daws }}{% endif %}</span>
-    <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-        {% if s.project_title %}
-        <span class="badge" style="background:{{ s.project_color }}22;color:{{ s.project_color }};border:1px solid {{ s.project_color }}66;">◈ {{ s.project_title }}</span>
-        {% endif %}
-        {% if s.release_potential %}<span class="badge badge-release">Release</span>{% endif %}
-        {% if s.to_rework %}<span class="badge badge-rework">Retravailler</span>{% endif %}
-        {% if s.mode %}<span class="badge badge-neu">{{ s.mode }}</span>{% endif %}
-        {% if s.tags %}
-            {% for tag in s.tags.split(',') %}
-            {% set t = tag.strip() %}{% if t %}
-            <span class="badge badge-tag">{{ t }}</span>
-            {% endif %}{% endfor %}
-        {% endif %}
-    </span>
-    <span class="rating-stars">{{ '★' * (s.rating or 0) }}</span>
-</a>
-{% endfor %}
+    {% for s in sessions %}
+    <a href="{{ url_for('view_session', sid=s.id) }}" class="session-row">
+        <span class="session-date">{{ s.date[:16] }}</span>
+        <span class="session-machines">{{ s.machines or '—' }}{% if s.daws %} · {{ s.daws }}{% endif %}</span>
+        <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            {% if s.project_title %}
+            <span class="badge" style="background:{{ s.project_color }}22;color:{{ s.project_color }};border:1px solid {{ s.project_color }}66;">◈ {{ s.project_title }}</span>
+            {% endif %}
+            {% if s.release_potential %}<span class="badge badge-release">Release</span>{% endif %}
+            {% if s.to_rework %}<span class="badge badge-rework">Retravailler</span>{% endif %}
+            {% if s.mode %}<span class="badge badge-neu">{{ s.mode }}</span>{% endif %}
+            {% if s.tags %}
+                {% for tag in s.tags.split(',') %}
+                {% set t = tag.strip() %}{% if t %}
+                <span class="badge badge-tag">{{ t }}</span>
+                {% endif %}{% endfor %}
+            {% endif %}
+        </span>
+        <span class="rating-stars">{{ '★' * (s.rating or 0) }}</span>
+    </a>
+    {% endfor %}
 </div>
-
-{% elif is_search %}
-<div class="empty">
-    <div class="empty-icon">🔎</div>
-    <h3 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Aucun résultat</h3>
-    <p>Aucune session ne correspond aux filtres de recherche.</p>
-    <br>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">Retour à toutes les sessions</a>
-</div>
-
 {% else %}
 <div class="empty">
     <div class="empty-icon">🤖</div>
@@ -85,28 +47,4 @@
     <a href="{{ url_for('new_session') }}" class="btn btn-primary">Première session</a>
 </div>
 {% endif %}
-
-<script>
-// Dédupliquer les options des selects
-(function() {
-    ['filter-mode','filter-project'].forEach(id => {
-        const sel = document.getElementById(id);
-        if (!sel) return;
-        const seen = new Set();
-        Array.from(sel.options).forEach(o => {
-            if (o.value && seen.has(o.value)) o.remove();
-            else seen.add(o.value);
-        });
-    });
-})();
-
-// Soumission automatique du formulaire après un délai pour éviter trop de requêtes
-let searchTimeout;
-document.getElementById('search').addEventListener('input', function() {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-        document.getElementById('search-form').submit();
-    }, 500); // Délai de 500ms pour éviter les soumissions trop fréquentes
-});
-</script>
 {% endblock %}

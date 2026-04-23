@@ -369,10 +369,11 @@
         /* Tablettes */
         @media (max-width: 768px) {
             body { font-size: 13px; }
-            header { padding: 0 16px; height: 48px; }
+            header { padding: 0 16px; height: auto; align-items: flex-start; }
             .header-brand { font-size: 11px; gap: 8px; }
             .header-brand .dot { width: 5px; height: 5px; }
-            .header-nav { gap: 3px; }
+            .header-nav { gap: 4px; flex-wrap: wrap; align-items: flex-start; justify-content: flex-start; width: 100%; }
+            .header-nav a, .header-nav .version-badge, #theme-picker { flex: 0 1 auto; }
             .header-nav a { font-size: 10px; padding: 4px 8px; }
 
             .page-header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
@@ -433,9 +434,10 @@
         /* Mobiles */
         @media (max-width: 480px) {
             body { font-size: 12px; }
-            header { padding: 0 12px; height: 44px; }
+            header { padding: 0 12px; height: auto; align-items: flex-start; }
             .header-brand { font-size: 10px; }
-            .header-nav { gap: 2px; }
+            .header-nav { gap: 3px; flex-wrap: wrap; align-items: flex-start; justify-content: flex-start; width: 100%; }
+            .header-nav a, .header-nav .version-badge, #theme-picker { flex: 0 1 100%; min-width: 0; }
             .header-nav a { font-size: 10px; padding: 3px 6px; }
 
             .page-header { margin-bottom: 16px; }
