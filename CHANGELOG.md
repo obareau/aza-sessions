@@ -3,6 +3,14 @@
 > Les versions alpha sont des releases actives en développement continu.
 > Chaque version est datée du jour de développement effectif.
 
+## v0.9.7-alpha — 2026-04-23
+
+### Nettoyage
+- **Suppression des scripts de build et lanceurs** — suppression des fichiers `build_mac.sh`, `build_windows.bat`, `lancer.bat` et `lancer.command` qui ne fonctionnaient pas ; documentation mise à jour pour lancer uniquement via Python
+- **Documentation** — mise à jour du README avec instructions claires pour le lancement Python uniquement
+
+---
+
 ## v0.9.6-alpha — 2026-04-23
 
 ### Nouvelles fonctionnalités

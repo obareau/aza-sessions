@@ -2,7 +2,7 @@
 
 > Application locale de documentation des sessions musicales pour le projet **Robōtariis** — univers de fiction dystopique dont la musique constitue la bande originale.
 
-**Version actuelle : v0.6.0-alpha**
+**Version actuelle : v0.9.7-alpha**
 
 ---
 
@@ -37,29 +37,19 @@ Les **Stratégies Obliques Robōtariis** — inspirées des *Oblique Strategies*
 
 ## Lancement
 
-**Ligne de commande (recommandé) :**
+**Installation des dépendances :**
 ```bash
 pip install -r requirements.txt
+```
+
+**Lancement de l'application :**
+```bash
 python3 app.py
 ```
 
-L'application détecte automatiquement un port libre à partir de 5001 et affiche l'URL complète dans le terminal.
+L'application détecte automatiquement un port libre à partir de 5001 et affiche l'URL complète dans le terminal (exemple : `http://localhost:5001`).
 
-**Mac — double-clic :**
-```
-lancer.command
-```
-
-**Windows — double-clic :**
-```
-lancer.bat
-```
-
-**Compiler un binaire autonome :**
-```bash
-./build_mac.sh        # macOS — génère dist/robotariis-sessions/
-build_windows.bat     # Windows
-```
+**Remarque :** L'application fonctionne uniquement en local sur votre machine. Ouvrez l'URL affichée dans votre navigateur web pour accéder à l'interface.
 
 ---
 
