@@ -5,6 +5,14 @@
 
 ---
 
+## v0.9.4-alpha — 2026-04-23
+
+### Corrections
+- **Export Markdown** — correction de l'erreur 500 causée par l'utilisation de `.get()` sur un objet `sqlite3.Row` (qui n'a pas cette méthode) ; remplacé par vérification directe du champ `project_title`
+- **Menu mobile** — amélioration de la visibilité et de la taille des liens de navigation sur mobiles et tablettes (police réduite, padding ajusté)
+
+---
+
 ## v0.9.3-alpha — 2026-04-23
 
 ### Ajouts

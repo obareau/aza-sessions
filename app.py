@@ -13,7 +13,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-VERSION = "0.9.3-alpha"
+VERSION = "0.9.4-alpha"
 DB_PATH      = os.path.join(os.path.dirname(__file__), "sessions.db")
 CONFIG_PATH  = os.path.join(os.path.dirname(__file__), "config.json")
 
@@ -349,7 +349,7 @@ def get_influences_active():
 
 
 def session_to_md(s):
-    project_line = f"\n**Projet:** {s['project_title']}" if s.get('project_title') else ""
+    project_line = f"\n**Projet:** {s['project_title']}" if s['project_title'] else ""
     return f"""# Session {s['date']}
 
 **Mode:** {s['mode'] or '—'}
