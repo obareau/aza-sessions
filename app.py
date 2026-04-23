@@ -13,7 +13,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-VERSION = "0.9.1-alpha"
+VERSION = "0.9.2-alpha"
 DB_PATH      = os.path.join(os.path.dirname(__file__), "sessions.db")
 CONFIG_PATH  = os.path.join(os.path.dirname(__file__), "config.json")
 
@@ -797,7 +797,19 @@ def export_all():
     """).fetchall()
     conn.close()
     if not sessions:
-        return "Aucune session", 404
+        content = f"""# Journal de Sessions Robōtariis v{VERSION}
+
+*Exporté le {datetime.now().strftime('%Y-%m-%d %H:%M')}*
+*0 session(s)*
+
+Aucune session à exporter.
+"""
+        filename = f"robotariis_{datetime.now().strftime('%Y%m%d')}.md"
+        return Response(
+            content,
+            mimetype="text/plain",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
     parts = [
         f"# Journal de Sessions Robōtariis v{VERSION}",
         f"*Exporté le {datetime.now().strftime('%Y-%m-%d %H:%M')}*",

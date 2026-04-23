@@ -5,10 +5,20 @@
 
 ---
 
+## v0.9.2-alpha — 2026-04-23
+
+### Corrections
+- **Export Markdown** — retourne désormais un fichier valide même sans sessions (au lieu d'une erreur 404)
+- **Recherche sessions** — inclut désormais le nom du projet dans les termes recherchables
+
+---
+
 ## v0.9.1-alpha — 2026-04-23
 
 ### Corrections
 - **Bug Jinja2 dans formulaire nouvelle session** — syntaxe ternaire imbriquée invalide dans `templates/new.html` (lignes 18, 48, 282, 310) causant une erreur 500 ; corrigé en normalisant la syntaxe des conditions multiples
+- **Export Markdown** — retourne désormais un fichier valide même sans sessions (au lieu d'une erreur 404)
+- **Recherche sessions** — inclut désormais le nom du projet dans les termes recherchables
 
 ---
 

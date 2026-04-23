@@ -39,7 +39,7 @@
 <div id="session-list">
 {% for s in sessions %}
 <a href="{{ url_for('view_session', sid=s.id) }}" class="session-row"
-   data-text="{{ [s.machines, s.daws, s.tags, s.comments, s.intention, s.mode, s.character]|select|join(' ')|lower }}"
+   data-text="{{ [s.machines, s.daws, s.tags, s.comments, s.intention, s.mode, s.character, s.project_title]|select|join(' ')|lower }}"
    data-mode="{{ s.mode or '' }}"
    data-rating="{{ s.rating or 0 }}"
    data-project="{{ s.project_title or '' }}">
