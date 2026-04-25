@@ -13,7 +13,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-VERSION = "0.9.9-alpha"
+VERSION = "1.0.0-alpha"
 DB_PATH      = os.environ.get("DB_PATH",      os.path.join(os.path.dirname(__file__), "sessions.db"))
 CONFIG_PATH  = os.environ.get("CONFIG_PATH",  os.path.join(os.path.dirname(__file__), "config.json"))
 

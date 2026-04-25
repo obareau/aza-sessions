@@ -158,6 +158,22 @@
         }
         .header-nav a:hover { opacity: 1; background: rgba(255,255,255,0.1); }
         .header-nav .sep { color: rgba(255,255,255,0.2); font-size: 10px; }
+
+        /* ── HAMBURGER MENU MOBILE ── */
+        #nav-toggle {
+            display: none;
+            background: none;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.85);
+            font-size: 16px;
+            padding: 5px 11px;
+            cursor: pointer;
+            border-radius: var(--radius);
+            font-family: var(--mono);
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        #nav-toggle:hover { background: rgba(255,255,255,0.1); }
         .version-badge {
             font-family: var(--mono); font-size: 10px; color: var(--text-muted);
             background: var(--bg-alt); border: 1px solid var(--border);
@@ -369,81 +385,102 @@
         /* Tablettes */
         @media (max-width: 768px) {
             body { font-size: 13px; }
-            header { padding: 0 16px; height: auto; align-items: flex-start; }
-            .header-brand { font-size: 11px; gap: 8px; }
-            .header-brand .dot { width: 5px; height: 5px; }
-            .header-nav { gap: 4px; flex-wrap: wrap; align-items: flex-start; justify-content: flex-start; width: 100%; }
-            .header-nav a, .header-nav .version-badge, #theme-picker { flex: 0 1 auto; }
-            .header-nav a { font-size: 10px; padding: 4px 8px; }
-
             .page-header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
             .page-title { font-size: 20px; }
             .page-subtitle { font-size: 10px; }
-
             .btn { padding: 8px 16px; font-size: 11px; }
             .btn-sm { padding: 4px 8px; font-size: 9px; }
-
-            .session-row {
-                grid-template-columns: 1fr;
-                gap: 8px;
-                padding: 12px;
-                margin-bottom: 6px;
-            }
+            .session-row { grid-template-columns: 1fr; gap: 8px; padding: 12px; margin-bottom: 6px; }
             .session-row > span:first-child { order: -1; }
             .session-date { font-size: 10px; }
             .session-machines { font-size: 10px; white-space: normal; }
-
             .badge { font-size: 9px; padding: 1px 6px; }
-
             .detail-grid { grid-template-columns: 1fr; gap: 16px; }
             .detail-field { gap: 2px; }
             .detail-label { font-size: 9px; }
             .detail-value { font-size: 12px; padding: 6px 8px; min-height: 32px; }
-
             .form-grid { grid-template-columns: 1fr; gap: 16px; }
             .form-group { gap: 4px; }
             .form-group.full { grid-column: 1; }
-
             .check-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
             .chk { font-size: 12px; }
-
             .card { margin: 0 -8px; }
             .card-title { font-size: 14px; }
             .card-header { flex-direction: column; align-items: flex-start; gap: 8px; }
-
             #kbd-panel { min-width: 320px; max-width: 90vw; padding: 20px 24px; }
             .kbd-row { flex-direction: column; align-items: flex-start; gap: 4px; }
-
-            .filters-bar {
-                gap: 8px;
-                margin-bottom: 16px;
-            }
-            .filter-selects {
-                gap: 6px;
-                justify-content: space-between;
-            }
-            .filters-bar input[type="text"] {
-                min-width: 100%;
-            }
-            .filters-bar select {
-                flex: 1;
-                min-width: 0;
-            }
+            .filters-bar { gap: 8px; margin-bottom: 16px; }
+            .filter-selects { gap: 6px; justify-content: space-between; }
+            .filters-bar input[type="text"] { min-width: 100%; }
+            .filters-bar select { flex: 1; min-width: 0; }
         }
 
-        /* Mobiles */
-        @media (max-width: 480px) {
-            body { font-size: 12px; }
-            header { padding: 0 12px; height: auto; align-items: flex-start; }
-            .header-brand { font-size: 10px; }
-            .header-nav { gap: 3px; flex-wrap: wrap; align-items: flex-start; justify-content: flex-start; width: 100%; }
-            .header-nav a, .header-nav .version-badge, #theme-picker { flex: 0 1 100%; min-width: 0; }
-            .header-nav a { font-size: 10px; padding: 3px 6px; }
+        /* Mobiles — hamburger menu */
+        @media (max-width: 600px) {
+            header { padding: 0 16px; height: 52px; }
+            .header-brand { font-size: 11px; }
 
+            /* Affiche le bouton hamburger */
+            #nav-toggle { display: block; }
+
+            /* Cache la nav desktop, elle devient un drawer */
+            .header-nav {
+                display: none;
+                position: fixed;
+                top: 52px; left: 0; right: 0;
+                background: var(--text);
+                border-top: 1px solid rgba(255,255,255,0.1);
+                border-bottom: 2px solid var(--accent);
+                padding: 8px 16px 16px;
+                flex-direction: column;
+                gap: 2px;
+                z-index: 200;
+                max-height: calc(100vh - 52px);
+                overflow-y: auto;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            }
+            .header-nav.open { display: flex; }
+
+            /* Liens touch-friendly */
+            .header-nav a {
+                font-size: 13px;
+                padding: 11px 14px;
+                opacity: 0.85;
+                border-radius: var(--radius);
+                width: 100%;
+            }
+            .header-nav a:hover, .header-nav a:active { opacity: 1; background: rgba(255,255,255,0.1); }
+
+            /* Séparateurs deviennent des espacements de groupe */
+            .header-nav .sep { display: none; }
+            .header-nav .nav-group {
+                border-top: 1px solid rgba(255,255,255,0.1);
+                margin-top: 4px;
+                padding-top: 4px;
+            }
+            .header-nav .nav-group-label {
+                font-family: var(--mono);
+                font-size: 9px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.15em;
+                color: var(--accent);
+                padding: 8px 14px 4px;
+                opacity: 1;
+            }
+
+            /* Version badge et theme picker dans le drawer */
+            .header-nav .version-badge {
+                margin: 8px 14px 0;
+                display: inline-block;
+                align-self: flex-start;
+            }
+            #theme-picker { margin: 8px 14px 0; align-self: flex-start; }
+
+            /* Page */
             .page-header { margin-bottom: 16px; }
             .page-title { font-size: 18px; }
             .page-subtitle { font-size: 9px; }
-
             .btn { padding: 6px 12px; font-size: 10px; }
             .btn-sm { padding: 3px 6px; font-size: 8px; }
 
@@ -537,29 +574,40 @@
 <body>
     <header>
         <div class="header-brand"><span class="dot"></span>Journal Robōtariis</div>
-        <nav class="header-nav">
+        <button id="nav-toggle" onclick="toggleNav()" aria-label="Menu">☰</button>
+        <nav class="header-nav" id="header-nav">
             {% if has_live %}
             <a href="{{ url_for('live') }}" style="color:#ff6b35;font-weight:700;opacity:1;animation:pulse 1.2s infinite;">● EN COURS</a>
             <span class="sep">|</span>
             {% endif %}
+
+            <span class="nav-group-label">Sessions</span>
             <a href="{{ url_for('index') }}">Sessions</a>
             <a href="{{ url_for('live') }}">▶ Live</a>
             <a href="{{ url_for('new_session') }}">+ Nouvelle</a>
             <span class="sep">|</span>
+
+            <span class="nav-group-label nav-group">Outils</span>
             <a href="{{ url_for('stats') }}">Stats</a>
             <a href="{{ url_for('list_projects') }}">◈ Projets</a>
             <a href="{{ url_for('spark') }}">⚡ Spark</a>
             <span class="sep">|</span>
+
+            <span class="nav-group-label nav-group">Catalogue</span>
             <a href="{{ url_for('manage_catalogue') }}">Catalogue</a>
             <a href="{{ url_for('manage_influences') }}">Influences</a>
             <a href="{{ url_for('manage_obliques') }}">Stratégies</a>
             <span class="sep">|</span>
+
+            <span class="nav-group-label nav-group">Ressources</span>
             <a href="{{ url_for('manage_samples') }}">Samples</a>
             <a href="{{ url_for('manage_tracks') }}">Morceaux</a>
             <a href="{{ url_for('manage_inspirations') }}">Inspi</a>
             <a href="{{ url_for('manage_wishlist') }}">Wishlist</a>
             <a href="{{ url_for('manage_mirack') }}">⬡ MiRack</a>
             <span class="sep">|</span>
+
+            <span class="nav-group-label nav-group">Config</span>
             <a href="{{ url_for('form_blank') }}" title="Formulaire papier — mode dégradé">⎙ Form</a>
             <a href="{{ url_for('settings') }}">Paramètres</a>
             <a href="{{ url_for('about') }}">About</a>
@@ -675,7 +723,33 @@
         const d = document.getElementById('theme-dropdown');
         d.style.display = d.style.display === 'none' ? 'block' : 'none';
     }
-    // Fermer en cliquant ailleurs
+
+    // ── Menu hamburger ──────────────────────────────────────────
+    function toggleNav() {
+        const nav = document.getElementById('header-nav');
+        const btn = document.getElementById('nav-toggle');
+        const isOpen = nav.classList.toggle('open');
+        btn.textContent = isOpen ? '✕' : '☰';
+        btn.setAttribute('aria-expanded', isOpen);
+    }
+    // Fermer le menu en cliquant sur un lien
+    document.querySelectorAll('#header-nav a').forEach(a => {
+        a.addEventListener('click', () => {
+            document.getElementById('header-nav').classList.remove('open');
+            document.getElementById('nav-toggle').textContent = '☰';
+        });
+    });
+    // Fermer en cliquant en dehors
+    document.addEventListener('click', e => {
+        const nav = document.getElementById('header-nav');
+        const btn = document.getElementById('nav-toggle');
+        if (nav.classList.contains('open') && !nav.contains(e.target) && !btn.contains(e.target)) {
+            nav.classList.remove('open');
+            btn.textContent = '☰';
+        }
+    });
+
+    // Fermer en cliquant ailleurs (theme picker)
     document.addEventListener('click', e => {
         if (!document.getElementById('theme-picker').contains(e.target))
             document.getElementById('theme-dropdown').style.display = 'none';

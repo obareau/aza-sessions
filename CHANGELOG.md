@@ -3,6 +3,13 @@
 > Les versions alpha sont des releases actives en développement continu.
 > Chaque version est datée du jour de développement effectif.
 
+## v1.0.0-alpha — 2026-04-25
+
+### Améliorations
+- **Menu hamburger mobile** — remplacement du mur de liens empilés par un menu ☰ sur mobile (≤600px) ; drawer full-width avec liens groupés par section (Sessions / Outils / Catalogue / Ressources / Config), liens touch-friendly (44px), fermeture au clic extérieur ou sur un lien, icône ✕ quand ouvert
+
+---
+
 ## v0.9.9-alpha — 2026-04-23
 
 ### Ajouts
