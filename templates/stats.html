@@ -317,9 +317,9 @@ window.addEventListener('DOMContentLoaded', () => {
 {% endif %}
 
 <!-- HEATMAP -->
-<div class="card" style="margin-bottom:24px;">
+<div class="card" style="margin-bottom:24px;overflow:hidden;">
     <div class="card-title" style="margin-bottom:16px;">∙ Activité — 52 semaines</div>
-    <div style="overflow-x:auto;">
+    <div style="overflow-x:auto;max-width:100%;">
         <div style="display:flex;gap:4px;align-items:flex-start;min-width:fit-content;">
             <!-- Labels jours -->
             <div style="display:flex;flex-direction:column;gap:3px;padding-top:18px;margin-right:2px;">
@@ -367,7 +367,7 @@ window.addEventListener('DOMContentLoaded', () => {
 {% endif %}
 
 <!-- LOGICIELS en 3 colonnes -->
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;">
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:20px;">
     {% if stats.daws %}
     <div class="card">
         <div class="card-title">∙ DAW</div>
@@ -397,7 +397,7 @@ window.addEventListener('DOMContentLoaded', () => {
 {% endif %}
 
 <!-- DISTRIBUTIONS -->
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;">
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:20px;">
     {% if stats.rating_dist %}
     <div class="card">
         <div class="card-title">∙ Distribution notes</div>
@@ -419,7 +419,7 @@ window.addEventListener('DOMContentLoaded', () => {
 </div>
 
 <!-- MODES + PROJETS -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:20px;">
     {% if stats.modes %}
     <div class="card">
         <div class="card-title">∙ Modes de travail</div>

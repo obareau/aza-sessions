@@ -3,6 +3,13 @@
 > Les versions alpha sont des releases actives en développement continu.
 > Chaque version est datée du jour de développement effectif.
 
+## v1.0.1-alpha — 2026-04-25
+
+### Corrections
+- **Stats mobile** — suppression du scroll horizontal parasite en portrait iPhone : grilles `1fr 1fr 1fr` et `1fr 1fr` remplacées par `repeat(auto-fill, minmax(...))` auto-adaptatives ; heatmap cloisonnée avec `overflow:hidden` sur la card ; `overflow-x:hidden` ajouté sur le body
+
+---
+
 ## v1.0.0-alpha — 2026-04-25
 
 ### Améliorations
