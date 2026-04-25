@@ -14,8 +14,8 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 VERSION = "0.9.9-alpha"
-DB_PATH      = os.path.join(os.path.dirname(__file__), "sessions.db")
-CONFIG_PATH  = os.path.join(os.path.dirname(__file__), "config.json")
+DB_PATH      = os.environ.get("DB_PATH",      os.path.join(os.path.dirname(__file__), "sessions.db"))
+CONFIG_PATH  = os.environ.get("CONFIG_PATH",  os.path.join(os.path.dirname(__file__), "config.json"))
 
 
 def get_config():
@@ -1825,7 +1825,7 @@ if __name__ == "__main__":
 
     # ── Backup automatique (garde les 5 derniers) ──────────────────────────────
     if os.path.exists(DB_PATH):
-        backup_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backups")
+        backup_dir = os.environ.get("BACKUPS_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "backups"))
         os.makedirs(backup_dir, exist_ok=True)
         existing = sorted(glob.glob(os.path.join(backup_dir, "sessions_*.db")))
         while len(existing) >= 5:
