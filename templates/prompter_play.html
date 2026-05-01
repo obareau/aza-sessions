@@ -27,6 +27,8 @@
     --c-blue:   #4DA6FF;
     --c-purple: #C77DFF;
     --fs: 1;
+    --bar-h: 20px;   /* hauteur barre durée restante */
+    --seg-w: 22px;   /* largeur d'un segment */
 }
 html, body {
     background: var(--bg); color: var(--text);
@@ -116,18 +118,51 @@ html, body {
 .tb-quit:hover { border-color: var(--accent); color: var(--accent); background: rgba(212,56,13,.06); }
 
 /* ═══════════════════════════════════════
-   BARRE DURÉE RESTANTE
+   BARRE DURÉE RESTANTE — segmentée + clignotante
 ═══════════════════════════════════════ */
+@keyframes blink-slow {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.25; }
+}
+@keyframes blink-fast {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.05; }
+}
+
 #remain-wrap {
-    height: 10px; background: var(--border); flex-shrink: 0; position: relative;
+    height: var(--bar-h);
+    background: var(--border);
+    flex-shrink: 0; position: relative;
+    /* Traits de séparation = segments style LED */
+    background-image: repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        transparent calc(var(--seg-w) - 2px),
+        var(--bg)   calc(var(--seg-w) - 2px),
+        var(--bg)   var(--seg-w)
+    );
 }
 #remain-fill {
     height: 100%; background: var(--accent);
     width: 0%; will-change: width;
-    /* couleur change quand proche de la fin */
+    position: relative; z-index: 0;
 }
-#remain-fill.warn { background: #FF8C00; }
-#remain-fill.urgent { background: #FF4D26; }
+/* Séparateurs superposés sur le fill */
+#remain-wrap::after {
+    content: '';
+    position: absolute; inset: 0; z-index: 1;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        transparent calc(var(--seg-w) - 2px),
+        var(--bg)   calc(var(--seg-w) - 2px),
+        var(--bg)   var(--seg-w)
+    );
+}
+/* Couleurs selon urgence */
+#remain-fill.warn   { background: #FF8C00; animation: blink-slow 0.75s ease-in-out infinite; }
+#remain-fill.urgent { background: #FF4D26; animation: blink-fast 0.28s ease-in-out infinite; }
 
 /* ═══════════════════════════════════════
    SCRUB (mode manuel)
@@ -323,6 +358,16 @@ html, body {
 
     <div class="tb-sep"></div>
 
+    <!-- Hauteur barre -->
+    <div id="barh-row" style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
+        <span style="font-size:10px;color:var(--tb-muted);">Barre</span>
+        <button class="tb-btn" onclick="barHDec()" style="padding:5px 7px;">−</button>
+        <span id="barh-val" style="font-size:10px;color:var(--tb-muted);min-width:28px;text-align:center;">20px</span>
+        <button class="tb-btn" onclick="barHInc()" style="padding:5px 7px;">+</button>
+    </div>
+
+    <div class="tb-sep"></div>
+
     <!-- Plein écran -->
     <button class="tb-btn" onclick="toggleFS()" title="Plein écran (F)">⛶</button>
 
@@ -470,13 +515,28 @@ function setRemainBar(pct, durationMs) {
     }
 }
 
-/* Met à jour la couleur de la barre selon le temps restant */
+/* Met à jour couleur + clignotement selon le temps restant */
 function updateBarColor() {
     var fill = document.getElementById('remain-fill');
+    var was = fill.className;
     fill.classList.remove('warn','urgent');
     if (remainSec <= 5)       fill.classList.add('urgent');
     else if (remainSec <= 10) fill.classList.add('warn');
+    /* Si la classe a changé, force un reflow pour relancer l'animation */
+    if (fill.className !== was) { void fill.offsetWidth; }
 }
+
+/* ─────────────────────────────────────
+   HAUTEUR DE LA BARRE
+───────────────────────────────────────*/
+var barH = 20;
+function setBarH(h) {
+    barH = Math.max(6, Math.min(80, h));
+    document.documentElement.style.setProperty('--bar-h', barH + 'px');
+    document.getElementById('barh-val').textContent = barH + 'px';
+}
+function barHInc() { setBarH(barH + 4); }
+function barHDec() { setBarH(barH - 4); }
 
 /* ─────────────────────────────────────
    HORLOGE GRANDE
