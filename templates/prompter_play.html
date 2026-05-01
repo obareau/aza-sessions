@@ -8,184 +8,262 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-    --bg:      #0A0908;
-    --surface: #111210;
-    --border:  #252320;
-    --text:    #E8E4DC;
-    --muted:   #5A5550;
+    --bg:      #0C0B0A;
+    --surface: #141311;
+    --border:  #242220;
+    --text:    #EAE6DE;
+    --muted:   #58534D;
     --accent:  #D4380D;
-    --mono:    'IBM Plex Mono', monospace;
-    --c-default: #E8E4DC;
-    --c-red:     #FF4D26;
-    --c-orange:  #FF8C00;
-    --c-green:   #3DCC7E;
-    --c-blue:    #4DA6FF;
-    --c-purple:  #C77DFF;
+    /* topbar clair */
+    --tb-bg:   #E8E4DC;
+    --tb-text: #1A1816;
+    --tb-muted:#7A746E;
+    --tb-border:#C8C4BC;
+    /* couleurs cues */
+    --c-default:#EAE6DE;
+    --c-red:    #FF4D26;
+    --c-orange: #FF8C00;
+    --c-green:  #3DCC7E;
+    --c-blue:   #4DA6FF;
+    --c-purple: #C77DFF;
     --fs: 1;
 }
 html, body {
     background: var(--bg); color: var(--text);
-    font-family: var(--mono); height: 100%;
-    overflow: hidden; user-select: none; -webkit-user-select: none;
+    font-family: 'IBM Plex Mono', monospace;
+    height: 100%; overflow: hidden;
+    user-select: none; -webkit-user-select: none;
 }
 #app { display: flex; flex-direction: column; height: 100dvh; }
 
-/* ── TOPBAR ── */
+/* ═══════════════════════════════════════
+   TOPBAR — fond clair
+═══════════════════════════════════════ */
 #topbar {
-    display: flex; align-items: center; gap: 8px;
-    padding: 8px 14px; background: var(--surface);
-    border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: nowrap;
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 16px;
+    background: var(--tb-bg);
+    border-bottom: 2px solid var(--tb-border);
+    flex-shrink: 0;
 }
-.top-title {
-    font-size: 12px; font-weight: 600; color: var(--muted);
-    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+
+/* Transport */
+#transport { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.tr-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px;
+    background: #F5F2EE; border: 1px solid var(--tb-border);
+    border-radius: 4px; cursor: pointer;
+    font-size: 16px; color: var(--tb-text);
+    transition: all .12s; flex-shrink: 0;
 }
-.top-title b { color: var(--text); font-weight: 700; }
-.top-btn {
-    background: none; border: 1px solid var(--muted); color: var(--muted);
-    font-family: var(--mono); font-size: 11px; text-transform: uppercase;
-    letter-spacing: .06em; padding: 5px 10px; cursor: pointer; border-radius: 3px;
-    white-space: nowrap; transition: all .12s; flex-shrink: 0; line-height: 1;
+.tr-btn:hover { background: #fff; border-color: #AAA49E; }
+.tr-btn#btn-play.playing {
+    background: var(--accent); border-color: var(--accent); color: #fff;
 }
-.top-btn:hover { border-color: var(--text); color: var(--text); }
-.top-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(212,56,13,.1); }
-.top-btn.danger { border-color: #552010; color: #A03020; }
-.top-btn.danger:hover { border-color: var(--accent); color: var(--accent); }
+.tr-btn#btn-stop.stopped {
+    background: var(--tb-text); border-color: var(--tb-text); color: var(--tb-bg);
+}
+
+/* Séparateur vertical */
+.tb-sep { width: 1px; height: 28px; background: var(--tb-border); flex-shrink: 0; }
+
+/* Titre */
+.tb-title {
+    flex: 1; font-size: 13px; font-weight: 700;
+    color: var(--tb-text); overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+.tb-title small {
+    font-weight: 400; color: var(--tb-muted); font-size: 11px; margin-left: 6px;
+}
+
+/* Durée par défaut (mode auto) */
+#dur-wrap { display: none; align-items: center; gap: 5px; flex-shrink: 0; }
+#dur-wrap.show { display: flex; }
+#dur-wrap label { font-size: 11px; color: var(--tb-muted); }
+#dur-input {
+    width: 50px; background: #F5F2EE; border: 1px solid var(--tb-border);
+    color: var(--tb-text); font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; padding: 5px 6px; border-radius: 3px; text-align: right;
+}
+#dur-input:focus { outline: 2px solid var(--accent); }
+
+/* Zoom */
 #zoom-row { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-#zoom-pct { font-size: 10px; color: var(--muted); min-width: 34px; text-align: center; }
-#auto-dur-wrap { display: none; align-items: center; gap: 5px; flex-shrink: 0; }
-#auto-dur-wrap.show { display: flex; }
-#auto-dur-wrap label { font-size: 10px; color: var(--muted); }
-#auto-dur {
-    width: 48px; background: var(--bg); border: 1px solid var(--muted);
-    color: var(--text); font-family: var(--mono); font-size: 11px;
-    padding: 4px 6px; border-radius: 3px; text-align: right;
+.tb-btn {
+    background: #F5F2EE; border: 1px solid var(--tb-border);
+    color: var(--tb-text); font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; padding: 5px 9px; cursor: pointer; border-radius: 3px;
+    white-space: nowrap; transition: all .12s; flex-shrink: 0;
+    text-transform: uppercase; letter-spacing: .05em;
 }
-#auto-dur:focus { outline: none; border-color: var(--accent); }
+.tb-btn:hover { background: #fff; border-color: #AAA49E; }
+#zoom-pct {
+    font-size: 11px; color: var(--tb-muted);
+    min-width: 36px; text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+}
 
-/* ── BARRE DE PROGRESSION ── */
-#progress-wrap { height: 8px; background: var(--border); flex-shrink: 0; }
-#progress-fill { height: 100%; background: var(--accent); width: 0%; will-change: width; }
+/* Quitter */
+.tb-quit {
+    background: none; border: 1px solid #C0B8B0; color: #8A8480;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    padding: 5px 10px; cursor: pointer; border-radius: 3px;
+    white-space: nowrap; transition: all .12s; flex-shrink: 0;
+    text-transform: uppercase; letter-spacing: .05em;
+}
+.tb-quit:hover { border-color: var(--accent); color: var(--accent); background: rgba(212,56,13,.06); }
 
-/* ── SCRUB ── */
+/* ═══════════════════════════════════════
+   BARRE DURÉE RESTANTE
+═══════════════════════════════════════ */
+#remain-wrap {
+    height: 10px; background: var(--border); flex-shrink: 0; position: relative;
+}
+#remain-fill {
+    height: 100%; background: var(--accent);
+    width: 0%; will-change: width;
+    /* couleur change quand proche de la fin */
+}
+#remain-fill.warn { background: #FF8C00; }
+#remain-fill.urgent { background: #FF4D26; }
+
+/* ═══════════════════════════════════════
+   SCRUB (mode manuel)
+═══════════════════════════════════════ */
 #scrub-wrap {
-    padding: 6px 16px; background: var(--surface);
+    padding: 6px 18px; background: var(--surface);
     border-bottom: 1px solid var(--border); flex-shrink: 0; display: none;
 }
 #scrub-wrap.show { display: block; }
 #scrub-bar {
     width: 100%; appearance: none; -webkit-appearance: none;
-    height: 4px; background: var(--border); border-radius: 2px; outline: none; cursor: pointer;
+    height: 4px; background: var(--border); border-radius: 2px;
+    outline: none; cursor: pointer;
 }
 #scrub-bar::-webkit-slider-thumb {
     -webkit-appearance: none; width: 16px; height: 16px;
     background: var(--accent); border-radius: 50%; cursor: pointer;
 }
 
-/* ── SCÈNE ── */
+/* ═══════════════════════════════════════
+   SCÈNE
+═══════════════════════════════════════ */
 #stage {
     flex: 1; display: flex; flex-direction: column;
     overflow: hidden; position: relative;
 }
 
-/* ── ZONE PRÉCÉDENTE ── */
+/* ─── Zone précédente ─── */
 #zone-prev {
-    flex: 0 0 auto; opacity: 0;
+    flex: 0 0 auto;
+    background: linear-gradient(to bottom, rgba(20,19,17,.0) 0%, rgba(20,19,17,.0) 100%);
     border-bottom: 1px solid var(--border);
-    padding: 12px 36px; min-height: 72px;
+    padding: 10px 36px; min-height: 70px;
     display: flex; flex-direction: column;
-    justify-content: center; align-items: center; gap: 4px;
-    cursor: pointer; transition: opacity .2s;
+    justify-content: center; align-items: center; gap: 3px;
+    cursor: pointer; opacity: 0; transition: opacity .25s;
 }
-#zone-prev.visible { opacity: 0.42; }
-#zone-prev.visible:hover { opacity: 0.6; }
-.prev-patch  { font-size: calc(20px * var(--fs)); font-weight: 600; color: var(--text); text-align: center; }
-.prev-action { font-size: calc(14px * var(--fs)); color: rgba(232,228,220,.75); text-align: center; }
-.prev-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); margin-bottom: 2px; }
+#zone-prev.visible { opacity: 1; }
+#zone-prev.visible:hover { opacity: .85; }
+.prev-lbl   { font-size: 9px; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); margin-bottom: 2px; }
+.prev-patch  { font-size: calc(18px * var(--fs)); font-weight: 600; color: rgba(234,230,222,.45); text-align: center; }
+.prev-action { font-size: calc(13px * var(--fs)); color: rgba(234,230,222,.3); text-align: center; }
 
-/* ── ZONE COURANTE ── */
+/* ─── Zone courante ─── */
 #zone-cur {
     flex: 1; display: flex; flex-direction: column;
     justify-content: center; align-items: center;
-    padding: 24px 40px; gap: 18px; position: relative; cursor: pointer;
+    padding: 20px 44px; gap: 16px;
+    cursor: pointer; position: relative;
 }
-#cur-time { font-size: calc(13px * var(--fs)); color: var(--muted); letter-spacing: .18em; }
+/* Horloge grande */
+#clock-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    position: absolute; top: 16px; right: 20px;
+}
+#clock-val {
+    font-size: calc(48px * var(--fs)); font-weight: 700;
+    color: var(--accent); line-height: 1;
+    font-variant-numeric: tabular-nums; letter-spacing: -.03em;
+}
+#clock-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); }
+
+/* Contenu cue */
+#cur-marker { font-size: calc(12px * var(--fs)); color: var(--muted); letter-spacing: .2em; }
 #cur-patch {
-    font-size: calc(clamp(40px, 7vw, 88px) * var(--fs));
+    font-size: calc(clamp(38px, 6.5vw, 84px) * var(--fs));
     font-weight: 700; line-height: 1.05; letter-spacing: -.025em;
-    text-align: center; color: var(--c-default);
-    word-break: break-word;
+    text-align: center; color: var(--c-default); word-break: break-word;
 }
 #cur-action {
-    font-size: calc(clamp(20px, 3vw, 38px) * var(--fs));
-    line-height: 1.5; color: rgba(232,228,220,.72);
+    font-size: calc(clamp(18px, 2.8vw, 36px) * var(--fs));
+    line-height: 1.55; color: rgba(234,230,222,.68);
     text-align: center; max-width: 860px; word-break: break-word;
 }
 
-/* Timer décompte */
-#timer-box {
-    position: absolute; top: 14px; right: 18px;
-    display: none; flex-direction: column; align-items: flex-end; gap: 2px;
-}
-#timer-box.show { display: flex; }
-#timer-val {
-    font-size: calc(38px * var(--fs)); font-weight: 700; color: var(--accent);
-    letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums;
-}
-#timer-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
-
-/* ── ZONE SUIVANTE ── */
+/* ─── Zone suivante ─── */
 #zone-next {
-    flex: 0 0 auto; opacity: 0.52;
+    flex: 0 0 auto;
     border-top: 1px solid var(--border);
-    padding: 12px 36px; min-height: 76px;
+    padding: 10px 36px; min-height: 74px;
     display: flex; flex-direction: column;
-    justify-content: center; align-items: center; gap: 4px;
-    cursor: pointer;
+    justify-content: center; align-items: center; gap: 3px;
+    cursor: pointer; opacity: .52;
 }
-#zone-next:hover { opacity: 0.7; }
-.next-lbl   { font-size: 9px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); }
-.next-patch  { font-size: calc(22px * var(--fs)); font-weight: 600; color: var(--text); text-align: center; }
-.next-action { font-size: calc(14px * var(--fs)); color: rgba(232,228,220,.65); text-align: center; }
+#zone-next:hover { opacity: .7; }
+.next-lbl   { font-size: 9px; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); margin-bottom: 2px; }
+.next-patch  { font-size: calc(20px * var(--fs)); font-weight: 600; color: var(--text); text-align: center; }
+.next-action { font-size: calc(14px * var(--fs)); color: rgba(234,230,222,.55); text-align: center; }
 
-/* ── BOTTOMBAR ── */
+/* ═══════════════════════════════════════
+   BOTTOMBAR
+═══════════════════════════════════════ */
 #bottombar {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 7px 16px; background: var(--surface);
-    border-top: 1px solid var(--border); flex-shrink: 0; gap: 12px;
+    padding: 7px 18px; background: var(--surface);
+    border-top: 1px solid var(--border); flex-shrink: 0; gap: 14px;
 }
 #cue-counter { font-size: 12px; color: var(--muted); white-space: nowrap; }
-#hint { font-size: 9px; color: var(--muted); text-align: center; flex: 1; line-height: 1.9; }
+#hint { font-size: 9px; color: var(--muted); text-align: center; flex: 1; line-height: 2; }
 #hint kbd {
     background: var(--border); border: 1px solid #333;
-    border-radius: 2px; padding: 1px 5px; font-family: var(--mono); font-size: 9px; color: #888;
+    border-radius: 2px; padding: 1px 5px; font-family: 'IBM Plex Mono',monospace; font-size: 9px; color: #888;
 }
+#elapsed-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
 #elapsed { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+#elapsed-lbl { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
 
-/* ── FIN DE SET ── */
+/* ═══════════════════════════════════════
+   FIN DE SET
+═══════════════════════════════════════ */
 #end-screen {
-    display: none; position: absolute; inset: 0; background: var(--bg);
+    display: none; position: absolute; inset: 0;
+    background: rgba(12,11,10,.96);
     flex-direction: column; align-items: center; justify-content: center;
-    gap: 16px; z-index: 20;
+    gap: 16px; z-index: 30;
 }
 #end-screen.show { display: flex; }
 .end-title { font-size: 72px; font-weight: 700; color: var(--accent); }
-.end-sub   { font-size: 13px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+.end-sub   { font-size: 13px; color: var(--muted); letter-spacing: .14em; text-transform: uppercase; }
 .end-actions { display: flex; gap: 12px; margin-top: 8px; }
 .end-btn {
-    background: var(--accent); color: white; border: none;
-    font-family: var(--mono); font-size: 13px; padding: 11px 28px;
-    cursor: pointer; border-radius: 3px; letter-spacing: .05em;
+    background: var(--accent); color: #fff; border: none;
+    font-family: 'IBM Plex Mono',monospace; font-size: 13px;
+    padding: 11px 28px; cursor: pointer; border-radius: 4px; letter-spacing: .04em;
 }
 .end-btn:hover { opacity: .85; }
 .end-btn-ghost {
     background: none; color: var(--muted); border: 1px solid var(--muted);
-    font-family: var(--mono); font-size: 13px; padding: 11px 28px;
-    cursor: pointer; border-radius: 3px; letter-spacing: .05em;
+    font-family: 'IBM Plex Mono',monospace; font-size: 13px;
+    padding: 11px 28px; cursor: pointer; border-radius: 4px; letter-spacing: .04em;
 }
 .end-btn-ghost:hover { color: var(--text); border-color: var(--text); }
 
-/* ── COULEURS ── */
+/* ═══════════════════════════════════════
+   COULEURS PATCH
+═══════════════════════════════════════ */
 .color-default { color: var(--c-default) !important; }
 .color-red     { color: var(--c-red)     !important; }
 .color-orange  { color: var(--c-orange)  !important; }
@@ -193,78 +271,99 @@ html, body {
 .color-blue    { color: var(--c-blue)    !important; }
 .color-purple  { color: var(--c-purple)  !important; }
 
+/* ═══════════════════════════════════════
+   RESPONSIVE MOBILE
+═══════════════════════════════════════ */
 @media (max-width: 600px) {
-    .top-title, #hint { display: none; }
-    #zone-prev { min-height: 54px; padding: 8px 18px; }
-    #zone-next { min-height: 58px; padding: 8px 18px; }
-    #zone-cur  { padding: 16px 18px; gap: 12px; }
-    #timer-box { top: 8px; right: 10px; }
-    #timer-val { font-size: calc(26px * var(--fs)); }
-    #auto-dur-wrap label { display: none; }
+    .tb-title small, #hint { display: none; }
+    #clock-val { font-size: calc(36px * var(--fs)); }
+    #clock-wrap { top: 10px; right: 12px; }
+    #zone-prev { min-height: 54px; padding: 8px 16px; }
+    #zone-next { min-height: 58px; padding: 8px 16px; }
+    #zone-cur  { padding: 14px 18px; gap: 10px; }
+    .tr-btn    { width: 36px; height: 36px; font-size: 14px; }
 }
 </style>
 </head>
 <body>
 <div id="app">
 
-<!-- TOPBAR -->
+<!-- ═══ TOPBAR CLAIRE ══════════════════════════════════ -->
 <div id="topbar">
-    <button class="top-btn danger" onclick="quitConfirm()">← Quitter</button>
-    <div class="top-title"><b>{{ script.title }}</b></div>
 
-    <!-- Mode Manuel / Auto -->
-    <button class="top-btn" id="btn-mode" onclick="toggleMode()">Manuel</button>
-
-    <!-- Durée par défaut en mode auto -->
-    <div id="auto-dur-wrap">
-        <label for="auto-dur">durée</label>
-        <input type="number" id="auto-dur" value="30" min="1" max="999">
-        <label for="auto-dur">s</label>
+    <!-- Transport -->
+    <div id="transport">
+        <button class="tr-btn" id="btn-rewind" onclick="rewindSet()"    title="Retour au début (R)">⏮</button>
+        <button class="tr-btn" id="btn-stop"   onclick="stopPlay()"     title="Stop (S)">⏹</button>
+        <button class="tr-btn" id="btn-play"   onclick="togglePlay()"   title="Démarrer / Pause (A)">▶</button>
     </div>
+
+    <div class="tb-sep"></div>
+
+    <!-- Titre -->
+    <div class="tb-title">
+        {{ script.title }}<small>{{ cues|length }} cue{{ 's' if cues|length != 1 else '' }}</small>
+    </div>
+
+    <!-- Durée par défaut (visible en mode auto) -->
+    <div id="dur-wrap">
+        <label for="dur-input">Durée&nbsp;défaut</label>
+        <input type="number" id="dur-input" value="30" min="1" max="999">
+        <label for="dur-input">s</label>
+    </div>
+
+    <div class="tb-sep"></div>
 
     <!-- Zoom -->
     <div id="zoom-row">
-        <button class="top-btn" onclick="zoomOut()">A−</button>
+        <button class="tb-btn" onclick="zoomOut()">A−</button>
         <span id="zoom-pct">100%</span>
-        <button class="top-btn" onclick="zoomIn()">A+</button>
+        <button class="tb-btn" onclick="zoomIn()">A+</button>
     </div>
 
+    <div class="tb-sep"></div>
+
     <!-- Plein écran -->
-    <button class="top-btn" onclick="toggleFS()" title="Plein écran (F)">⛶</button>
+    <button class="tb-btn" onclick="toggleFS()" title="Plein écran (F)">⛶</button>
+
+    <!-- Quitter -->
+    <button class="tb-quit" onclick="quitConfirm()" title="Quitter (Q)">✕ Quitter</button>
 </div>
 
-<!-- BARRE DE PROGRESSION -->
-<div id="progress-wrap"><div id="progress-fill"></div></div>
+<!-- ═══ BARRE DURÉE RESTANTE ══════════════════════════ -->
+<div id="remain-wrap"><div id="remain-fill"></div></div>
 
-<!-- SCRUB BAR -->
+<!-- ═══ SCRUB (mode manuel) ═══════════════════════════ -->
 <div id="scrub-wrap" class="show">
     <input type="range" id="scrub-bar"
            min="0" max="{{ [cues|length - 1, 0]|max }}" value="0"
            oninput="scrubTo(parseInt(this.value))">
 </div>
 
-<!-- SCÈNE -->
+<!-- ═══ SCÈNE ══════════════════════════════════════════ -->
 <div id="stage">
 
-    <!-- PRÉCÉDENTE : clic = retour -->
+    <!-- CUE PRÉCÉDENTE — clic = retour -->
     <div id="zone-prev" onclick="prevCue()">
         <div class="prev-lbl">↑ Précédent</div>
         <div class="prev-patch"  id="prev-patch"></div>
         <div class="prev-action" id="prev-action"></div>
     </div>
 
-    <!-- COURANTE : clic = suivant -->
+    <!-- CUE COURANTE — clic = suivant -->
     <div id="zone-cur" onclick="nextCue()">
-        <div id="cur-time"></div>
+        <!-- Horloge grande -->
+        <div id="clock-wrap">
+            <div id="clock-val">—:——</div>
+            <div id="clock-lbl">Restant</div>
+        </div>
+        <!-- Contenu -->
+        <div id="cur-marker"></div>
         <div id="cur-patch"></div>
         <div id="cur-action"></div>
-        <div id="timer-box">
-            <div id="timer-val">0:00</div>
-            <div id="timer-lbl">Prochaine cue</div>
-        </div>
     </div>
 
-    <!-- SUIVANTE : clic = suivant -->
+    <!-- CUE SUIVANTE — clic = suivant -->
     <div id="zone-next" onclick="nextCue()">
         <div class="next-lbl">↓ Suivant</div>
         <div class="next-patch"  id="next-patch"></div>
@@ -277,7 +376,7 @@ html, body {
         <div class="end-sub">{{ script.title }}</div>
         <div class="end-actions">
             <button class="end-btn"
-                    onclick="event.stopPropagation(); restartSet()">↺ Recommencer</button>
+                    onclick="event.stopPropagation(); rewindSet()">↺ Recommencer</button>
             <button class="end-btn-ghost"
                     onclick="event.stopPropagation(); quitConfirm()">← Quitter</button>
         </div>
@@ -285,29 +384,33 @@ html, body {
 
 </div>
 
-<!-- BOTTOMBAR -->
+<!-- ═══ BOTTOMBAR ══════════════════════════════════════ -->
 <div id="bottombar">
     <div id="cue-counter">— / —</div>
     <div id="hint">
         <kbd>Espace</kbd>/<kbd>→</kbd> suivant &nbsp;·&nbsp;
         <kbd>←</kbd> précédent &nbsp;·&nbsp;
-        <kbd>A</kbd> auto &nbsp;·&nbsp;
-        <kbd>R</kbd> restart &nbsp;·&nbsp;
+        <kbd>A</kbd> play/pause &nbsp;·&nbsp;
+        <kbd>S</kbd> stop &nbsp;·&nbsp;
+        <kbd>R</kbd> rewind &nbsp;·&nbsp;
         <kbd>F</kbd> plein écran &nbsp;·&nbsp;
         <kbd>+</kbd>/<kbd>−</kbd> zoom &nbsp;·&nbsp;
         <kbd>Q</kbd> quitter
     </div>
-    <div id="elapsed">00:00</div>
+    <div id="elapsed-wrap">
+        <div id="elapsed">00:00</div>
+        <div id="elapsed-lbl">Écoulé</div>
+    </div>
 </div>
 
 </div><!-- #app -->
 
 <script>
-/* ─────────────────────────────────────────────
+/* ─────────────────────────────────────
    DONNÉES
-───────────────────────────────────────────── */
+───────────────────────────────────────*/
 const CUES = {{ cues | tojson }};
-const COLOR_MAP = {
+const COLORS = {
     'default':'var(--c-default)',
     'red'    :'var(--c-red)',
     'orange' :'var(--c-orange)',
@@ -315,52 +418,46 @@ const COLOR_MAP = {
     'blue'   :'var(--c-blue)',
     'purple' :'var(--c-purple)'
 };
+const BACK_URL = "{{ url_for('prompter_list') }}";
 
-const PROMPTER_URL = "{{ url_for('prompter_list') }}";
-
-/* ─────────────────────────────────────────────
+/* ─────────────────────────────────────
    ÉTAT
-───────────────────────────────────────────── */
-var cur           = 0;
-var autoMode      = false;
-var isEnded       = false;
-var fontScale     = 1.0;
-var elapsedSec    = 0;
-var countdownSec  = 0;
-var _cdTimer      = null;   // setInterval décompte
-var _pbTimer      = null;   // setTimeout barre de progression
+───────────────────────────────────────*/
+var cur         = 0;
+var isPlaying   = false;   // mode auto actif
+var isEnded     = false;
+var fontScale   = 1.0;
+var elapsedSec  = 0;
+var remainSec   = 0;       // secondes restantes cue courante
+var _cdTimer    = null;    // setInterval décompte
+var _pbRaf      = null;
 
-/* ─────────────────────────────────────────────
+/* ─────────────────────────────────────
    UTILITAIRES
-───────────────────────────────────────────── */
+───────────────────────────────────────*/
 function fmt(s) {
     s = Math.max(0, Math.floor(s));
     return String(Math.floor(s / 60)).padStart(2,'0') + ':' + String(s % 60).padStart(2,'0');
 }
-
 function getDefaultDur() {
-    var v = parseInt(document.getElementById('auto-dur').value, 10);
+    var v = parseInt(document.getElementById('dur-input').value, 10);
     return (isNaN(v) || v < 1) ? 30 : v;
 }
 
-/* ─────────────────────────────────────────────
-   BARRE DE PROGRESSION
-   Technique fiable : on coupe la transition,
-   on force la largeur à 0, on laisse le moteur
-   peindre ce frame via double rAF, puis on lance
-   la transition.
-───────────────────────────────────────────── */
-function setProgressBar(pct, durationMs) {
-    var fill = document.getElementById('progress-fill');
-    // Annule un timer de lancement en attente
-    if (_pbTimer !== null) { clearTimeout(_pbTimer); _pbTimer = null; }
-
+/* ─────────────────────────────────────
+   BARRE DURÉE RESTANTE
+   Commence à 100% (plein = tout le temps restant)
+   Se vide vers 0% sur durationMs ms.
+   Si durationMs=0 : positionnement instantané.
+───────────────────────────────────────*/
+function setRemainBar(pct, durationMs) {
+    var fill = document.getElementById('remain-fill');
+    fill.classList.remove('warn','urgent');
     if (durationMs > 0) {
-        // Étape 1 : stopper toute transition en cours, sauter à 0
+        // Partir de 100% (plein)
         fill.style.transition = 'none';
-        fill.style.width = '0%';
-        // Étape 2 : double rAF — le premier attend que le navigateur
-        // enregistre le style 0%, le second lance l'animation
+        fill.style.width = '100%';
+        // Double rAF : garantit que le frame 100% est rendu avant la transition
         requestAnimationFrame(function() {
             requestAnimationFrame(function() {
                 fill.style.transition = 'width ' + durationMs + 'ms linear';
@@ -373,51 +470,68 @@ function setProgressBar(pct, durationMs) {
     }
 }
 
-/* ─────────────────────────────────────────────
-   DÉCOMPTE AUTO
-───────────────────────────────────────────── */
+/* Met à jour la couleur de la barre selon le temps restant */
+function updateBarColor() {
+    var fill = document.getElementById('remain-fill');
+    fill.classList.remove('warn','urgent');
+    if (remainSec <= 5)       fill.classList.add('urgent');
+    else if (remainSec <= 10) fill.classList.add('warn');
+}
+
+/* ─────────────────────────────────────
+   HORLOGE GRANDE
+───────────────────────────────────────*/
+function setClockAuto(secs) {
+    document.getElementById('clock-val').textContent = fmt(secs);
+    document.getElementById('clock-lbl').textContent = 'Restant';
+}
+function setClockManual() {
+    document.getElementById('clock-val').textContent = fmt(elapsedSec);
+    document.getElementById('clock-lbl').textContent = 'Écoulé';
+}
+function clearClock() {
+    document.getElementById('clock-val').textContent = '—:——';
+    document.getElementById('clock-lbl').textContent = '';
+}
+
+/* ─────────────────────────────────────
+   DÉCOMPTE
+───────────────────────────────────────*/
 function startCountdown(secs) {
-    clearCountdown();
+    stopCountdown();
     if (secs <= 0) return;
-    countdownSec = secs;
-    var box = document.getElementById('timer-box');
-    box.classList.add('show');
-    updateTimerDisplay();
-    setProgressBar(100, secs * 1000);
+    remainSec = secs;
+    setClockAuto(remainSec);
+    setRemainBar(0, secs * 1000);   // se vide de 100% → 0%
     _cdTimer = setInterval(function() {
-        countdownSec--;
-        updateTimerDisplay();
-        if (countdownSec <= 0) {
-            clearCountdown();
+        remainSec--;
+        setClockAuto(remainSec);
+        updateBarColor();
+        if (remainSec <= 0) {
+            stopCountdown();
             nextCue();
         }
     }, 1000);
 }
 
-function clearCountdown() {
+function stopCountdown() {
     if (_cdTimer) { clearInterval(_cdTimer); _cdTimer = null; }
-    document.getElementById('timer-box').classList.remove('show');
-    countdownSec = 0;
+    remainSec = 0;
 }
 
-function updateTimerDisplay() {
-    document.getElementById('timer-val').textContent = fmt(countdownSec);
-}
-
-/* ─────────────────────────────────────────────
+/* ─────────────────────────────────────
    RENDU
-───────────────────────────────────────────── */
+───────────────────────────────────────*/
 function render(idx) {
     if (!CUES.length) return;
     if (idx >= CUES.length) { showEnd(); return; }
     if (idx < 0) idx = 0;
-
     isEnded = false;
     cur = idx;
 
     var cue  = CUES[idx];
-    var prev = idx > 0             ? CUES[idx - 1] : null;
-    var next = idx < CUES.length-1 ? CUES[idx + 1] : null;
+    var prev = idx > 0             ? CUES[idx-1] : null;
+    var next = idx < CUES.length-1 ? CUES[idx+1] : null;
 
     /* Zone précédente */
     var zp = document.getElementById('zone-prev');
@@ -432,11 +546,10 @@ function render(idx) {
     }
 
     /* Zone courante */
-    document.getElementById('cur-time').textContent =
-        cue.time_fmt ? '@ ' + cue.time_fmt : '';
+    document.getElementById('cur-marker').textContent = cue.time_fmt ? '@ ' + cue.time_fmt : '';
     var pEl = document.getElementById('cur-patch');
     pEl.textContent = cue.patch  || '—';
-    pEl.style.color = COLOR_MAP[cue.color] || COLOR_MAP['default'];
+    pEl.style.color = COLORS[cue.color] || COLORS['default'];
     document.getElementById('cur-action').textContent = cue.action || '';
 
     /* Zone suivante */
@@ -449,101 +562,113 @@ function render(idx) {
     }
 
     /* Compteur + scrub */
-    document.getElementById('cue-counter').textContent = (idx + 1) + ' / ' + CUES.length;
+    document.getElementById('cue-counter').textContent = (idx+1) + ' / ' + CUES.length;
     document.getElementById('scrub-bar').value = idx;
 
-    /* Progression */
-    clearCountdown();
-
-    if (autoMode) {
-        /* Calcule la durée : différence de temps entre cues, sinon durée par défaut */
+    /* Progression / timer */
+    stopCountdown();
+    if (isPlaying) {
         var dur = 0;
         if (next) {
-            if (next.time_s > cue.time_s) {
-                dur = next.time_s - cue.time_s;
-            } else {
-                dur = getDefaultDur();
-            }
+            dur = (next.time_s > cue.time_s) ? (next.time_s - cue.time_s) : getDefaultDur();
+        }
+        if (dur > 0) {
             startCountdown(dur);
         } else {
-            /* Dernière cue : barre pleine, pas de timer */
-            setProgressBar(100, 0);
+            /* Dernière cue en auto : barre vide, horloge effacée */
+            setRemainBar(0, 0);
+            clearClock();
         }
     } else {
-        /* Mode manuel : barre proportionnelle à la position */
-        setProgressBar(Math.round((idx + 1) / CUES.length * 100), 0);
+        /* Mode manuel : barre proportionnelle à la position dans le set */
+        setRemainBar(100 - Math.round(idx / Math.max(CUES.length-1, 1) * 100), 0);
+        setClockManual();
     }
 }
 
-/* ─────────────────────────────────────────────
+/* ─────────────────────────────────────
    NAVIGATION
-───────────────────────────────────────────── */
+───────────────────────────────────────*/
 function nextCue() {
     if (isEnded) return;
-    clearCountdown();
+    stopCountdown();
     render(cur + 1);
 }
-
 function prevCue() {
     if (isEnded) return;
-    clearCountdown();
+    stopCountdown();
     if (cur > 0) render(cur - 1);
 }
-
 function scrubTo(idx) {
-    clearCountdown();
-    render(Math.max(0, Math.min(idx, CUES.length - 1)));
+    stopCountdown();
+    render(Math.max(0, Math.min(idx, CUES.length-1)));
 }
-
-function restartSet() {
-    isEnded = false;
-    document.getElementById('end-screen').classList.remove('show');
-    clearCountdown();
-    elapsedSec = 0;
-    render(0);
-}
-
 function showEnd() {
     isEnded = true;
-    clearCountdown();
-    setProgressBar(100, 0);
+    stopCountdown();
+    setRemainBar(0, 0);
+    clearClock();
     document.getElementById('cue-counter').textContent = CUES.length + ' / ' + CUES.length;
     document.getElementById('end-screen').classList.add('show');
 }
 
-/* ─────────────────────────────────────────────
-   QUITTER AVEC CONFIRMATION
-───────────────────────────────────────────── */
-function quitConfirm() {
-    if (confirm('Quitter le set en cours et retourner à la liste des scripts ?')) {
-        window.location.href = PROMPTER_URL;
-    }
+/* ─────────────────────────────────────
+   TRANSPORT
+───────────────────────────────────────*/
+function togglePlay() {
+    isPlaying ? stopPlay() : startPlay();
 }
-
-/* ─────────────────────────────────────────────
-   MODE AUTO / MANUEL
-───────────────────────────────────────────── */
-function toggleMode() {
-    autoMode = !autoMode;
-    var btn   = document.getElementById('btn-mode');
-    var scrub = document.getElementById('scrub-wrap');
-    var durW  = document.getElementById('auto-dur-wrap');
-    if (autoMode) {
-        btn.textContent = 'Auto ⏱';  btn.classList.add('active');
-        scrub.classList.remove('show');
-        durW.classList.add('show');
-    } else {
-        btn.textContent = 'Manuel';   btn.classList.remove('active');
-        scrub.classList.add('show');
-        durW.classList.remove('show');
-        clearCountdown();
-    }
+function startPlay() {
+    isPlaying = true;
+    updateTransportUI();
     if (!isEnded) render(cur);
 }
+function stopPlay() {
+    isPlaying = false;
+    stopCountdown();
+    updateTransportUI();
+    /* En mode arrêté : barre positionnelle + horloge elapsed */
+    if (!isEnded) {
+        setRemainBar(100 - Math.round(cur / Math.max(CUES.length-1, 1) * 100), 0);
+        setClockManual();
+    }
+}
+function rewindSet() {
+    isEnded = false;
+    document.getElementById('end-screen').classList.remove('show');
+    stopCountdown();
+    elapsedSec = 0;
+    render(0);
+}
+function updateTransportUI() {
+    var btnPlay = document.getElementById('btn-play');
+    var btnStop = document.getElementById('btn-stop');
+    var durW    = document.getElementById('dur-wrap');
+    var scrub   = document.getElementById('scrub-wrap');
+    if (isPlaying) {
+        btnPlay.textContent = '⏸';  btnPlay.classList.add('playing');
+        btnStop.classList.remove('stopped');
+        durW.classList.add('show');
+        scrub.classList.remove('show');
+    } else {
+        btnPlay.textContent = '▶';  btnPlay.classList.remove('playing');
+        btnStop.classList.add('stopped');
+        durW.classList.remove('show');
+        scrub.classList.add('show');
+    }
+}
 
-/* ─────────────────────────────────────────────
+/* ─────────────────────────────────────
+   QUITTER
+───────────────────────────────────────*/
+function quitConfirm() {
+    if (confirm('Quitter le set en cours et retourner à la liste des scripts ?'))
+        window.location.href = BACK_URL;
+}
+
+/* ─────────────────────────────────────
    ZOOM
-───────────────────────────────────────────── */
+───────────────────────────────────────*/
 function setZoom(s) {
     fontScale = Math.max(0.4, Math.min(2.5, s));
     document.documentElement.style.setProperty('--fs', fontScale);
@@ -552,67 +677,70 @@ function setZoom(s) {
 function zoomIn()  { setZoom(fontScale + 0.15); }
 function zoomOut() { setZoom(fontScale - 0.15); }
 
-/* ─────────────────────────────────────────────
+/* ─────────────────────────────────────
    PLEIN ÉCRAN
-───────────────────────────────────────────── */
+───────────────────────────────────────*/
 function toggleFS() {
     if (!document.fullscreenElement)
         document.documentElement.requestFullscreen().catch(function(){});
-    else
-        document.exitFullscreen();
+    else document.exitFullscreen();
 }
 
-/* ─────────────────────────────────────────────
+/* ─────────────────────────────────────
    CHRONO GLOBAL
-───────────────────────────────────────────── */
+───────────────────────────────────────*/
 setInterval(function() {
     elapsedSec++;
     document.getElementById('elapsed').textContent = fmt(elapsedSec);
+    /* En mode manuel, l'horloge grande suit le chrono */
+    if (!isPlaying && !isEnded) setClockManual();
 }, 1000);
 
-/* ─────────────────────────────────────────────
+/* ─────────────────────────────────────
    CLAVIER
-───────────────────────────────────────────── */
+───────────────────────────────────────*/
 document.addEventListener('keydown', function(e) {
     if (e.target.tagName === 'INPUT') return;
     switch (e.code) {
         case 'Space':
-        case 'ArrowRight':      e.preventDefault(); nextCue();    break;
-        case 'ArrowLeft':       e.preventDefault(); prevCue();    break;
-        case 'KeyR':            restartSet();                      break;
-        case 'KeyF':            toggleFS();                        break;
-        case 'KeyA':            toggleMode();                      break;
-        case 'KeyQ':            quitConfirm();                     break;
+        case 'ArrowRight':      e.preventDefault(); nextCue();     break;
+        case 'ArrowLeft':       e.preventDefault(); prevCue();     break;
+        case 'KeyA':            togglePlay();                       break;
+        case 'KeyS':            stopPlay();                         break;
+        case 'KeyR':            rewindSet();                        break;
+        case 'KeyF':            toggleFS();                         break;
+        case 'KeyQ':            quitConfirm();                      break;
         case 'Equal':
-        case 'NumpadAdd':       zoomIn();                          break;
+        case 'NumpadAdd':       zoomIn();                           break;
         case 'Minus':
-        case 'NumpadSubtract':  zoomOut();                         break;
+        case 'NumpadSubtract':  zoomOut();                          break;
         case 'Escape':
             if (document.fullscreenElement) document.exitFullscreen();
             break;
     }
 });
 
-/* ─────────────────────────────────────────────
+/* ─────────────────────────────────────
    SWIPE MOBILE
-───────────────────────────────────────────── */
+───────────────────────────────────────*/
 var _tx = 0, _ty = 0;
 var zCur = document.getElementById('zone-cur');
-zCur.addEventListener('touchstart', function(e) {
+zCur.addEventListener('touchstart', function(e){
     _tx = e.touches[0].clientX; _ty = e.touches[0].clientY;
-}, {passive: true});
-zCur.addEventListener('touchend', function(e) {
+}, {passive:true});
+zCur.addEventListener('touchend', function(e){
     var dx = e.changedTouches[0].clientX - _tx;
     var dy = e.changedTouches[0].clientY - _ty;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy))
         dx < 0 ? nextCue() : prevCue();
     else if (Math.abs(dx) < 15 && Math.abs(dy) < 15)
         nextCue();
-}, {passive: true});
+}, {passive:true});
 
-/* ─────────────────────────────────────────────
+/* ─────────────────────────────────────
    INIT
-───────────────────────────────────────────── */
+───────────────────────────────────────*/
+updateTransportUI();  // boutons dans l'état initial (stop)
 if (CUES.length > 0) {
     render(0);
 } else {
