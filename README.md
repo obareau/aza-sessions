@@ -1,24 +1,80 @@
 # Journal de Sessions Robōtariis
 
-> Application locale de documentation des sessions musicales pour le projet **Robōtariis** — univers de fiction dystopique dont la musique constitue la bande originale.
+> Application de documentation et de performance musicale pour le projet **Robōtariis** —
+> univers de fiction dystopique dont les sessions de création constituent la bande originale.
 
-**Version actuelle : v0.9.7-alpha**
+**Version : v2.0.0** · [Changelog](CHANGELOG.md) · [Live](https://robotariis-sessions.fly.dev/)
 
 ---
 
-## À propos
+## Ce que c'est
 
-**Journal de Sessions Robōtariis** est un outil personnel de reporting musical — une sorte de carnet de bord numérique pour documenter chaque session de création sonore en temps réel.
+**Journal de Sessions Robōtariis** est un outil personnel en deux parties :
 
-L'application est pensée pour un usage **100 % local** : pas de cloud, pas de compte, pas de connexion requise. Les données restent dans un fichier SQLite sur ta machine.
+1. **Carnet de bord musical** — documente chaque session de création (machines, patches, tempo,
+   influences, notes, rating) et les organise en projets.
 
-### Le projet Robōtariis
+2. **Prompteur Dawless** — scripts de set avec minutage, noms de patch et instructions.
+   Vue performance plein écran avec transport DAW (Play/Stop/Rewind), horloge décompte,
+   barre de progression segmentée style LED, avance automatique entre cues.
 
-Robōtariis est un univers de fiction dystopique personnel — les sessions documentées ici constituent la bande originale de cet univers. Chaque enregistrement peut correspondre à une scène, un lieu, une ambiance particulière du lore.
+L'application tourne **localement** (`python app.py`) ou en **cloud** sur Fly.io.
 
-Style musical visé : **Dark Ambient / Industriel** — dans la tradition de PanSonic, Vromb, Synapscape, avec une affinité pour les labels Hands Productions et Ant-Zen.
+---
 
-Les **Stratégies Obliques Robōtariis** — inspirées des *Oblique Strategies* de Brian Eno — apparaissent aléatoirement pour guider et contraindre la création.
+## Démarrage rapide
+
+```bash
+pip install -r requirements.txt
+python app.py
+# → http://localhost:5001
+```
+
+Pour le déploiement cloud :
+
+```bash
+fly deploy   # depuis le dossier du projet
+# → https://robotariis-sessions.fly.dev/
+```
+
+---
+
+## Fonctionnalités
+
+### Sessions musicales
+| Fonction | Description |
+|---|---|
+| Créer / Éditer / Supprimer | Formulaire complet avec titre, date, durée |
+| Copier setup | Nouvelle session pré-remplie depuis une existante |
+| Liaison sessions | Chaîne de travail sur un même morceau |
+| Export Markdown | Compatible Obsidian — individuel ou global |
+| Export PDF | Formulaire vierge A4 imprimable (mode dégradé papier) |
+
+### Organisation
+| Fonction | Description |
+|---|---|
+| Projets | Regrouper plusieurs sessions avec couleur et description |
+| Tags | Libres, cliquables pour filtrer |
+| Filtres temps réel | Texte, mode, note |
+| Statistiques | Dashboard Chart.js — machines, influences, timeline mensuelle |
+
+### ⬡ Prompteur Dawless
+| Fonction | Description |
+|---|---|
+| Scripts de set | Titre, description, cues (temps · patch · action · couleur) |
+| Vue performance | Trois zones prev/current/next, plein écran |
+| Transport DAW | ⏮ Rewind · ⏹ Stop · ▶ Play/Pause |
+| Horloge | 48px — décompte cue en auto, chrono en manuel |
+| Barre LED | Segments 22px, clignotement (<10s / <5s), hauteur réglable |
+| Mode auto | Avance automatique — durée depuis minutage ou valeur par défaut |
+| Mode manuel | Barre scrub, clic / Espace / swipe mobile |
+| Zoom police | A+ / A− (40–250 %) |
+| Import / Export | JSON structuré + Markdown compatible Obsidian |
+
+### Catalogue & Références
+- Machines hardware, effets, DAW, synthés iOS, plugins VST/AU
+- Influences (artistes, labels)
+- **Stratégies Obliques Robōtariis** — contraintes créatives aléatoires, style Brian Eno
 
 ---
 
@@ -28,62 +84,12 @@ Les **Stratégies Obliques Robōtariis** — inspirées des *Oblique Strategies*
 |---|---|
 | Backend | Python 3 / Flask |
 | Base de données | SQLite (`sessions.db`) |
+| Hébergement | Fly.io (Docker + Gunicorn) ou local |
 | Templates | Jinja2 |
-| CSS | Vanilla — zéro framework |
+| CSS | Vanilla — zéro framework externe |
 | Graphiques | Chart.js |
 | Typographie | IBM Plex Mono / IBM Plex Sans |
-
----
-
-## Lancement
-
-**Installation des dépendances :**
-```bash
-pip install -r requirements.txt
-```
-
-**Lancement de l'application :**
-```bash
-python3 app.py
-```
-
-L'application détecte automatiquement un port libre à partir de 5001 et affiche l'URL complète dans le terminal (exemple : `http://localhost:5001`).
-
-**Remarque :** L'application fonctionne uniquement en local sur votre machine. Ouvrez l'URL affichée dans votre navigateur web pour accéder à l'interface.
-
----
-
-## Fonctionnalités
-
-### Sessions
-- Créer, consulter, éditer, supprimer une session
-- Copier le setup d'une session existante pour en créer une nouvelle
-- Liaison entre sessions (session parente/enfant)
-- Export Markdown individuel ou global (compatible Obsidian)
-
-### Organisation
-- **Projets** — regrouper plusieurs sessions sous un titre, avec couleur et description
-- **Tags** — libres, cliquables dans la liste pour filtrer
-- **Filtres** — recherche texte, mode, note en temps réel
-
-### Catalogue & Références
-- **Catalogue** — gérer le matériel : machines hardware, effets, DAW, synthés iOS, plugins VST/AU
-- **Influences** — artistes et labels de référence par session
-- **Stratégies Obliques Robōtariis** — inspiration créative aléatoire (style Oblique Strategies)
-
-### Statistiques
-- Dashboard interactif Chart.js : machines, influences, notes, énergie, modes, timeline mensuelle
-- Taux de sessions à retravailler / potentiel release
-
-### Paramètres
-- **Backup** — télécharger la base courante en `.db` horodaté
-- **Import** — fusionner une ancienne base SQLite (doublons ignorés)
-- **Reset** — vider les sessions (conserve catalogue, influences, obliques)
-
-### Interface
-- **Thème sombre** — toggle ◐ dans le header, persisté entre les pages
-- **Widget Pomodoro** — chronomètre flottant (25/5/15 min), persistant entre les pages
-- **Auto-save** — brouillon sauvegardé automatiquement dans le navigateur, restaurable
+| Thèmes | Béton · Machine · Nord · Solarized · Gruvbox · Dracula |
 
 ---
 
@@ -91,85 +97,71 @@ L'application détecte automatiquement un port libre à partir de 5001 et affich
 
 ```
 app.py                      # Application principale — routes, DB, logique
+wsgi.py                     # Point d'entrée Gunicorn (Fly.io)
+Dockerfile                  # Build Docker Python 3.11-slim
+fly.toml                    # Config Fly.io (région CDG, 256 MB)
 templates/
   base.html                 # Layout commun — nav, CSS, Pomodoro, dark mode
-  index.html                # Liste des sessions (filtres, tags cliquables)
-  new.html                  # Formulaire nouvelle session (prefill depuis existante)
-  edit.html                 # Édition session
+  index.html                # Liste des sessions
+  new.html / edit.html      # Formulaires session
   view.html                 # Détail session
-  stats.html                # Dashboard statistiques Chart.js
-  catalogue.html            # Gestion catalogue matériel
-  influences.html           # Gestion influences
-  obliques.html             # Gestion stratégies Obliques
-  settings.html             # Paramètres — import/backup/reset DB
-  projects.html             # Liste des projets
-  project_detail.html       # Détail projet — sessions liées
-static/                     # Assets statiques
+  stats.html                # Dashboard statistiques
+  prompter_list.html        # Liste des scripts prompteur
+  prompter_edit.html        # Éditeur de cues
+  prompter_play.html        # Vue performance plein écran
+  form_blank.html           # Formulaire PDF vierge
+  catalogue.html            # Gestion matériel
+  projects.html             # Projets
+  settings.html             # Import / Backup / Reset DB
+  about.html                # À propos + raccourcis
 requirements.txt            # flask>=3.0.0
-CHANGELOG.md                # Historique des versions
-sessions.db                 # Base de données SQLite — NON VERSIONNÉ
+CHANGELOG.md                # Historique complet des versions
+sessions.db                 # Base SQLite — NON VERSIONNÉ
 ```
 
 ---
 
 ## Base de données
 
-Quatre tables SQLite :
-
 | Table | Description |
 |---|---|
 | `sessions` | Sessions musicales — table principale (30+ champs) |
 | `projects` | Projets — regroupement de sessions |
+| `prompter_scripts` | Scripts prompteur — JSON cues |
 | `catalogue` | Matériel : machine, effet, daw, synth_ios, plugin |
-| `influences` | Artistes et labels : artiste, label, autre |
-| `obliques` | Stratégies créatives éditables |
+| `influences` | Artistes et labels |
+| `obliques` | Stratégies créatives |
 
-La base est migrée automatiquement au démarrage — les anciennes versions sont compatibles.
+Les migrations sont automatiques au démarrage via `ALTER TABLE … ADD COLUMN` dans `init_db()`.
 
 ---
 
-## Backup & Migration
+## Déploiement Fly.io
 
 ```bash
-# Backup manuel
-cp sessions.db sessions_backup_$(date +%Y%m%d).db
+# Première fois
+fly launch          # crée l'app et le volume
 
-# Ou depuis l'interface : Paramètres → ↓ Télécharger la base
+# Mises à jour
+fly deploy          # rebuild Docker + rolling deploy
+
+# Logs
+fly logs --app robotariis-sessions
 ```
 
-Pour importer une ancienne base : **Paramètres → Importer une ancienne base** — la fusion est intelligente (doublons ignorés, colonnes manquantes gérées).
+La base SQLite est stockée dans un volume persistant monté sur `/data`.
+`wsgi.py` appelle `init_db()` dans `app.app_context()` avant que Gunicorn ne démarre.
 
 ---
 
 ## Roadmap
 
-### v0.7.0 — À venir
-- Export direct vers vault Obsidian
+- Export direct vers vault Obsidian (API MCP)
 - Vue calendrier des sessions
-- Pagination sur la liste (au-delà de 50 sessions)
-- Recherche par plage de dates
-
-### Future
-- Synchronisation réseau local multi-machines
+- Pagination liste (au-delà de 50 sessions)
 - Import automatique depuis métadonnées fichier audio
-- Tags liés aux notes du vault Robōtariis
 
 ---
 
-## Historique rapide
-
-| Version | Date | Highlights |
-|---|---|---|
-| v0.6.0-alpha | 2026-04-20 | Suppression, projets, copie setup, tags cliquables, dark mode |
-| v0.5.4-alpha | 2026-04-20 | Page Paramètres — import DB, backup, reset |
-| v0.5.3-alpha | 2026-04-20 | Fix stats, Pomodoro persistant, auto-save formulaires |
-| v0.5.2-alpha | 2026-04-20 | Filtres sessions, liaison entre sessions |
-| v0.5.1-alpha | 2026-04-20 | Widget Pomodoro, bannière terminal, port auto |
-| v0.4.0 | 2026-04-20 | Édition de sessions |
-| v0.3.1 | 2026-04-20 | Initial — Flask complet, stats, export Markdown |
-
-→ Voir [CHANGELOG.md](CHANGELOG.md) pour le détail complet.
-
----
-
-*Projet personnel — Olivier, Scaër, Bretagne — 2026*
+*Projet personnel — Olivier, Scaër, Bretagne — 2026*  
+*La machine ne ment pas. Elle déforme.*

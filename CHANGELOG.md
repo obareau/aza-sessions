@@ -3,265 +3,181 @@
 > Les versions alpha sont des releases actives en développement continu.
 > Chaque version est datée du jour de développement effectif.
 
+---
+
+## v2.0.0 — 2026-05-01 — Release majeure
+
+La version 2.0 marque le passage d'un outil de documentation locale à une
+**plateforme de performance Dawless complète**, déployée en production sur Fly.io.
+
+### ⬡ Prompteur Dawless — module complet
+- Création, édition, suppression de scripts de set (titre, description, cues)
+- Chaque cue : temps `MM:SS`, nom de patch/preset, instruction, couleur (6 niveaux)
+- Vue performance plein écran : **trois zones** (précédent / courant / suivant)
+- **Topbar claire style DAW** — contraste fort avec la scène noire
+- **Transport** : ⏮ Rewind · ⏹ Stop · ▶ Play / ⏸ Pause
+- **Horloge grande** (48px) — décompte en mode auto, chrono en mode manuel
+- **Barre durée restante** segmentée style LED — se vide de 100 % → 0 %
+  - Segments 22px séparés par trait noir
+  - Clignotement CSS lent (< 10 s) et rapide (< 5 s)
+  - Hauteur réglable (6–80 px, défaut 20 px)
+- **Mode auto** — avance automatique entre cues avec décompte ; durée par défaut configurable si pas de minutage
+- **Mode manuel** — barre scrub positionnelle, avance au clic / espace / swipe
+- Zoom police A+ / A− (variable CSS `--fs`, 40–250 %)
+- Plein écran natif (touche F)
+- Bouton « ✕ Quitter » avec confirmation — raccourci Q
+- Raccourcis clavier complets : Espace · → · ← · A · S · R · F · Q · + · −
+- Swipe mobile gauche/droite
+- **Export JSON** — format structuré réimportable
+- **Export Markdown** — tableau compatible Obsidian
+- **Import** — upload `.json` ou `.md`, parsing automatique, redirection vers l'éditeur
+
+### 🏷️ Titres de session
+- Champ titre optionnel sur chaque session (ex : *Drone Secteur 7*)
+- Affiché dans la liste sous la date, comme titre principal dans la vue détail
+- Formulaires new/edit mis à jour
+
+### ☁️ Déploiement cloud Fly.io
+- Dockerfile Python 3.11-slim + Gunicorn WSGI
+- `wsgi.py` — init DB au démarrage Gunicorn via `app.app_context()`
+- Volume persistant `/data` (sessions.db + backups)
+- Région CDG (Paris), 256 MB RAM, free tier
+- URL publique : **https://robotariis-sessions.fly.dev/**
+
+### 📱 Mobile
+- Menu hamburger fixe en portrait iPhone — nav cachée par défaut, drawer ☰/✕
+- Stats : grilles responsives `auto-fill minmax` — plus de scroll horizontal
+- `overflow-x: hidden` sur body
+
+### 🐛 Corrections majeures
+- Suppression de session — erreur `cannot DELETE from contentless fts5 table` corrigée (drop FTS5 triggers au démarrage)
+- Barre de progression — double `requestAnimationFrame` pour reflow garanti
+- Restart prompteur — `event.stopPropagation()` pour éviter la propagation du clic
+
+### 📄 Formulaire PDF papier (mode dégradé)
+- `/form/blank` — template A4 deux pages imprimable sans JS
+- Génération dynamique depuis le catalogue courant (machines, effets, DAW, iOS, plugins, influences, caractères)
+
+---
+
 ## v1.3.0-alpha — 2026-05-01
 
 ### Ajouts
-- **Prompteur — Barre segments LED** : découpage en segments 22px, clignotement CSS lent (<10s) et rapide (<5s), hauteur réglable (+4/-4px, 6–80px)
-- **Prompteur — Export JSON** : téléchargement du script en JSON structuré (`/prompter/<id>/export/json`)
-- **Prompteur — Export Markdown** : tableau Markdown compatible Obsidian (`/prompter/<id>/export/md`)
-- **Prompteur — Import** : upload d'un fichier `.json` ou `.md` pour créer un nouveau script ; parsing automatique du format
+- Export JSON et Markdown par script prompteur
+- Import `.json` / `.md` — parsing automatique, flash message
+- Barre durée restante : segments LED, clignotement, hauteur réglable
 
 ---
 
 ## v1.2.0-alpha — 2026-05-01
 
 ### Ajouts
-- **Titre de session** — champ optionnel pour nommer chaque session (ex: "Drone Secteur 7") ; affiché dans la liste sous la date, dans le titre de la page détail, et dans les formulaires nouveau/édition
-- **Prompteur amélioré** — affichage trois zones (cue précédente à 22%, cue courante en plein, cue suivante à 45%) ; barre de progression animée en temps réel (transition CSS sur la durée de la cue en mode auto) ; boîte décompte haut-droite ; contrôle zoom police (A+/A−, raccourcis +/−) ; variable CSS `--font-scale` dynamique
-
-### Corrections
-- Index : titre de session affiché sous la date dans chaque ligne
-- Vue détail : sous-titre unifié `#id · date · durée`
+- Titre optionnel sur chaque session
+- Prompteur : 3 zones prev/current/next, barre animée, décompte, zoom police
 
 ---
 
 ## v1.1.0-alpha — 2026-04-25
 
 ### Ajouts
-- **Prompteur Dawless** (`/prompter`) — scripts de set avec minutage, patch et instructions ; éditeur de cues (temps MM:SS, patch, action, couleur) ; vue performance plein écran : cue courante en grand, preview suivante, deux modes (Manuel — Espace/→/← ou tap/swipe — et Auto — timer décompte automatique vers la prochaine cue) ; barre de scrubbing en mode libre ; chrono elapsed ; raccourcis clavier complets (Espace, →, ←, R, F, A) ; swipe mobile
+- **Prompteur Dawless** (`/prompter`) — scripts de set avec minutage, patch et instructions ; éditeur de cues (temps MM:SS, patch, action, couleur) ; vue performance plein écran
 
 ---
 
-## v1.0.1-alpha — 2026-04-25
+## v1.0.1 — 2026-04-25
 
 ### Corrections
-- **Stats mobile** — suppression du scroll horizontal parasite en portrait iPhone : grilles `1fr 1fr 1fr` et `1fr 1fr` remplacées par `repeat(auto-fill, minmax(...))` auto-adaptatives ; heatmap cloisonnée avec `overflow:hidden` sur la card ; `overflow-x:hidden` ajouté sur le body
+- Déploiement Fly.io : `wsgi.py` corrigé, `init_db()` dans `app_context()`
+- `fly.toml` : `memory = '256mb'`, `dockerfile = "Dockerfile"`
 
 ---
 
-## v1.0.0-alpha — 2026-04-25
-
-### Améliorations
-- **Menu hamburger mobile** — remplacement du mur de liens empilés par un menu ☰ sur mobile (≤600px) ; drawer full-width avec liens groupés par section (Sessions / Outils / Catalogue / Ressources / Config), liens touch-friendly (44px), fermeture au clic extérieur ou sur un lien, icône ✕ quand ouvert
-
----
-
-## v0.9.9-alpha — 2026-04-23
+## v1.0.0 — 2026-04-25
 
 ### Ajouts
-- **Formulaire papier** (`/form/blank`) — mode dégradé terrain : formulaire A4 vierge imprimable avec checkboxes catalogue réels (machines, effets, DAW, iOS, plugins), caractère à entourer, modes/intentions en bulles, étoiles/énergie à cocher, lignes pour notes libres, timestamps, routing, et stratégie Oblique aléatoire ; lien ⎙ Form dans la navigation
+- Déploiement Fly.io (Docker + Gunicorn, volume persistant `/data`)
+- Navigation mobile hamburger
+- Fix horizontal scroll stats page
+- Suppression sessions : fix crash FTS5
+
+---
+
+## v0.9.9-alpha — 2026-04-24
+
+### Ajouts
+- Formulaire vierge imprimable PDF (`/form/blank`) généré depuis le catalogue
 
 ---
 
 ## v0.9.8-alpha — 2026-04-23
 
 ### Corrections
-- **Suppression de session** — correction de l'erreur 500 (`cannot DELETE from contentless fts5 table: sessions_fts`) causée par des triggers FTS5 utilisant une syntaxe invalide sur table contentless ; la table `sessions_fts` et ses triggers (`sessions_ai`, `sessions_ad`, `sessions_au`) sont désormais supprimés au démarrage — la recherche FTS5 avait déjà été retirée, ces objets DB étaient orphelins
-
----
-
-## v0.9.7-alpha — 2026-04-23
-
-### Nettoyage
-- **Suppression des scripts de build et lanceurs** — suppression des fichiers `build_mac.sh`, `build_windows.bat`, `lancer.bat` et `lancer.command` qui ne fonctionnaient pas ; documentation mise à jour pour lancer uniquement via Python
-- **Documentation** — mise à jour du README avec instructions claires pour le lancement Python uniquement
-
----
-
-## v0.9.6-alpha — 2026-04-23
-
-### Nouvelles fonctionnalités
-- **Recherche côté serveur** — remplacement du filtrage JavaScript côté client par une route `/search` dédiée pour éviter les problèmes de performance et les crashes Chrome avec de gros volumes de données ; la recherche fonctionne maintenant sur machines, effets, DAW, plugins, tags, commentaires, intention, mode et titre de projet
-
----
-
-## v0.9.5-alpha — 2026-04-23
-
-### Corrections
-- **Recherche sessions** — correction du crash JavaScript causé par la génération incorrecte de l'attribut `data-text` dans le template ; `s.character` était traité comme une liste alors que c'est une string en base de données
-
----
-
-## v0.9.4-alpha — 2026-04-23
-
-### Corrections
-- **Export Markdown** — correction de l'erreur 500 causée par l'utilisation de `.get()` sur un objet `sqlite3.Row` (qui n'a pas cette méthode) ; remplacé par vérification directe du champ `project_title`
-- **Menu mobile** — amélioration de la visibilité et de la taille des liens de navigation sur mobiles et tablettes (police réduite, padding ajusté)
-
----
-
-## v0.9.3-alpha — 2026-04-23
-
-### Ajouts
-- **Responsive Design** — Adaptation complète pour mobiles et tablettes avec media queries, layouts adaptatifs, et optimisation tactile
-
----
-
-## v0.9.2-alpha — 2026-04-23
-
-### Corrections
-- **Export Markdown** — retourne désormais un fichier valide même sans sessions (au lieu d'une erreur 404)
-- **Recherche sessions** — inclut désormais le nom du projet dans les termes recherchables
-
----
-
-## v0.9.1-alpha — 2026-04-23
-
-### Corrections
-- **Bug Jinja2 dans formulaire nouvelle session** — syntaxe ternaire imbriquée invalide dans `templates/new.html` (lignes 18, 48, 282, 310) causant une erreur 500 ; corrigé en normalisant la syntaxe des conditions multiples
-- **Export Markdown** — retourne désormais un fichier valide même sans sessions (au lieu d'une erreur 404)
-- **Recherche sessions** — inclut désormais le nom du projet dans les termes recherchables
-
----
-
-## v0.9.0-alpha — 2026-04-21
-
-### Ajouts
-- **Backup automatique** — copie horodatée de `sessions.db` dans `backups/` à chaque lancement, garde les 5 derniers, chemin affiché dans le terminal
-- **Spark — Mode contrainte unique** (`/spark/focus`) — une seule suggestion affichée en grand, centrée, minimaliste ; bouton "▶ Démarrer avec ça" qui lance directement le Live ; accessible depuis Spark via "⊙ Contrainte unique"
-- **Records & badges** dans les Stats — carte avec : meilleure session (★ cliquable), session la plus longue (lien), temps de création total cumulé en heures, machine la plus utilisée
-- **MiRack — notes inline** — icône ✎ au survol de chaque module ; clic → champ texte inline ; Entrée/✓ sauvegarde, Échap/✕ annule
-
----
-
-## v0.8.3-alpha — 2026-04-21
-
-### Ajouts
-- **Export PDF** — route `/session/<id>/print` — page A4 autonome (sans base.html), stylée pour l'impression
-- Design carnet de bord : en-tête Robōtariis, grille infos techniques, sections patches/notes/oblique/audio, footer signé
-- Barre d'actions en haut (écran uniquement) : bouton « ↓ Imprimer / PDF » + lien retour
-- Compatible `Cmd+P` / `Ctrl+P` → « Enregistrer en PDF » dans le navigateur (zéro dépendance Python)
-- Support `?auto=1` pour déclencher l'impression automatiquement au chargement
-- Bouton **↓ PDF** dans la vue détail de session (ouvre dans un nouvel onglet)
-
----
-
-## v0.8.2-alpha — 2026-04-21
-
-### Ajouts
-- **Heatmap calendrier** dans les Stats — grille 53 semaines × 7 jours style GitHub contributions, rendu en JS pur (sans lib supplémentaire)
-- 5 niveaux d'intensité couleur basés sur la variable CSS `--accent` du thème actif (compatible tous les thèmes)
-- Labels mois en haut des colonnes, labels jours L/M/J/D à gauche
-- Tooltip au survol : jour, date ISO, nombre de sessions
-- Compteur « X jours avec session sur 52 semaines »
-- **Streak actuel** et **record streak** dans les KPIs (calculés en Python côté serveur)
-
----
-
-## v0.8.1-alpha — 2026-04-21
-
-### Ajouts
-- **Raccourcis clavier globaux** — actifs sur toutes les pages, ignorés si focus dans un champ texte
-  - `n` → Nouvelle session
-  - `l` → Session en cours (Live)
-  - `g` `h` → Accueil (liste sessions)
-  - `g` `s` → Statistiques
-  - `g` `p` → ⚡ Spark
-  - `/` → Focus sur la recherche (ou redirect vers l'accueil)
-  - `j` / `k` → Session suivante / précédente dans la liste visible
-  - `Enter` → Ouvrir la session sélectionnée
-  - `Esc` → Fermer l'overlay ou désélectionner
-  - `?` → Afficher / masquer l'aide des raccourcis
-- **Overlay aide** (`?`) — panel centré avec la liste de tous les raccourcis, style terminal
-- **Sélection j/k** — highlight `.kbd-focus` sur la session active, scroll automatique dans la vue
-
----
-
-## v0.8.0-alpha — 2026-04-21
-
-### Ajouts
-- **Mode session en cours** (`/live`) — démarrer un chrono avant de jouer, notes libres en temps réel, sélection des machines, auto-save AJAX toutes les 15 s + `sendBeacon` au départ de page
-- **Timer live** — affichage `HH:MM:SS` qui repart correctement même après un rechargement
-- **Terminer & Documenter** — redirige vers `/new` pré-rempli : durée calculée, machines cochées, mode/intention/oblique de la session, notes libres dans le champ comments
-- **Badge ● EN COURS** dans la navigation — visible en clignotant orange sur toutes les pages si une session est active
-- **Lien ▶ Live** permanent dans la navigation
+- Suppression de session : `BEGIN IMMEDIATE` retiré
+- FTS5 contentless table : triggers droppés au démarrage via `init_db()`
+- `debug=True` activé temporairement pour diagnostic
 
 ---
 
 ## v0.7.0-alpha — 2026-04-21
 
 ### Ajouts
-- **Banques de samples** (`/samples`) — référencer les packs et banques : nom, type, note ★, source
-- **Morceaux inspirants** (`/tracks`) — titre, artiste, album, année, tags, notes d'écoute
-- **Wishlist matos** (`/wishlist`) — fabricant, nom, type, prix, priorité (Urgent/Bientôt/Un jour/Rêve), toggle Acquis
-- **Sources d'inspiration hors musique** (`/inspirations`) — phrases, extraits film, livres, concepts — groupées par type avec codes couleur
-- **⬡ MiRack** (`/mirack`) — catalogue des modules du synthé modulaire virtuel : catégorie, toggle maîtrisé/favori, barre de progression globale (%)
-- **⚡ Spark** (`/spark`) — générateur créatif personnalisé : analyse la base de sessions pour suggérer machines sous-utilisées, intentions jamais explorées, caractères inexploités, modules MiRack non maîtrisés, inspiration et morceau aléatoires, stratégie Oblique
-- **Sélecteur de thèmes** — 6 thèmes inspirés des palettes terminaux : Béton (défaut), Machine (dark), Nord (arctic blue), Solarized Dark, Solarized Light, Gruvbox (warm retro) — dropdown avec swatches colorés, persisté en localStorage
-- Navigation restructurée en groupes logiques (sessions / outils / ressources / config)
-- 5 nouvelles tables SQLite : `sample_banks`, `inspiring_tracks`, `gear_wishlist`, `inspirations`, `mirack_modules`
+- Samples, Morceaux, Wishlist, Inspirations, MiRack, Spark
+- 6 thèmes terminal (Béton, Machine, Nord, Solarized, Gruvbox, Dracula)
 
 ---
 
 ## v0.6.0-alpha — 2026-04-20
 
 ### Ajouts
-- **Suppression de session** — bouton « ✕ Supprimer » dans la vue détail, avec confirmation JS, route POST `/session/<id>/delete`
-- **Copie de setup** — bouton « ⎘ Copier setup » dans la vue détail, préremplit le formulaire nouvelle session avec le même hardware, logiciels, caractère et influences (`/new?from=<id>`)
-- **Vue Projets** — regrouper des sessions sous un projet avec titre, couleur et description (`/projects`)
-- **Détail projet** — liste des sessions liées, stats rapides (durée totale, note moyenne)
-- **Association session ↔ projet** — select dans les formulaires new et edit, colonne `project_id` en DB
-- **Tags cliquables** — clic sur un tag dans la liste des sessions filtre automatiquement par ce tag
-- **Thème sombre** — variables CSS dark complètes, toggle ◐ dans le header, persisté en localStorage
-- **Lien ◈ Projets** dans la navigation principale
-
-### Corrections
-- Noms des artistes/machines enfin visibles dans catalogue et influences : remplacement des styles inline `background:transparent` + `onblur` JS (qui écrasaient le CSS) par des classes CSS dédiées `.inf-name`, `.cat-name`, `.inf-notes`, `.cat-notes`
+- Suppression sessions (form POST + confirm)
+- Vue Projets — regroupement de sessions sous un titre avec couleur
+- Copie setup d'une session existante
+- Tags cliquables dans la liste
+- Dark mode toggle ◐
 
 ---
 
 ## v0.5.4-alpha — 2026-04-20
 
 ### Ajouts
-- Page Paramètres (`/settings`) accessible depuis la nav
-- Import de base SQLite : upload d'un ancien `sessions.db`, fusion intelligente (doublons ignorés, colonnes manquantes gérées)
-- Backup : téléchargement de la base courante en `.db` horodaté
-- Reset sessions : vide toutes les sessions (conserve catalogue, influences, obliques)
+- Page Paramètres — import DB, backup `.db` horodaté, reset sessions
 
 ---
 
 ## v0.5.3-alpha — 2026-04-20
 
-### Corrections
-- Stats : fix crash JS `doughnut(cChars/cModes)` appelé sans data — bloquait le rendu des graphiques énergie, notes et caractère
-- Influences/Catalogue : noms des items maintenant visibles (background explicite sur `input[name="name"]`)
-- Notes des items : masquées par défaut, visibles au hover (catalogue + influences)
-
 ### Ajouts
-- Pomodoro persistant : état sauvegardé dans localStorage, restauré au changement de page (temps écoulé compensé)
-- Auto-save formulaires : brouillon sauvegardé automatiquement à chaque modification (new + edit), banner de restauration si données non soumises
+- Widget Pomodoro flottant persistant (25/5/15 min)
+- Auto-save formulaires (localStorage)
+
+### Corrections
+- Stats Chart.js — fix compatibilité
 
 ---
 
 ## v0.5.2-alpha — 2026-04-20
 
 ### Ajouts
-- Filtres et recherche en temps réel sur la liste des sessions (texte libre, mode, note)
-- Liaison entre sessions : select dropdown dans les formulaires new/edit, affichage en card dans la vue détail
-- Fichier audio : bouton copier-presse-papiers dans la vue détail
+- Filtres et recherche en temps réel (texte libre, mode, note)
+- Liaison entre sessions — select dropdown, affichage en card
+- Fichier audio — bouton copier presse-papiers
 
 ---
 
 ## v0.5.1-alpha — 2026-04-20
 
 ### Ajouts
-- Widget Pomodoro flottant (25/5/15 min, barre de progression, style Robōtariis)
-- Bannière terminal ANSI + détection automatique du port libre au démarrage
-- `os.chdir()` au démarrage — lancement stable depuis n'importe quel chemin
-
-### Corrections
-- Champ "notes…" dans le catalogue masqué par défaut (visible au hover)
-- `build_mac.sh` : compatibilité Python 3.9, `mkdir -p static`, mode `--onedir`
-- Port 5001 par défaut (5000 occupé par AirPlay sur macOS)
+- Widget Pomodoro flottant (25/5/15 min, barre de progression)
+- Bannière terminal ANSI + détection port libre au démarrage
+- `os.chdir()` au démarrage
 
 ---
 
 ## v0.4.0 — 2026-04-20
 
 ### Ajouts
-- Édition d'une session existante — route `/session/<id>/edit` (GET/POST)
-- Template `edit.html` — formulaire pré-rempli avec toutes les valeurs existantes
-- Bouton « ✎ Éditer » dans la vue détail de session
+- Édition d'une session existante — route `/session/<id>/edit`
+- Template `edit.html` — formulaire pré-rempli
 
 ---
 

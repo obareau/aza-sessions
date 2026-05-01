@@ -10,22 +10,46 @@
     <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
 </div>
 
+<!-- VERSION -->
+<div class="card" style="border-color:var(--accent);background:var(--accent-soft);">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+            <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent);letter-spacing:-.02em;">
+                v{{ version }}
+            </div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-top:4px;letter-spacing:.06em;">
+                RELEASE MAJEURE — 1 MAI 2026
+            </div>
+        </div>
+        <a href="https://github.com/obareau/robotariis-sessions/releases" target="_blank"
+           class="btn btn-secondary" style="font-size:11px;">
+            → GitHub Releases
+        </a>
+    </div>
+    <div style="font-family:var(--mono);font-size:12px;line-height:1.8;margin-top:16px;color:var(--text-muted);">
+        La v2.0 marque l'arrivée du <strong style="color:var(--text);">Prompteur Dawless</strong> —
+        vue performance plein écran avec transport DAW, horloge décompte et barre LED segmentée —
+        ainsi que le déploiement en production sur <strong style="color:var(--text);">Fly.io</strong>.
+    </div>
+</div>
+
 <!-- PROJET -->
 <div class="card">
     <div class="card-title">∙ Le projet</div>
     <div style="font-family:var(--mono);font-size:13px;line-height:1.9;margin-top:12px;color:var(--text);">
         <p style="margin-bottom:12px;">
-            <strong>Journal de Sessions Robōtariis</strong> est un outil de documentation musicale personnel —
-            un carnet de bord numérique pour tracer chaque session de création sonore en temps réel.
+            <strong>Journal de Sessions Robōtariis</strong> est un outil de documentation et de
+            performance musicale personnel — carnet de bord numérique pour tracer chaque session
+            de création sonore, et prompteur de set pour les performances Dawless en temps réel.
         </p>
         <p style="margin-bottom:12px;">
-            L'application fonctionne <strong>100 % en local</strong> : pas de cloud, pas de compte,
-            pas de connexion. Les données restent dans un fichier SQLite sur ta machine.
+            L'application tourne en <strong>local</strong> (SQLite, zéro cloud requis)
+            ou en production sur <strong>Fly.io</strong>.
         </p>
         <p>
             Chaque session documentée peut correspondre à une scène, un lieu ou une ambiance
-            particulière du lore <strong>Robōtariis</strong> — univers de fiction dystopique
-            dont ces enregistrements constituent la bande originale.
+            du lore <strong>Robōtariis</strong> — univers de fiction dystopique dont
+            ces enregistrements constituent la bande originale.
         </p>
     </div>
 </div>
@@ -53,20 +77,44 @@
     </div>
 </div>
 
+<!-- PROMPTEUR -->
+<div class="card">
+    <div class="card-title">⬡ Prompteur Dawless — v2.0</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:14px;">
+        {% for feat in [
+            ('Transport DAW',       '⏮ Rewind · ⏹ Stop · ▶ Play/Pause'),
+            ('Horloge grande',      'Décompte cue (auto) ou chrono global (manuel)'),
+            ('Barre LED',           'Segments 22px · clignotement <10s / <5s · hauteur réglable'),
+            ('3 zones',             'Précédent (dim) · Courant · Suivant (dim)'),
+            ('Mode Auto',           'Avance automatique sur minutage ou durée par défaut'),
+            ('Mode Manuel',         'Barre scrub · clic / Espace / swipe'),
+            ('Zoom police',         'A+ / A− de 40 % à 250 %'),
+            ('Import / Export',     'JSON structuré · Markdown compatible Obsidian'),
+            ('Plein écran',         'Natif — touche F'),
+            ('Quitter',             'Confirmation avant sortie — touche Q'),
+        ] %}
+        <div style="padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);">
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:700;margin-bottom:4px;">{{ feat[0] }}</div>
+            <div style="font-size:11px;color:var(--text);line-height:1.5;">{{ feat[1] }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
 <!-- TECHNIQUE -->
 <div class="card">
     <div class="card-title">∙ Stack technique</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:12px;">
         {% for label, value in [
-            ('Backend', 'Python 3 / Flask'),
-            ('Base de données', 'SQLite'),
-            ('Templates', 'Jinja2'),
-            ('CSS', 'Vanilla — zéro framework'),
-            ('Graphiques', 'Chart.js'),
-            ('Typographie', 'IBM Plex Mono / Sans'),
-            ('Port', '5001 (auto-détection)'),
-            ('Persistance', 'localStorage (Pomodoro, thèmes)'),
-            ('Thèmes', 'Béton · Machine · Nord · Solarized · Gruvbox'),
+            ('Backend',       'Python 3 / Flask'),
+            ('Base de données','SQLite (local) · volume Fly.io (cloud)'),
+            ('Hébergement',   'Fly.io — Docker + Gunicorn · CDG (Paris)'),
+            ('Templates',     'Jinja2'),
+            ('CSS',           'Vanilla — zéro framework'),
+            ('Graphiques',    'Chart.js'),
+            ('Typographie',   'IBM Plex Mono / IBM Plex Sans'),
+            ('Thèmes',        'Béton · Machine · Nord · Solarized · Gruvbox · Dracula'),
+            ('Persistance',   'localStorage (Pomodoro, thème, autosave)'),
         ] %}
         <div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);">
             <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:700;margin-bottom:4px;">{{ label }}</div>
@@ -78,23 +126,34 @@
 
 <!-- RACCOURCIS CLAVIER -->
 <div class="card">
-    <div class="card-title">∙ Raccourcis clavier <span style="font-size:10px;font-weight:400;color:var(--text-muted);">— actifs partout, inactifs si focus dans un champ · appuie sur <kbd style="font-family:var(--mono);font-size:10px;background:var(--bg-alt);border:1px solid var(--border-strong);border-radius:3px;padding:1px 6px;box-shadow:0 1px 0 var(--border-strong);">?</kbd> à tout moment</span></div>
+    <div class="card-title">∙ Raccourcis clavier
+        <span style="font-size:10px;font-weight:400;color:var(--text-muted);"> — inactifs si focus dans un champ · <kbd style="font-family:var(--mono);font-size:10px;background:var(--bg-alt);border:1px solid var(--border-strong);border-radius:3px;padding:1px 6px;">?</kbd> à tout moment</span>
+    </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-top:16px;">
-
         {% for section, shortcuts in [
             ('Navigation', [
-                ('n',       'Nouvelle session'),
-                ('l',       'Session en cours (Live)'),
-                ('g  h',    'Accueil — liste des sessions'),
-                ('g  s',    'Statistiques'),
-                ('g  p',    '⚡ Spark'),
+                ('n',    'Nouvelle session'),
+                ('l',    'Session en cours (Live)'),
+                ('g  h', 'Accueil — liste des sessions'),
+                ('g  s', 'Statistiques'),
+                ('g  p', '⚡ Spark'),
             ]),
             ('Liste des sessions', [
-                ('/',       'Activer la recherche'),
-                ('j',       'Session suivante'),
-                ('k',       'Session précédente'),
-                ('Enter',   'Ouvrir la session sélectionnée'),
-                ('Esc',     'Désélectionner / fermer'),
+                ('/',     'Activer la recherche'),
+                ('j',     'Session suivante'),
+                ('k',     'Session précédente'),
+                ('Enter', 'Ouvrir la session sélectionnée'),
+                ('Esc',   'Désélectionner / fermer'),
+            ]),
+            ('Prompteur Dawless', [
+                ('A',     'Play / Pause'),
+                ('S',     'Stop'),
+                ('R',     'Rewind — retour au début'),
+                ('Espace / →', 'Cue suivante'),
+                ('←',     'Cue précédente'),
+                ('F',     'Plein écran'),
+                ('Q',     'Quitter (avec confirmation)'),
+                ('+ / −', 'Zoom police'),
             ]),
         ] %}
         <div>
@@ -111,7 +170,6 @@
             {% endfor %}
         </div>
         {% endfor %}
-
     </div>
 </div>
 
@@ -120,12 +178,14 @@
     <div class="card-title">∙ Historique des versions</div>
     <div style="margin-top:12px;">
         {% for v, date, desc in [
-            ('v0.7.0-alpha', '2026-04-21', 'Samples, Morceaux, Wishlist, Inspirations, MiRack, Spark, 6 thèmes terminal'),
+            ('v2.0.0',       '2026-05-01', 'Prompteur Dawless complet, déploiement Fly.io, titres de session'),
+            ('v1.1.0-alpha', '2026-04-25', 'Première version du prompteur (MVP)'),
+            ('v1.0.0',       '2026-04-25', 'Déploiement cloud Fly.io, fix suppression sessions'),
+            ('v0.9.9-alpha', '2026-04-24', 'Formulaire PDF vierge imprimable'),
+            ('v0.7.0-alpha', '2026-04-21', 'Samples, Morceaux, Wishlist, Inspirations, MiRack, Spark, 6 thèmes'),
             ('v0.6.0-alpha', '2026-04-20', 'Suppression sessions, projets, copie setup, tags cliquables, dark mode'),
-            ('v0.5.4-alpha', '2026-04-20', 'Page Paramètres — import DB, backup, reset'),
-            ('v0.5.3-alpha', '2026-04-20', 'Fix stats Chart.js, Pomodoro persistant, auto-save formulaires'),
-            ('v0.5.2-alpha', '2026-04-20', 'Filtres sessions, liaison entre sessions, copie fichier audio'),
-            ('v0.5.1-alpha', '2026-04-20', 'Widget Pomodoro, bannière terminal ANSI, détection port auto'),
+            ('v0.5.4-alpha', '2026-04-20', 'Paramètres — import DB, backup, reset'),
+            ('v0.5.1-alpha', '2026-04-20', 'Widget Pomodoro, bannière terminal ANSI, port auto'),
             ('v0.4.0',       '2026-04-20', 'Édition de sessions existantes'),
             ('v0.3.1',       '2026-04-20', 'Initial — Flask complet, stats Chart.js, export Markdown'),
         ] %}
@@ -136,10 +196,16 @@
         </div>
         {% endfor %}
     </div>
-    <div style="margin-top:12px;">
-        <a href="https://github.com/obareau/robotariis-sessions" target="_blank"
+    <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="https://github.com/obareau/robotariis-sessions/blob/main/CHANGELOG.md"
+           target="_blank"
            style="font-family:var(--mono);font-size:11px;color:var(--accent2);text-decoration:none;">
-            → Voir le CHANGELOG complet sur GitHub
+            → CHANGELOG complet sur GitHub
+        </a>
+        <a href="https://robotariis-sessions.fly.dev/"
+           target="_blank"
+           style="font-family:var(--mono);font-size:11px;color:var(--accent2);text-decoration:none;">
+            → Version live (Fly.io)
         </a>
     </div>
 </div>
@@ -149,7 +215,7 @@
     <div class="card-title">∙ Auteur</div>
     <div style="font-family:var(--mono);font-size:13px;line-height:1.8;margin-top:12px;color:var(--text-muted);">
         Projet personnel — <strong style="color:var(--text);">Olivier</strong>, Scaër, Bretagne — 2026<br>
-        Développé avec Flask et une dose de noise industrielle.<br>
+        Développé avec Flask, du bruit industriel, et beaucoup de café.<br>
         <span style="font-size:11px;opacity:.6;">La machine ne ment pas. Elle déforme.</span>
     </div>
 </div>
