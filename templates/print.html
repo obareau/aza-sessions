@@ -253,7 +253,7 @@
 
 <!-- BARRE IMPRESSION (masquée à l'impression) -->
 <div class="print-bar no-print">
-    <a href="{{ url_for('view_session', sid=session.id) }}" class="close-btn">← Retour à la session</a>
+    <a href="{{ url_for('sessions.view_session', sid=session.id) }}" class="close-btn">← Retour à la session</a>
     <div style="opacity:.6;">Cmd+P · Ctrl+P → Enregistrer en PDF</div>
     <button class="print-btn" onclick="window.print()">↓ Imprimer / PDF</button>
 </div>

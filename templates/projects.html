@@ -7,13 +7,13 @@
         <div class="page-title">◈ Projets</div>
         <div class="page-subtitle">{{ projects|length }} projet{% if projects|length != 1 %}s{% endif %}</div>
     </div>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+    <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
 </div>
 
 <!-- NOUVEAU PROJET -->
 <div class="card">
     <div class="card-title">∙ Nouveau projet</div>
-    <form method="POST" action="{{ url_for('new_project') }}" style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;margin-top:12px;align-items:end;">
+    <form method="POST" action="{{ url_for('projects.new_project') }}" style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;margin-top:12px;align-items:end;">
         <div class="form-group" style="margin:0">
             <label>Titre</label>
             <input type="text" name="title" placeholder="ex: EP Secteur 7, Colonne Vertebrale..." required>
@@ -37,7 +37,7 @@
 <div class="card" style="border-left:3px solid {{ p.color }};margin-bottom:0;">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
         <div style="flex:1;min-width:0;">
-            <a href="{{ url_for('view_project', pid=p.id) }}" style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text);text-decoration:none;display:block;margin-bottom:4px;">
+            <a href="{{ url_for('projects.view_project', pid=p.id) }}" style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text);text-decoration:none;display:block;margin-bottom:4px;">
                 {{ p.title }}
             </a>
             {% if p.description %}
@@ -50,9 +50,9 @@
             </div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;">
-            <a href="{{ url_for('view_project', pid=p.id) }}" class="btn btn-ghost btn-sm">→</a>
-            <a href="{{ url_for('edit_project', pid=p.id) }}" class="btn btn-secondary btn-sm">✎</a>
-            <form method="POST" action="{{ url_for('delete_project', pid=p.id) }}"
+            <a href="{{ url_for('projects.view_project', pid=p.id) }}" class="btn btn-ghost btn-sm">→</a>
+            <a href="{{ url_for('projects.edit_project', pid=p.id) }}" class="btn btn-secondary btn-sm">✎</a>
+            <form method="POST" action="{{ url_for('projects.delete_project', pid=p.id) }}"
                   onsubmit="return confirm('Supprimer le projet « {{ p.title }} » ? Les sessions liées seront détachées.')">
                 <button type="submit" class="btn btn-danger btn-sm">✕</button>
             </form>

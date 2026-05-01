@@ -11,7 +11,7 @@
         <div style="font-family:var(--mono);font-size:12px;color:var(--text-muted);margin-top:8px;">Le chrono démarre dès que tu cliques. Notes libres pendant, formulaire complet à la fin.</div>
     </div>
 
-    <form method="POST" action="{{ url_for('live_start') }}">
+    <form method="POST" action="{{ url_for('live.live_start') }}">
         <div class="card">
             <div class="form-grid">
                 <div class="form-group">
@@ -47,7 +47,7 @@
                 ▶ &nbsp;Démarrer
             </button>
             <div style="margin-top:16px;">
-                <a href="{{ url_for('index') }}" style="font-family:var(--mono);font-size:11px;color:var(--text-muted);text-decoration:none;">← Retour</a>
+                <a href="{{ url_for('sessions.index') }}" style="font-family:var(--mono);font-size:11px;color:var(--text-muted);text-decoration:none;">← Retour</a>
             </div>
         </div>
     </form>
@@ -55,7 +55,7 @@
 
 {% else %}
 <!-- ── SESSION EN COURS ───────────────────────────────────────────────────── -->
-<form method="POST" action="{{ url_for('live_finish') }}" id="live-form">
+<form method="POST" action="{{ url_for('live.live_finish') }}" id="live-form">
 
 <!-- HEADER : TIMER -->
 <div style="text-align:center;padding:32px 0 24px;border-bottom:1px solid var(--border);margin-bottom:28px;">
@@ -134,7 +134,7 @@
 
 <!-- BOUTONS FIN DE SESSION -->
 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);">
-    <form method="POST" action="{{ url_for('live_abandon') }}" onsubmit="return confirm('Abandonner et supprimer cette session ?')">
+    <form method="POST" action="{{ url_for('live.live_abandon') }}" onsubmit="return confirm('Abandonner et supprimer cette session ?')">
         <button type="submit" class="btn btn-danger">✕ Abandonner</button>
     </form>
     <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);text-align:center;">

@@ -27,10 +27,10 @@
         </div>
         <div class="page-subtitle">Documente pendant que c'est frais</div>
     </div>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+    <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
 </div>
 
-<form method="POST" action="{{ url_for('new_session') }}" data-autosave>
+<form method="POST" action="{{ url_for('sessions.new_session') }}" data-autosave>
 {% if prefill is mapping and prefill.get('_from_live') %}
 <input type="hidden" name="_from_live" value="1">
 {% endif %}
@@ -82,7 +82,7 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">∙ Hardware / Machines</span>
-        <a href="{{ url_for('manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
+        <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
     </div>
     <div class="check-grid">
         {% for item in catalogue.machine %}
@@ -98,7 +98,7 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">∙ Effets Hardware</span>
-        <a href="{{ url_for('manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
+        <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
     </div>
     <div class="check-grid">
         {% for item in catalogue.effet %}
@@ -114,7 +114,7 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">∙ DAW</span>
-        <a href="{{ url_for('manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
+        <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
     </div>
     <div class="check-grid">
         {% for item in catalogue.daw %}
@@ -130,7 +130,7 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">∙ Synthés iOS</span>
-        <a href="{{ url_for('manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
+        <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
     </div>
     <div class="check-grid">
         {% for item in catalogue.synth_ios %}
@@ -146,7 +146,7 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">∙ Plugins VST/AU</span>
-        <a href="{{ url_for('manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
+        <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
     </div>
     <div class="check-grid">
         {% for item in catalogue.plugin %}
@@ -226,7 +226,7 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">∙ Influences de session</span>
-        <a href="{{ url_for('manage_influences') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
+        <a href="{{ url_for('influences.manage_influences') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
     </div>
     <div class="check-grid">
         {% for inf in influences %}
@@ -317,7 +317,7 @@
 </div>
 
 <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">Annuler</a>
+    <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">Annuler</a>
     <button type="submit" class="btn btn-primary">Enregistrer →</button>
 </div>
 </form>

@@ -7,7 +7,7 @@
         <div class="page-title">⚙ Paramètres</div>
         <div class="page-subtitle">Base de données — v{{ version }}</div>
     </div>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+    <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
 </div>
 
 {% if msg %}
@@ -30,7 +30,7 @@
             <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-top:4px;">Session{% if nb_sessions > 1 %}s{% endif %}</div>
         </div>
         <div style="flex:1"></div>
-        <a href="{{ url_for('settings_backup') }}" class="btn btn-ghost">↓ Télécharger la base (backup)</a>
+        <a href="{{ url_for('settings.settings_backup') }}" class="btn btn-ghost">↓ Télécharger la base (backup)</a>
     </div>
 </div>
 
@@ -42,7 +42,7 @@
         Les sessions seront <strong>fusionnées</strong> avec la base actuelle — les doublons (même date + machines) sont ignorés automatiquement.<br>
         Les colonnes manquantes dans l'ancienne base sont gérées silencieusement.
     </p>
-    <form method="POST" action="{{ url_for('settings_import') }}" enctype="multipart/form-data"
+    <form method="POST" action="{{ url_for('settings.settings_import') }}" enctype="multipart/form-data"
           style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px;">
         <input type="file" name="db_file" accept=".db" required
                style="font-family:var(--mono);font-size:12px;flex:1;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);">
@@ -57,7 +57,7 @@
         Ces actions sont irréversibles. Fais un backup avant.
     </p>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;">
-        <form method="POST" action="{{ url_for('settings_reset_sessions') }}"
+        <form method="POST" action="{{ url_for('settings.settings_reset_sessions') }}"
               onsubmit="return confirm('Supprimer TOUTES les sessions ? Cette action est irréversible.')">
             <button type="submit" class="btn btn-danger">✕ Vider les sessions</button>
         </form>

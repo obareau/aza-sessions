@@ -577,41 +577,41 @@
         <button id="nav-toggle" onclick="toggleNav()" aria-label="Menu">☰</button>
         <nav class="header-nav" id="header-nav">
             {% if has_live %}
-            <a href="{{ url_for('live') }}" style="color:#ff6b35;font-weight:700;opacity:1;animation:pulse 1.2s infinite;">● EN COURS</a>
+            <a href="{{ url_for('live.live') }}" style="color:#ff6b35;font-weight:700;opacity:1;animation:pulse 1.2s infinite;">● EN COURS</a>
             <span class="sep">|</span>
             {% endif %}
 
             <span class="nav-group-label">Sessions</span>
-            <a href="{{ url_for('index') }}">Sessions</a>
-            <a href="{{ url_for('live') }}">▶ Live</a>
-            <a href="{{ url_for('new_session') }}">+ Nouvelle</a>
+            <a href="{{ url_for('sessions.index') }}">Sessions</a>
+            <a href="{{ url_for('live.live') }}">▶ Live</a>
+            <a href="{{ url_for('sessions.new_session') }}">+ Nouvelle</a>
             <span class="sep">|</span>
 
             <span class="nav-group-label nav-group">Outils</span>
-            <a href="{{ url_for('stats') }}">Stats</a>
-            <a href="{{ url_for('list_projects') }}">◈ Projets</a>
-            <a href="{{ url_for('spark') }}">⚡ Spark</a>
-            <a href="{{ url_for('prompter_list') }}">⬡ Prompteur</a>
+            <a href="{{ url_for('stats.stats') }}">Stats</a>
+            <a href="{{ url_for('projects.list_projects') }}">◈ Projets</a>
+            <a href="{{ url_for('misc.spark') }}">⚡ Spark</a>
+            <a href="{{ url_for('prompter.prompter_list') }}">⬡ Prompteur</a>
             <span class="sep">|</span>
 
             <span class="nav-group-label nav-group">Catalogue</span>
-            <a href="{{ url_for('manage_catalogue') }}">Catalogue</a>
-            <a href="{{ url_for('manage_influences') }}">Influences</a>
-            <a href="{{ url_for('manage_obliques') }}">Stratégies</a>
+            <a href="{{ url_for('catalogue.manage_catalogue') }}">Catalogue</a>
+            <a href="{{ url_for('influences.manage_influences') }}">Influences</a>
+            <a href="{{ url_for('obliques.manage_obliques') }}">Stratégies</a>
             <span class="sep">|</span>
 
             <span class="nav-group-label nav-group">Ressources</span>
-            <a href="{{ url_for('manage_samples') }}">Samples</a>
-            <a href="{{ url_for('manage_tracks') }}">Morceaux</a>
-            <a href="{{ url_for('manage_inspirations') }}">Inspi</a>
-            <a href="{{ url_for('manage_wishlist') }}">Wishlist</a>
-            <a href="{{ url_for('manage_mirack') }}">⬡ MiRack</a>
+            <a href="{{ url_for('misc.manage_samples') }}">Samples</a>
+            <a href="{{ url_for('misc.manage_tracks') }}">Morceaux</a>
+            <a href="{{ url_for('misc.manage_inspirations') }}">Inspi</a>
+            <a href="{{ url_for('misc.manage_wishlist') }}">Wishlist</a>
+            <a href="{{ url_for('misc.manage_mirack') }}">⬡ MiRack</a>
             <span class="sep">|</span>
 
             <span class="nav-group-label nav-group">Config</span>
-            <a href="{{ url_for('form_blank') }}" title="Formulaire papier — mode dégradé">⎙ Form</a>
-            <a href="{{ url_for('settings') }}">Paramètres</a>
-            <a href="{{ url_for('about') }}">About</a>
+            <a href="{{ url_for('sessions.form_blank') }}" title="Formulaire papier — mode dégradé">⎙ Form</a>
+            <a href="{{ url_for('settings.settings') }}">Paramètres</a>
+            <a href="{{ url_for('misc.about') }}">About</a>
             <span class="version-badge">v{{ version }}</span>
             <!-- THEME PICKER -->
             <div id="theme-picker" style="display:flex;align-items:center;gap:4px;margin-left:6px;position:relative;">

@@ -8,15 +8,15 @@
         <div class="page-subtitle">#{{ session.id }} · {{ session.date[:16] }}{% if session.duration_min %} — {{ session.duration_min }} min{% endif %}</div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <a href="{{ url_for('print_session', sid=session.id) }}" class="btn btn-ghost" target="_blank">↓ PDF</a>
-        <a href="{{ url_for('export_one', sid=session.id) }}" class="btn btn-ghost">↓ Obsidian</a>
-        <a href="{{ url_for('new_session') }}?from={{ session.id }}" class="btn btn-secondary" title="Créer une session avec le même setup">⎘ Copier setup</a>
-        <a href="{{ url_for('edit_session', sid=session.id) }}" class="btn btn-secondary">✎ Éditer</a>
-        <form method="POST" action="{{ url_for('delete_session', sid=session.id) }}" style="display:inline;"
+        <a href="{{ url_for('sessions.print_session', sid=session.id) }}" class="btn btn-ghost" target="_blank">↓ PDF</a>
+        <a href="{{ url_for('sessions.export_one', sid=session.id) }}" class="btn btn-ghost">↓ Obsidian</a>
+        <a href="{{ url_for('sessions.new_session') }}?from={{ session.id }}" class="btn btn-secondary" title="Créer une session avec le même setup">⎘ Copier setup</a>
+        <a href="{{ url_for('sessions.edit_session', sid=session.id) }}" class="btn btn-secondary">✎ Éditer</a>
+        <form method="POST" action="{{ url_for('sessions.delete_session', sid=session.id) }}" style="display:inline;"
               onsubmit="return confirm('Supprimer définitivement cette session ? Action irréversible.')">
             <button type="submit" class="btn btn-danger">✕ Supprimer</button>
         </form>
-        <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+        <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
     </div>
 </div>
 
@@ -28,7 +28,7 @@
     {% if session.release_potential %}<span class="badge badge-release">Release</span>{% endif %}
     {% if session.to_rework %}<span class="badge badge-rework">Retravailler</span>{% endif %}
     {% if session.project_title %}
-    <a href="{{ url_for('view_project', pid=session.project_id_val) }}"
+    <a href="{{ url_for('projects.view_project', pid=session.project_id_val) }}"
        class="badge" style="background:{{ session.project_color }}22;color:{{ session.project_color }};border:1px solid {{ session.project_color }}66;text-decoration:none;">
         ◈ {{ session.project_title }}
     </a>
@@ -148,7 +148,7 @@
 {% if linked %}
 <div class="card" style="border-color:var(--accent2);">
     <div class="card-title" style="color:var(--accent2);">∙ Session liée</div>
-    <a href="{{ url_for('view_session', sid=linked.id) }}" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text);padding:8px 0;">
+    <a href="{{ url_for('sessions.view_session', sid=linked.id) }}" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text);padding:8px 0;">
         <span style="font-family:var(--mono);font-size:11px;color:var(--text-muted);">#{{ linked.id }} — {{ linked.date[:16] }}</span>
         <span style="font-family:var(--mono);font-size:12px;">{{ linked.machines or '—' }}</span>
         {% if linked.rating %}<span class="rating-stars">{{ '★' * linked.rating }}</span>{% endif %}
