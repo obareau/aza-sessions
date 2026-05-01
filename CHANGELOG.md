@@ -3,6 +3,16 @@
 > Les versions alpha sont des releases actives en développement continu.
 > Chaque version est datée du jour de développement effectif.
 
+## v1.3.0-alpha — 2026-05-01
+
+### Ajouts
+- **Prompteur — Barre segments LED** : découpage en segments 22px, clignotement CSS lent (<10s) et rapide (<5s), hauteur réglable (+4/-4px, 6–80px)
+- **Prompteur — Export JSON** : téléchargement du script en JSON structuré (`/prompter/<id>/export/json`)
+- **Prompteur — Export Markdown** : tableau Markdown compatible Obsidian (`/prompter/<id>/export/md`)
+- **Prompteur — Import** : upload d'un fichier `.json` ou `.md` pour créer un nouveau script ; parsing automatique du format
+
+---
+
 ## v1.2.0-alpha — 2026-05-01
 
 ### Ajouts
