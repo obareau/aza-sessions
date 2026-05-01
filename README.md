@@ -3,7 +3,7 @@
 > Application de documentation et de performance musicale pour le projet **Robōtariis** —
 > univers de fiction dystopique dont les sessions de création constituent la bande originale.
 
-**Version : v2.0.0** · [Changelog](CHANGELOG.md) · [Live](https://robotariis-sessions.fly.dev/)
+**Version : v2.0.0** · [Changelog](CHANGELOG.md)
 
 ---
 
