@@ -3,6 +3,18 @@
 > Les versions alpha sont des releases actives en développement continu.
 > Chaque version est datée du jour de développement effectif.
 
+## v1.2.0-alpha — 2026-05-01
+
+### Ajouts
+- **Titre de session** — champ optionnel pour nommer chaque session (ex: "Drone Secteur 7") ; affiché dans la liste sous la date, dans le titre de la page détail, et dans les formulaires nouveau/édition
+- **Prompteur amélioré** — affichage trois zones (cue précédente à 22%, cue courante en plein, cue suivante à 45%) ; barre de progression animée en temps réel (transition CSS sur la durée de la cue en mode auto) ; boîte décompte haut-droite ; contrôle zoom police (A+/A−, raccourcis +/−) ; variable CSS `--font-scale` dynamique
+
+### Corrections
+- Index : titre de session affiché sous la date dans chaque ligne
+- Vue détail : sous-titre unifié `#id · date · durée`
+
+---
+
 ## v1.1.0-alpha — 2026-04-25
 
 ### Ajouts

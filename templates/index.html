@@ -18,7 +18,10 @@
 <div id="session-list">
     {% for s in sessions %}
     <a href="{{ url_for('view_session', sid=s.id) }}" class="session-row">
-        <span class="session-date">{{ s.date[:16] }}</span>
+        <span class="session-date">
+            {{ s.date[:16] }}
+            {% if s.title %}<span style="display:block;font-size:11px;font-weight:600;color:var(--text);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">{{ s.title }}</span>{% endif %}
+        </span>
         <span class="session-machines">{{ s.machines or '—' }}{% if s.daws %} · {{ s.daws }}{% endif %}</span>
         <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
             {% if s.project_title %}

@@ -4,8 +4,8 @@
 
 <div class="page-header">
     <div>
-        <div class="page-title">Session #{{ session.id }}</div>
-        <div class="page-subtitle">{{ session.date[:16] }}{% if session.duration_min %} — {{ session.duration_min }} min{% endif %}</div>
+        <div class="page-title">{% if session.title %}{{ session.title }}{% else %}Session #{{ session.id }}{% endif %}</div>
+        <div class="page-subtitle">#{{ session.id }} · {{ session.date[:16] }}{% if session.duration_min %} — {{ session.duration_min }} min{% endif %}</div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <a href="{{ url_for('print_session', sid=session.id) }}" class="btn btn-ghost" target="_blank">↓ PDF</a>

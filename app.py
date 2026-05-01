@@ -14,7 +14,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.jinja_env.filters['fromjson'] = json.loads
-VERSION = "1.1.0-alpha"
+VERSION = "1.2.0-alpha"
 DB_PATH      = os.environ.get("DB_PATH",      os.path.join(os.path.dirname(__file__), "sessions.db"))
 CONFIG_PATH  = os.environ.get("CONFIG_PATH",  os.path.join(os.path.dirname(__file__), "config.json"))
 
@@ -324,6 +324,7 @@ def init_db():
     for migration in [
         "ALTER TABLE sessions ADD COLUMN recap_claude TEXT",
         "ALTER TABLE sessions ADD COLUMN project_id INTEGER",
+        "ALTER TABLE sessions ADD COLUMN title TEXT DEFAULT ''",
     ]:
         try:
             conn.execute(migration)
@@ -481,14 +482,15 @@ def new_session():
         conn = get_db()
         conn.execute("""
             INSERT INTO sessions (
-                date, duration_min, mode, intention, energy_level,
+                title, date, duration_min, mode, intention, energy_level,
                 machines, effects, daws, synths_ios, plugins,
                 patches, audio_file, timestamps, rating, tags,
                 character, lore_link, to_rework, release_potential,
                 tempo, tonality, signal_routing, microfreak_algo,
                 linked_session, influences, oblique, comments, recap_claude, project_id
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, (
+            data.get("title", "").strip(),
             data.get("date", datetime.now().strftime("%Y-%m-%d %H:%M")),
             data.get("duration_min") or None,
             data.get("mode"),
@@ -656,7 +658,7 @@ def edit_session(sid):
         conn = get_db()
         conn.execute("""
             UPDATE sessions SET
-                date=?, duration_min=?, mode=?, intention=?, energy_level=?,
+                title=?, date=?, duration_min=?, mode=?, intention=?, energy_level=?,
                 machines=?, effects=?, daws=?, synths_ios=?, plugins=?,
                 patches=?, audio_file=?, timestamps=?, rating=?, tags=?,
                 character=?, lore_link=?, to_rework=?, release_potential=?,
@@ -665,6 +667,7 @@ def edit_session(sid):
                 project_id=?
             WHERE id=?
         """, (
+            data.get("title", "").strip(),
             data.get("date"),
             data.get("duration_min") or None,
             data.get("mode"),
