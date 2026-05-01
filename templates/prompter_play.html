@@ -177,7 +177,7 @@
 
     <!-- SCRUB BAR (mode manuel) -->
     <div id="scrub-wrap" class="show">
-        <input type="range" id="scrub-bar" min="0" max="{{ (cues|length - 1)|max(0) }}" value="0" oninput="scrubTo(parseInt(this.value))">
+        <input type="range" id="scrub-bar" min="0" max="{{ [cues|length - 1, 0]|max }}" value="0" oninput="scrubTo(parseInt(this.value))">
     </div>
 
     <!-- SCÈNE -->
