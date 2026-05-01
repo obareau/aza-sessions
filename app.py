@@ -13,7 +13,8 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-VERSION = "1.0.1-alpha"
+app.jinja_env.filters['fromjson'] = json.loads
+VERSION = "1.1.0-alpha"
 DB_PATH      = os.environ.get("DB_PATH",      os.path.join(os.path.dirname(__file__), "sessions.db"))
 CONFIG_PATH  = os.environ.get("CONFIG_PATH",  os.path.join(os.path.dirname(__file__), "config.json"))
 
@@ -293,6 +294,15 @@ def init_db():
         )
     """)
 
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS prompter_scripts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            cues TEXT DEFAULT '[]',
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS live_session (
             id INTEGER PRIMARY KEY,
@@ -1654,6 +1664,87 @@ def spark_focus():
 @app.route("/about")
 def about():
     return render_template("about.html", version=VERSION, oblique=rand_oblique())
+
+
+# ── ROUTES PROMPTEUR DAWLESS ──────────────────────────────────────────────────
+
+@app.route("/prompter")
+def prompter_list():
+    conn = get_db()
+    scripts = conn.execute("SELECT * FROM prompter_scripts ORDER BY created_at DESC").fetchall()
+    conn.close()
+    return render_template("prompter_list.html", scripts=scripts, version=VERSION, oblique=rand_oblique())
+
+
+@app.route("/prompter/new", methods=["GET", "POST"])
+@app.route("/prompter/<int:sid>/edit", methods=["GET", "POST"])
+def prompter_edit(sid=None):
+    conn = get_db()
+    script = None
+    if sid:
+        script = conn.execute("SELECT * FROM prompter_scripts WHERE id=?", (sid,)).fetchone()
+        if not script:
+            conn.close()
+            return redirect(url_for("prompter_list"))
+
+    if request.method == "POST":
+        title = request.form.get("title", "").strip() or "Script sans titre"
+        description = request.form.get("description", "").strip()
+        # Reconstruit les cues depuis les champs dynamiques
+        times   = request.form.getlist("cue_time[]")
+        patches = request.form.getlist("cue_patch[]")
+        actions = request.form.getlist("cue_action[]")
+        colors  = request.form.getlist("cue_color[]")
+        cues = []
+        for t, p, a, c in zip(times, patches, actions, colors):
+            if p.strip() or a.strip():
+                # Convertit MM:SS en secondes
+                secs = 0
+                if t.strip():
+                    parts = t.strip().split(":")
+                    try:
+                        if len(parts) == 2:
+                            secs = int(parts[0]) * 60 + int(parts[1])
+                        else:
+                            secs = int(parts[0])
+                    except ValueError:
+                        secs = 0
+                cues.append({"time_s": secs, "time_fmt": t.strip(), "patch": p.strip(), "action": a.strip(), "color": c or "default"})
+
+        cues_json = json.dumps(cues, ensure_ascii=False)
+        if sid:
+            conn.execute("UPDATE prompter_scripts SET title=?, description=?, cues=? WHERE id=?",
+                         (title, description, cues_json, sid))
+        else:
+            conn.execute("INSERT INTO prompter_scripts (title, description, cues) VALUES (?,?,?)",
+                         (title, description, cues_json))
+        conn.commit()
+        conn.close()
+        return redirect(url_for("prompter_list"))
+
+    conn.close()
+    cues = json.loads(script["cues"]) if script else []
+    return render_template("prompter_edit.html", script=script, cues=cues, version=VERSION, oblique=rand_oblique())
+
+
+@app.route("/prompter/<int:sid>/delete", methods=["POST"])
+def prompter_delete(sid):
+    conn = get_db()
+    conn.execute("DELETE FROM prompter_scripts WHERE id=?", (sid,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("prompter_list"))
+
+
+@app.route("/prompter/<int:sid>/play")
+def prompter_play(sid):
+    conn = get_db()
+    script = conn.execute("SELECT * FROM prompter_scripts WHERE id=?", (sid,)).fetchone()
+    conn.close()
+    if not script:
+        return redirect(url_for("prompter_list"))
+    cues = json.loads(script["cues"])
+    return render_template("prompter_play.html", script=script, cues=cues, version=VERSION)
 
 
 # ── ROUTES LIVE SESSION ────────────────────────────────────────────────────────

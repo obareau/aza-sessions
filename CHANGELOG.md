@@ -3,6 +3,13 @@
 > Les versions alpha sont des releases actives en développement continu.
 > Chaque version est datée du jour de développement effectif.
 
+## v1.1.0-alpha — 2026-04-25
+
+### Ajouts
+- **Prompteur Dawless** (`/prompter`) — scripts de set avec minutage, patch et instructions ; éditeur de cues (temps MM:SS, patch, action, couleur) ; vue performance plein écran : cue courante en grand, preview suivante, deux modes (Manuel — Espace/→/← ou tap/swipe — et Auto — timer décompte automatique vers la prochaine cue) ; barre de scrubbing en mode libre ; chrono elapsed ; raccourcis clavier complets (Espace, →, ←, R, F, A) ; swipe mobile
+
+---
+
 ## v1.0.1-alpha — 2026-04-25
 
 ### Corrections

@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>▶ {{ script.title }} — Prompteur Robōtariis</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --bg: #0A0908;
+        --surface: #111210;
+        --border: #1E1D1B;
+        --text: #E8E4DC;
+        --muted: #5A5550;
+        --accent: #D4380D;
+        --mono: 'IBM Plex Mono', monospace;
+
+        --color-default: #E8E4DC;
+        --color-red:     #FF4D26;
+        --color-orange:  #FF8C00;
+        --color-green:   #3DCC7E;
+        --color-blue:    #4DA6FF;
+        --color-purple:  #C77DFF;
+    }
+
+    html, body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--mono);
+        height: 100%;
+        overflow: hidden;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    /* ── LAYOUT ── */
+    #app {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        padding: 0;
+    }
+
+    /* ── TOPBAR ── */
+    #topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 20px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+        gap: 12px;
+    }
+    #topbar .title {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .12em;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+    }
+    #topbar .title span { color: var(--text); }
+    #mode-toggle {
+        background: none;
+        border: 1px solid var(--muted);
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        padding: 4px 10px;
+        cursor: pointer;
+        border-radius: 3px;
+        white-space: nowrap;
+        transition: all .15s;
+    }
+    #mode-toggle.auto { border-color: var(--accent); color: var(--accent); }
+    #btn-fs {
+        background: none;
+        border: 1px solid var(--muted);
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 14px;
+        padding: 3px 9px;
+        cursor: pointer;
+        border-radius: 3px;
+        transition: all .15s;
+        flex-shrink: 0;
+    }
+    #btn-fs:hover { border-color: var(--text); color: var(--text); }
+    #btn-back {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 11px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    #btn-back:hover { color: var(--text); }
+
+    /* ── PROGRESS BAR ── */
+    #progress-bar {
+        height: 2px;
+        background: var(--border);
+        flex-shrink: 0;
+        position: relative;
+    }
+    #progress-fill {
+        height: 100%;
+        background: var(--accent);
+        width: 0%;
+        transition: width .5s linear;
+    }
+
+    /* ── ZONE PRINCIPALE ── */
+    #stage {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 24px 40px;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    /* ── CUE COURANTE ── */
+    #cue-current {
+        width: 100%;
+        max-width: 900px;
+        text-align: center;
+        animation: fadeIn .25s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    #cue-time {
+        font-size: 13px;
+        color: var(--muted);
+        letter-spacing: .15em;
+        margin-bottom: 16px;
+    }
+    #cue-patch {
+        font-size: clamp(28px, 6vw, 72px);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -.02em;
+        margin-bottom: 20px;
+        color: var(--color-default);
+        transition: color .2s;
+        word-break: break-word;
+    }
+    #cue-action {
+        font-size: clamp(16px, 3vw, 32px);
+        font-weight: 400;
+        line-height: 1.5;
+        color: rgba(232,228,220,0.7);
+        max-width: 780px;
+        word-break: break-word;
+    }
+
+    /* ── TIMER AUTO ── */
+    #timer-ring {
+        position: absolute;
+        top: 16px;
+        right: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+    #timer-countdown {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--accent);
+        letter-spacing: -.02em;
+        line-height: 1;
+    }
+    #timer-label {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: .12em;
+        color: var(--muted);
+    }
+
+    /* ── PROCHAINE CUE ── */
+    #cue-next-zone {
+        flex-shrink: 0;
+        padding: 14px 40px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        background: var(--surface);
+        min-height: 64px;
+    }
+    #next-label {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: .15em;
+        color: var(--muted);
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    #next-time {
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    #next-patch {
+        font-size: 15px;
+        font-weight: 600;
+        color: rgba(232,228,220,0.5);
+        margin-right: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    #next-action {
+        font-size: 13px;
+        color: rgba(232,228,220,0.3);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1;
+    }
+
+    /* ── BOTTOMBAR ── */
+    #bottombar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 20px;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        flex-shrink: 0;
+        gap: 16px;
+    }
+    #cue-counter {
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+    }
+    #hint {
+        font-size: 10px;
+        color: var(--muted);
+        text-align: center;
+        flex: 1;
+    }
+    #hint kbd {
+        background: var(--border);
+        border: 1px solid #333;
+        border-radius: 3px;
+        padding: 1px 6px;
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--text);
+    }
+    #elapsed {
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* ── ÉCRAN FIN DE SET ── */
+    #end-screen {
+        display: none;
+        position: absolute;
+        inset: 0;
+        background: var(--bg);
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        z-index: 10;
+    }
+    #end-screen.show { display: flex; }
+    #end-screen .end-title {
+        font-size: 48px;
+        font-weight: 700;
+        color: var(--accent);
+    }
+    #end-screen .end-sub {
+        font-size: 14px;
+        color: var(--muted);
+        letter-spacing: .1em;
+        text-transform: uppercase;
+    }
+
+    /* ── BARRE DE SCRUBBING (mode libre) ── */
+    #scrub-bar {
+        width: 100%;
+        appearance: none;
+        -webkit-appearance: none;
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        outline: none;
+        cursor: pointer;
+        display: none;
+    }
+    #scrub-bar.show { display: block; }
+    #scrub-bar::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px; height: 16px;
+        background: var(--accent);
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+    /* ── COULEURS CUE ── */
+    .color-red    { color: var(--color-red)    !important; }
+    .color-orange { color: var(--color-orange) !important; }
+    .color-green  { color: var(--color-green)  !important; }
+    .color-blue   { color: var(--color-blue)   !important; }
+    .color-purple { color: var(--color-purple) !important; }
+</style>
+</head>
+<body>
+
+<div id="app">
+    <!-- TOPBAR -->
+    <div id="topbar">
+        <a href="{{ url_for('prompter_list') }}" id="btn-back">← Retour</a>
+        <div class="title"><span>{{ script.title }}</span></div>
+        <button id="mode-toggle" onclick="toggleMode()">Mode : Manuel</button>
+        <input type="range" id="scrub-bar" min="0" max="{{ cues|length - 1 }}" value="0" oninput="scrubTo(parseInt(this.value))">
+        <button id="btn-fs" onclick="toggleFS()" title="Plein écran">⛶</button>
+    </div>
+
+    <!-- BARRE DE PROGRESSION -->
+    <div id="progress-bar"><div id="progress-fill"></div></div>
+
+    <!-- SCÈNE PRINCIPALE -->
+    <div id="stage" onclick="nextCue()">
+        <div id="cue-current">
+            <div id="cue-time"></div>
+            <div id="cue-patch"></div>
+            <div id="cue-action"></div>
+        </div>
+        <!-- Timer auto -->
+        <div id="timer-ring" style="display:none;">
+            <div id="timer-countdown">--</div>
+            <div id="timer-label">Prochaine cue</div>
+        </div>
+        <!-- Écran fin -->
+        <div id="end-screen">
+            <div class="end-title">FIN DU SET</div>
+            <div class="end-sub">{{ script.title }}</div>
+            <button onclick="restartSet()" class="btn" style="margin-top:16px;background:var(--accent);color:white;border:none;font-family:var(--mono);font-size:13px;padding:10px 24px;cursor:pointer;border-radius:3px;">↺ Recommencer</button>
+        </div>
+    </div>
+
+    <!-- PROCHAINE CUE -->
+    <div id="cue-next-zone">
+        <span id="next-label">Suivant</span>
+        <span id="next-time"></span>
+        <span id="next-patch"></span>
+        <span id="next-action"></span>
+    </div>
+
+    <!-- BOTTOMBAR -->
+    <div id="bottombar">
+        <div id="cue-counter">— / —</div>
+        <div id="hint">
+            <kbd>Espace</kbd> ou <kbd>→</kbd> suivant &nbsp;·&nbsp;
+            <kbd>←</kbd> précédent &nbsp;·&nbsp;
+            <kbd>R</kbd> restart &nbsp;·&nbsp;
+            <kbd>F</kbd> plein écran &nbsp;·&nbsp;
+            <kbd>A</kbd> mode auto
+        </div>
+        <div id="elapsed">00:00</div>
+    </div>
+</div>
+
+<script>
+const CUES = {{ cues | tojson }};
+let current = 0;
+let autoMode = false;
+let autoTimer = null;
+let elapsedTimer = null;
+let elapsedSec = 0;
+let countdownSec = 0;
+let countdownTimer = null;
+
+const COLOR_MAP = {
+    default: 'var(--color-default)',
+    red:     'var(--color-red)',
+    orange:  'var(--color-orange)',
+    green:   'var(--color-green)',
+    blue:    'var(--color-blue)',
+    purple:  'var(--color-purple)',
+};
+
+function fmt(secs) {
+    const m = Math.floor(secs / 60), s = secs % 60;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function render(idx) {
+    if (idx >= CUES.length) { showEnd(); return; }
+    current = idx;
+    const cue = CUES[idx];
+    const next = CUES[idx + 1] || null;
+
+    // Scène principale
+    document.getElementById('cue-time').textContent = cue.time_fmt ? `@ ${cue.time_fmt}` : '';
+    const patchEl = document.getElementById('cue-patch');
+    patchEl.textContent = cue.patch || '—';
+    patchEl.style.color = COLOR_MAP[cue.color] || COLOR_MAP.default;
+    document.getElementById('cue-action').textContent = cue.action || '';
+
+    // Relance l'animation
+    const cur = document.getElementById('cue-current');
+    cur.style.animation = 'none'; cur.offsetHeight; cur.style.animation = '';
+
+    // Prochaine cue
+    document.getElementById('next-time').textContent = next ? (next.time_fmt ? `@ ${next.time_fmt}` : '') : '';
+    document.getElementById('next-patch').textContent = next ? (next.patch || '') : '— Fin du set';
+    document.getElementById('next-action').textContent = next ? (next.action || '') : '';
+
+    // Compteur
+    document.getElementById('cue-counter').textContent = `${idx + 1} / ${CUES.length}`;
+
+    // Progression
+    document.getElementById('progress-fill').style.width = `${((idx + 1) / CUES.length) * 100}%`;
+
+    // Scrub bar
+    document.getElementById('scrub-bar').value = idx;
+
+    // Mode auto : timer vers prochaine cue
+    if (autoMode && next && next.time_s > cue.time_s) {
+        startCountdown(next.time_s - cue.time_s);
+    } else if (autoMode && !next) {
+        clearCountdown();
+    }
+}
+
+function nextCue() {
+    clearCountdown();
+    if (current + 1 <= CUES.length) render(current + 1);
+}
+
+function prevCue() {
+    clearCountdown();
+    if (current > 0) render(current - 1);
+}
+
+function restartSet() {
+    document.getElementById('end-screen').classList.remove('show');
+    clearCountdown();
+    elapsedSec = 0;
+    render(0);
+}
+
+function showEnd() {
+    document.getElementById('end-screen').classList.add('show');
+    clearCountdown();
+}
+
+function scrubTo(idx) {
+    clearCountdown();
+    render(Math.max(0, Math.min(idx, CUES.length - 1)));
+}
+
+// ── MODE AUTO ───────────────────────────────────────
+function toggleMode() {
+    autoMode = !autoMode;
+    const btn = document.getElementById('mode-toggle');
+    const scrub = document.getElementById('scrub-bar');
+    const ring = document.getElementById('timer-ring');
+    if (autoMode) {
+        btn.textContent = 'Mode : Auto ⏱';
+        btn.classList.add('auto');
+        scrub.classList.remove('show');
+        ring.style.display = 'flex';
+        render(current); // relance le timer
+    } else {
+        btn.textContent = 'Mode : Manuel';
+        btn.classList.remove('auto');
+        scrub.classList.add('show');
+        ring.style.display = 'none';
+        clearCountdown();
+    }
+}
+
+function startCountdown(secs) {
+    clearCountdown();
+    countdownSec = secs;
+    updateCountdownDisplay();
+    countdownTimer = setInterval(() => {
+        countdownSec--;
+        updateCountdownDisplay();
+        if (countdownSec <= 0) {
+            clearCountdown();
+            nextCue();
+        }
+    }, 1000);
+}
+
+function clearCountdown() {
+    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+    document.getElementById('timer-countdown').textContent = '--';
+}
+
+function updateCountdownDisplay() {
+    document.getElementById('timer-countdown').textContent = fmt(Math.max(0, countdownSec));
+}
+
+// ── ELAPSED ─────────────────────────────────────────
+elapsedTimer = setInterval(() => {
+    elapsedSec++;
+    document.getElementById('elapsed').textContent = fmt(elapsedSec);
+}, 1000);
+
+// ── PLEIN ÉCRAN ─────────────────────────────────────
+function toggleFS() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+// ── CLAVIER ─────────────────────────────────────────
+document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    switch(e.code) {
+        case 'Space':
+        case 'ArrowRight':
+        case 'KeyN':
+            e.preventDefault(); nextCue(); break;
+        case 'ArrowLeft':
+        case 'KeyP':
+            e.preventDefault(); prevCue(); break;
+        case 'KeyR':
+            restartSet(); break;
+        case 'KeyF':
+            toggleFS(); break;
+        case 'KeyA':
+            toggleMode(); break;
+        case 'Escape':
+            if (document.fullscreenElement) document.exitFullscreen();
+            break;
+    }
+});
+
+// ── SWIPE MOBILE ─────────────────────────────────────
+let touchStartX = 0;
+document.getElementById('stage').addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive: true});
+document.getElementById('stage').addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) { dx < 0 ? nextCue() : prevCue(); }
+    else nextCue();
+}, {passive: true});
+
+// ── INIT ─────────────────────────────────────────────
+if (CUES.length > 0) {
+    render(0);
+    // Mode libre : affiche scrub bar par défaut
+    document.getElementById('scrub-bar').classList.add('show');
+} else {
+    document.getElementById('cue-patch').textContent = 'Script vide';
+    document.getElementById('cue-action').textContent = 'Ajoute des cues dans l\'éditeur.';
+}
+</script>
+</body>
+</html>

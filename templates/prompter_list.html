@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Prompteur Dawless — Robōtariis{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">⬡ Prompteur Dawless</div>
+        <div class="page-subtitle">Scripts de set avec minutage et instructions</div>
+    </div>
+    <a href="{{ url_for('prompter_edit') }}" class="btn btn-primary">+ Nouveau script</a>
+</div>
+
+{% if scripts %}
+<div style="display:flex;flex-direction:column;gap:12px;">
+{% for s in scripts %}
+{% set cues = s.cues|tojson|safe %}
+<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;">
+    <div style="flex:1;min-width:0;">
+        <div style="font-family:var(--mono);font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;">{{ s.title }}</div>
+        {% if s.description %}
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);">{{ s.description }}</div>
+        {% endif %}
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:6px;">
+            {{ (s.cues|fromjson)|length }} cues · {{ s.created_at[:10] }}
+        </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0;">
+        <a href="{{ url_for('prompter_play', sid=s.id) }}" class="btn btn-primary" style="font-size:13px;padding:8px 16px;">▶ Jouer</a>
+        <a href="{{ url_for('prompter_edit', sid=s.id) }}" class="btn btn-secondary">✎ Éditer</a>
+        <form method="POST" action="{{ url_for('prompter_delete', sid=s.id) }}" style="display:inline;"
+              onsubmit="return confirm('Supprimer ce script ?')">
+            <button type="submit" class="btn btn-danger">✕</button>
+        </form>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty">
+    <div class="empty-icon">⬡</div>
+    <h3 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Aucun script</h3>
+    <p>Crée ton premier script de set Dawless.</p>
+    <br>
+    <a href="{{ url_for('prompter_edit') }}" class="btn btn-primary">+ Nouveau script</a>
+</div>
+{% endif %}
+
+{% endblock %}
