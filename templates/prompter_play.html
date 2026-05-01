@@ -6,340 +6,387 @@
 <title>▶ {{ script.title }} — Prompteur</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-        --bg:      #0A0908;
-        --surface: #111210;
-        --border:  #1E1D1B;
-        --text:    #E8E4DC;
-        --muted:   #5A5550;
-        --accent:  #D4380D;
-        --mono:    'IBM Plex Mono', monospace;
-        --c-default: #E8E4DC;
-        --c-red:     #FF4D26;
-        --c-orange:  #FF8C00;
-        --c-green:   #3DCC7E;
-        --c-blue:    #4DA6FF;
-        --c-purple:  #C77DFF;
-        --font-scale: 1;
-    }
-    html, body {
-        background: var(--bg); color: var(--text);
-        font-family: var(--mono); height: 100%;
-        overflow: hidden; user-select: none; -webkit-user-select: none;
-    }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+    --bg:      #0A0908;
+    --surface: #111210;
+    --border:  #252320;
+    --text:    #E8E4DC;
+    --muted:   #5A5550;
+    --accent:  #D4380D;
+    --mono:    'IBM Plex Mono', monospace;
+    --c-default: #E8E4DC;
+    --c-red:     #FF4D26;
+    --c-orange:  #FF8C00;
+    --c-green:   #3DCC7E;
+    --c-blue:    #4DA6FF;
+    --c-purple:  #C77DFF;
+    --fs: 1;
+}
+html, body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--mono); height: 100%;
+    overflow: hidden; user-select: none; -webkit-user-select: none;
+}
+#app { display: flex; flex-direction: column; height: 100dvh; }
 
-    /* ── LAYOUT ── */
-    #app { display: flex; flex-direction: column; height: 100vh; }
+/* ── TOPBAR ── */
+#topbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: nowrap;
+}
+.top-title {
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.top-title b { color: var(--text); font-weight: 700; }
+.top-btn {
+    background: none; border: 1px solid var(--muted); color: var(--muted);
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: .06em; padding: 5px 10px; cursor: pointer; border-radius: 3px;
+    white-space: nowrap; transition: all .12s; flex-shrink: 0; line-height: 1;
+}
+.top-btn:hover { border-color: var(--text); color: var(--text); }
+.top-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(212,56,13,.1); }
+.top-btn.danger { border-color: #552010; color: #A03020; }
+.top-btn.danger:hover { border-color: var(--accent); color: var(--accent); }
+#zoom-row { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+#zoom-pct { font-size: 10px; color: var(--muted); min-width: 34px; text-align: center; }
+#auto-dur-wrap { display: none; align-items: center; gap: 5px; flex-shrink: 0; }
+#auto-dur-wrap.show { display: flex; }
+#auto-dur-wrap label { font-size: 10px; color: var(--muted); }
+#auto-dur {
+    width: 48px; background: var(--bg); border: 1px solid var(--muted);
+    color: var(--text); font-family: var(--mono); font-size: 11px;
+    padding: 4px 6px; border-radius: 3px; text-align: right;
+}
+#auto-dur:focus { outline: none; border-color: var(--accent); }
 
-    /* ── TOPBAR ── */
-    #topbar {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 8px 16px; background: var(--surface);
-        border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 10px;
-    }
-    #btn-back {
-        color: var(--muted); text-decoration: none; font-size: 11px;
-        white-space: nowrap; flex-shrink: 0; transition: color .15s;
-    }
-    #btn-back:hover { color: var(--text); }
-    .top-title {
-        font-size: 11px; font-weight: 600; color: var(--muted);
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        flex: 1; letter-spacing: .08em;
-    }
-    .top-title span { color: var(--text); }
-    .top-btn {
-        background: none; border: 1px solid var(--muted); color: var(--muted);
-        font-family: var(--mono); font-size: 10px; text-transform: uppercase;
-        letter-spacing: .07em; padding: 4px 9px; cursor: pointer; border-radius: 3px;
-        white-space: nowrap; transition: all .15s; flex-shrink: 0;
-    }
-    .top-btn:hover { border-color: var(--text); color: var(--text); }
-    .top-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(212,56,13,.08); }
-    #zoom-row { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-    #zoom-row span { font-size: 10px; color: var(--muted); min-width: 32px; text-align: center; }
+/* ── BARRE DE PROGRESSION ── */
+#progress-wrap { height: 8px; background: var(--border); flex-shrink: 0; }
+#progress-fill { height: 100%; background: var(--accent); width: 0%; will-change: width; }
 
-    /* ── BARRE DE PROGRESSION TEMPS ── */
-    #progress-wrap { height: 4px; background: var(--border); flex-shrink: 0; }
-    #progress-fill { height: 100%; background: var(--accent); width: 0%; }
+/* ── SCRUB ── */
+#scrub-wrap {
+    padding: 6px 16px; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0; display: none;
+}
+#scrub-wrap.show { display: block; }
+#scrub-bar {
+    width: 100%; appearance: none; -webkit-appearance: none;
+    height: 4px; background: var(--border); border-radius: 2px; outline: none; cursor: pointer;
+}
+#scrub-bar::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    background: var(--accent); border-radius: 50%; cursor: pointer;
+}
 
-    /* ── SCRUB BAR ── */
-    #scrub-wrap {
-        padding: 5px 16px; background: var(--surface);
-        border-bottom: 1px solid var(--border); flex-shrink: 0; display: none;
-    }
-    #scrub-wrap.show { display: block; }
-    #scrub-bar {
-        width: 100%; appearance: none; -webkit-appearance: none;
-        height: 3px; background: var(--border); border-radius: 2px;
-        outline: none; cursor: pointer;
-    }
-    #scrub-bar::-webkit-slider-thumb {
-        -webkit-appearance: none; width: 14px; height: 14px;
-        background: var(--accent); border-radius: 50%; cursor: pointer;
-    }
+/* ── SCÈNE ── */
+#stage {
+    flex: 1; display: flex; flex-direction: column;
+    overflow: hidden; position: relative;
+}
 
-    /* ── SCÈNE ── */
-    #stage {
-        flex: 1; display: flex; flex-direction: column;
-        justify-content: stretch; align-items: stretch;
-        overflow: hidden; cursor: pointer; position: relative;
-    }
+/* ── ZONE PRÉCÉDENTE ── */
+#zone-prev {
+    flex: 0 0 auto; opacity: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 36px; min-height: 72px;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center; gap: 4px;
+    cursor: pointer; transition: opacity .2s;
+}
+#zone-prev.visible { opacity: 0.42; }
+#zone-prev.visible:hover { opacity: 0.6; }
+.prev-patch  { font-size: calc(20px * var(--fs)); font-weight: 600; color: var(--text); text-align: center; }
+.prev-action { font-size: calc(14px * var(--fs)); color: rgba(232,228,220,.75); text-align: center; }
+.prev-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); margin-bottom: 2px; }
 
-    /* ── ZONE PRÉCÉDENTE ── */
-    #zone-prev {
-        flex: 0 0 auto;
-        opacity: 0.38;
-        border-bottom: 1px solid var(--border);
-        padding: 10px 32px;
-        min-height: 64px; max-height: 96px;
-        display: flex; flex-direction: column;
-        justify-content: center; align-items: center;
-        cursor: pointer;
-    }
-    #zone-prev.hidden { visibility: hidden; }
-    .prev-patch  { font-size: calc(15px * var(--font-scale)); font-weight: 600; color: var(--text); text-align: center; }
-    .prev-action { font-size: calc(11px * var(--font-scale)); color: var(--text); text-align: center; margin-top: 3px; opacity: .75; }
+/* ── ZONE COURANTE ── */
+#zone-cur {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    padding: 24px 40px; gap: 18px; position: relative; cursor: pointer;
+}
+#cur-time { font-size: calc(13px * var(--fs)); color: var(--muted); letter-spacing: .18em; }
+#cur-patch {
+    font-size: calc(clamp(40px, 7vw, 88px) * var(--fs));
+    font-weight: 700; line-height: 1.05; letter-spacing: -.025em;
+    text-align: center; color: var(--c-default);
+    word-break: break-word;
+}
+#cur-action {
+    font-size: calc(clamp(20px, 3vw, 38px) * var(--fs));
+    line-height: 1.5; color: rgba(232,228,220,.72);
+    text-align: center; max-width: 860px; word-break: break-word;
+}
 
-    /* ── ZONE COURANTE ── */
-    #zone-cur {
-        flex: 1;
-        display: flex; flex-direction: column;
-        justify-content: center; align-items: center;
-        padding: 20px 32px; gap: 14px; position: relative;
-    }
-    #cur-time {
-        font-size: calc(11px * var(--font-scale));
-        color: var(--muted); letter-spacing: .15em;
-    }
-    #cur-patch {
-        font-size: calc(clamp(28px, 5.5vw, 68px) * var(--font-scale));
-        font-weight: 700; line-height: 1.1; letter-spacing: -.02em;
-        text-align: center; color: var(--c-default);
-        word-break: break-word; transition: color .2s;
-    }
-    #cur-action {
-        font-size: calc(clamp(14px, 2.5vw, 28px) * var(--font-scale));
-        line-height: 1.5; color: rgba(232,228,220,0.7);
-        text-align: center; max-width: 820px; word-break: break-word;
-    }
+/* Timer décompte */
+#timer-box {
+    position: absolute; top: 14px; right: 18px;
+    display: none; flex-direction: column; align-items: flex-end; gap: 2px;
+}
+#timer-box.show { display: flex; }
+#timer-val {
+    font-size: calc(38px * var(--fs)); font-weight: 700; color: var(--accent);
+    letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums;
+}
+#timer-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
 
-    /* Timer décompte auto */
-    #timer-box {
-        position: absolute; top: 12px; right: 16px;
-        display: none; flex-direction: column; align-items: flex-end; gap: 2px;
-    }
-    #timer-box.show { display: flex; }
-    #timer-val {
-        font-size: 32px; font-weight: 700; color: var(--accent);
-        letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums;
-    }
-    #timer-lbl { font-size: 8px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); }
+/* ── ZONE SUIVANTE ── */
+#zone-next {
+    flex: 0 0 auto; opacity: 0.52;
+    border-top: 1px solid var(--border);
+    padding: 12px 36px; min-height: 76px;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center; gap: 4px;
+    cursor: pointer;
+}
+#zone-next:hover { opacity: 0.7; }
+.next-lbl   { font-size: 9px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); }
+.next-patch  { font-size: calc(22px * var(--fs)); font-weight: 600; color: var(--text); text-align: center; }
+.next-action { font-size: calc(14px * var(--fs)); color: rgba(232,228,220,.65); text-align: center; }
 
-    /* ── ZONE SUIVANTE ── */
-    #zone-next {
-        flex: 0 0 auto;
-        opacity: 0.55;
-        border-top: 1px solid var(--border);
-        padding: 10px 32px;
-        min-height: 70px; max-height: 108px;
-        display: flex; flex-direction: column;
-        justify-content: center; align-items: center;
-        cursor: pointer;
-    }
-    .next-badge { font-size: 8px; text-transform: uppercase; letter-spacing: .15em; color: var(--muted); margin-bottom: 5px; }
-    .next-patch  { font-size: calc(17px * var(--font-scale)); font-weight: 600; color: var(--text); text-align: center; }
-    .next-action { font-size: calc(11px * var(--font-scale)); color: rgba(232,228,220,0.65); text-align: center; margin-top: 3px; }
+/* ── BOTTOMBAR ── */
+#bottombar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 16px; background: var(--surface);
+    border-top: 1px solid var(--border); flex-shrink: 0; gap: 12px;
+}
+#cue-counter { font-size: 12px; color: var(--muted); white-space: nowrap; }
+#hint { font-size: 9px; color: var(--muted); text-align: center; flex: 1; line-height: 1.9; }
+#hint kbd {
+    background: var(--border); border: 1px solid #333;
+    border-radius: 2px; padding: 1px 5px; font-family: var(--mono); font-size: 9px; color: #888;
+}
+#elapsed { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
-    /* ── BOTTOMBAR ── */
-    #bottombar {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 8px 16px; background: var(--surface);
-        border-top: 1px solid var(--border); flex-shrink: 0; gap: 12px;
-    }
-    #cue-counter { font-size: 11px; color: var(--muted); white-space: nowrap; }
-    #hint { font-size: 9px; color: var(--muted); text-align: center; flex: 1; line-height: 1.8; }
-    #hint kbd {
-        background: var(--border); border: 1px solid #2E2C29;
-        border-radius: 2px; padding: 1px 5px;
-        font-family: var(--mono); font-size: 9px; color: #888;
-    }
-    #elapsed {
-        font-size: 11px; color: var(--muted); white-space: nowrap;
-        font-variant-numeric: tabular-nums;
-    }
+/* ── FIN DE SET ── */
+#end-screen {
+    display: none; position: absolute; inset: 0; background: var(--bg);
+    flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; z-index: 20;
+}
+#end-screen.show { display: flex; }
+.end-title { font-size: 72px; font-weight: 700; color: var(--accent); }
+.end-sub   { font-size: 13px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+.end-actions { display: flex; gap: 12px; margin-top: 8px; }
+.end-btn {
+    background: var(--accent); color: white; border: none;
+    font-family: var(--mono); font-size: 13px; padding: 11px 28px;
+    cursor: pointer; border-radius: 3px; letter-spacing: .05em;
+}
+.end-btn:hover { opacity: .85; }
+.end-btn-ghost {
+    background: none; color: var(--muted); border: 1px solid var(--muted);
+    font-family: var(--mono); font-size: 13px; padding: 11px 28px;
+    cursor: pointer; border-radius: 3px; letter-spacing: .05em;
+}
+.end-btn-ghost:hover { color: var(--text); border-color: var(--text); }
 
-    /* ── FIN DE SET ── */
-    #end-screen {
-        display: none; position: absolute; inset: 0; background: var(--bg);
-        flex-direction: column; align-items: center; justify-content: center;
-        gap: 14px; z-index: 10;
-    }
-    #end-screen.show { display: flex; }
-    .end-title { font-size: 56px; font-weight: 700; color: var(--accent); }
-    .end-sub   { font-size: 12px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
-    .end-btn   {
-        margin-top: 12px; background: var(--accent); color: white; border: none;
-        font-family: var(--mono); font-size: 13px; padding: 10px 28px;
-        cursor: pointer; border-radius: 3px; letter-spacing: .05em;
-    }
-    .end-btn:hover { opacity: .85; }
+/* ── COULEURS ── */
+.color-default { color: var(--c-default) !important; }
+.color-red     { color: var(--c-red)     !important; }
+.color-orange  { color: var(--c-orange)  !important; }
+.color-green   { color: var(--c-green)   !important; }
+.color-blue    { color: var(--c-blue)    !important; }
+.color-purple  { color: var(--c-purple)  !important; }
 
-    /* ── COULEURS ── */
-    .color-default { color: var(--c-default) !important; }
-    .color-red     { color: var(--c-red)     !important; }
-    .color-orange  { color: var(--c-orange)  !important; }
-    .color-green   { color: var(--c-green)   !important; }
-    .color-blue    { color: var(--c-blue)    !important; }
-    .color-purple  { color: var(--c-purple)  !important; }
-
-    @media (max-width: 600px) {
-        .top-title { display: none; }
-        #hint { display: none; }
-        #zone-prev { min-height: 48px; max-height: 68px; padding: 6px 16px; }
-        #zone-next { min-height: 52px; max-height: 80px; padding: 6px 16px; }
-        #zone-cur  { padding: 12px 16px; gap: 10px; }
-        #timer-box { top: 8px; right: 10px; }
-        #timer-val { font-size: 24px; }
-    }
+@media (max-width: 600px) {
+    .top-title, #hint { display: none; }
+    #zone-prev { min-height: 54px; padding: 8px 18px; }
+    #zone-next { min-height: 58px; padding: 8px 18px; }
+    #zone-cur  { padding: 16px 18px; gap: 12px; }
+    #timer-box { top: 8px; right: 10px; }
+    #timer-val { font-size: calc(26px * var(--fs)); }
+    #auto-dur-wrap label { display: none; }
+}
 </style>
 </head>
 <body>
 <div id="app">
 
-    <!-- TOPBAR -->
-    <div id="topbar">
-        <a href="{{ url_for('prompter_list') }}" id="btn-back">← Retour</a>
-        <div class="top-title"><span>{{ script.title }}</span></div>
-        <button class="top-btn" id="btn-mode" onclick="toggleMode()">Manuel</button>
-        <div id="zoom-row">
-            <button class="top-btn" onclick="zoomOut()">A−</button>
-            <span id="zoom-pct">100%</span>
-            <button class="top-btn" onclick="zoomIn()">A+</button>
-        </div>
-        <button class="top-btn" onclick="toggleFS()" title="Plein écran">⛶</button>
+<!-- TOPBAR -->
+<div id="topbar">
+    <button class="top-btn danger" onclick="quitConfirm()">← Quitter</button>
+    <div class="top-title"><b>{{ script.title }}</b></div>
+
+    <!-- Mode Manuel / Auto -->
+    <button class="top-btn" id="btn-mode" onclick="toggleMode()">Manuel</button>
+
+    <!-- Durée par défaut en mode auto -->
+    <div id="auto-dur-wrap">
+        <label for="auto-dur">durée</label>
+        <input type="number" id="auto-dur" value="30" min="1" max="999">
+        <label for="auto-dur">s</label>
     </div>
 
-    <!-- BARRE DE PROGRESSION TEMPS -->
-    <div id="progress-wrap"><div id="progress-fill"></div></div>
-
-    <!-- SCRUB BAR (mode manuel) -->
-    <div id="scrub-wrap" class="show">
-        <input type="range" id="scrub-bar"
-               min="0" max="{{ [cues|length - 1, 0]|max }}" value="0"
-               oninput="scrubTo(parseInt(this.value))">
+    <!-- Zoom -->
+    <div id="zoom-row">
+        <button class="top-btn" onclick="zoomOut()">A−</button>
+        <span id="zoom-pct">100%</span>
+        <button class="top-btn" onclick="zoomIn()">A+</button>
     </div>
 
-    <!-- SCÈNE -->
-    <div id="stage">
+    <!-- Plein écran -->
+    <button class="top-btn" onclick="toggleFS()" title="Plein écran (F)">⛶</button>
+</div>
 
-        <!-- CUE PRÉCÉDENTE — clic = retour -->
-        <div id="zone-prev" class="hidden" onclick="event.stopPropagation(); prevCue()">
-            <div class="prev-patch"  id="prev-patch"></div>
-            <div class="prev-action" id="prev-action"></div>
+<!-- BARRE DE PROGRESSION -->
+<div id="progress-wrap"><div id="progress-fill"></div></div>
+
+<!-- SCRUB BAR -->
+<div id="scrub-wrap" class="show">
+    <input type="range" id="scrub-bar"
+           min="0" max="{{ [cues|length - 1, 0]|max }}" value="0"
+           oninput="scrubTo(parseInt(this.value))">
+</div>
+
+<!-- SCÈNE -->
+<div id="stage">
+
+    <!-- PRÉCÉDENTE : clic = retour -->
+    <div id="zone-prev" onclick="prevCue()">
+        <div class="prev-lbl">↑ Précédent</div>
+        <div class="prev-patch"  id="prev-patch"></div>
+        <div class="prev-action" id="prev-action"></div>
+    </div>
+
+    <!-- COURANTE : clic = suivant -->
+    <div id="zone-cur" onclick="nextCue()">
+        <div id="cur-time"></div>
+        <div id="cur-patch"></div>
+        <div id="cur-action"></div>
+        <div id="timer-box">
+            <div id="timer-val">0:00</div>
+            <div id="timer-lbl">Prochaine cue</div>
         </div>
+    </div>
 
-        <!-- CUE COURANTE — clic = suivant -->
-        <div id="zone-cur" onclick="nextCue()">
-            <div id="cur-time"></div>
-            <div id="cur-patch"></div>
-            <div id="cur-action"></div>
-            <div id="timer-box">
-                <div id="timer-val">0:00</div>
-                <div id="timer-lbl">Prochaine cue</div>
-            </div>
-        </div>
+    <!-- SUIVANTE : clic = suivant -->
+    <div id="zone-next" onclick="nextCue()">
+        <div class="next-lbl">↓ Suivant</div>
+        <div class="next-patch"  id="next-patch"></div>
+        <div class="next-action" id="next-action"></div>
+    </div>
 
-        <!-- CUE SUIVANTE — clic = suivant -->
-        <div id="zone-next" onclick="nextCue()">
-            <div class="next-badge">↓ Suivant</div>
-            <div class="next-patch"  id="next-patch"></div>
-            <div class="next-action" id="next-action"></div>
-        </div>
-
-        <!-- FIN DE SET -->
-        <div id="end-screen">
-            <div class="end-title">FIN</div>
-            <div class="end-sub">{{ script.title }}</div>
+    <!-- FIN DE SET -->
+    <div id="end-screen">
+        <div class="end-title">FIN</div>
+        <div class="end-sub">{{ script.title }}</div>
+        <div class="end-actions">
             <button class="end-btn"
                     onclick="event.stopPropagation(); restartSet()">↺ Recommencer</button>
+            <button class="end-btn-ghost"
+                    onclick="event.stopPropagation(); quitConfirm()">← Quitter</button>
         </div>
-
-    </div>
-
-    <!-- BOTTOMBAR -->
-    <div id="bottombar">
-        <div id="cue-counter">— / —</div>
-        <div id="hint">
-            <kbd>Espace</kbd>/<kbd>→</kbd> suivant &nbsp;·&nbsp;
-            <kbd>←</kbd> précédent &nbsp;·&nbsp;
-            <kbd>R</kbd> restart &nbsp;·&nbsp;
-            <kbd>F</kbd> plein écran &nbsp;·&nbsp;
-            <kbd>A</kbd> auto &nbsp;·&nbsp;
-            <kbd>+</kbd>/<kbd>−</kbd> zoom
-        </div>
-        <div id="elapsed">00:00</div>
     </div>
 
 </div>
 
+<!-- BOTTOMBAR -->
+<div id="bottombar">
+    <div id="cue-counter">— / —</div>
+    <div id="hint">
+        <kbd>Espace</kbd>/<kbd>→</kbd> suivant &nbsp;·&nbsp;
+        <kbd>←</kbd> précédent &nbsp;·&nbsp;
+        <kbd>A</kbd> auto &nbsp;·&nbsp;
+        <kbd>R</kbd> restart &nbsp;·&nbsp;
+        <kbd>F</kbd> plein écran &nbsp;·&nbsp;
+        <kbd>+</kbd>/<kbd>−</kbd> zoom &nbsp;·&nbsp;
+        <kbd>Q</kbd> quitter
+    </div>
+    <div id="elapsed">00:00</div>
+</div>
+
+</div><!-- #app -->
+
 <script>
+/* ─────────────────────────────────────────────
+   DONNÉES
+───────────────────────────────────────────── */
 const CUES = {{ cues | tojson }};
 const COLOR_MAP = {
-    'default': 'var(--c-default)',
-    'red':     'var(--c-red)',
-    'orange':  'var(--c-orange)',
-    'green':   'var(--c-green)',
-    'blue':    'var(--c-blue)',
-    'purple':  'var(--c-purple)'
+    'default':'var(--c-default)',
+    'red'    :'var(--c-red)',
+    'orange' :'var(--c-orange)',
+    'green'  :'var(--c-green)',
+    'blue'   :'var(--c-blue)',
+    'purple' :'var(--c-purple)'
 };
 
-let cur          = 0;
-let autoMode     = false;
-let countdownSec = 0;
-let countdownTimer = null;
-let elapsedSec   = 0;
-let fontScale    = 1.0;
-let isEnded      = false;
+const PROMPTER_URL = "{{ url_for('prompter_list') }}";
 
-// ── UTILITAIRES ───────────────────────────────────────
+/* ─────────────────────────────────────────────
+   ÉTAT
+───────────────────────────────────────────── */
+var cur           = 0;
+var autoMode      = false;
+var isEnded       = false;
+var fontScale     = 1.0;
+var elapsedSec    = 0;
+var countdownSec  = 0;
+var _cdTimer      = null;   // setInterval décompte
+var _pbTimer      = null;   // setTimeout barre de progression
+
+/* ─────────────────────────────────────────────
+   UTILITAIRES
+───────────────────────────────────────────── */
 function fmt(s) {
     s = Math.max(0, Math.floor(s));
     return String(Math.floor(s / 60)).padStart(2,'0') + ':' + String(s % 60).padStart(2,'0');
 }
 
-// ── BARRE DE PROGRESSION ──────────────────────────────
-// Réinitialise à 0% SANS animation, puis anime vers pct sur durationMs.
-// Si durationMs = 0 : saut instantané vers pct.
+function getDefaultDur() {
+    var v = parseInt(document.getElementById('auto-dur').value, 10);
+    return (isNaN(v) || v < 1) ? 30 : v;
+}
+
+/* ─────────────────────────────────────────────
+   BARRE DE PROGRESSION
+   Technique fiable : on coupe la transition,
+   on force la largeur à 0, on laisse le moteur
+   peindre ce frame via double rAF, puis on lance
+   la transition.
+───────────────────────────────────────────── */
 function setProgressBar(pct, durationMs) {
-    const fill = document.getElementById('progress-fill');
+    var fill = document.getElementById('progress-fill');
+    // Annule un timer de lancement en attente
+    if (_pbTimer !== null) { clearTimeout(_pbTimer); _pbTimer = null; }
+
     if (durationMs > 0) {
-        // 1. Couper toute transition et forcer 0%
+        // Étape 1 : stopper toute transition en cours, sauter à 0
         fill.style.transition = 'none';
         fill.style.width = '0%';
-        // 2. Forcer le reflow (le navigateur applique le 0% avant d'ajouter la transition)
-        void fill.offsetWidth;
-        // 3. Lancer l'animation
-        fill.style.transition = 'width ' + durationMs + 'ms linear';
-        fill.style.width = pct + '%';
+        // Étape 2 : double rAF — le premier attend que le navigateur
+        // enregistre le style 0%, le second lance l'animation
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                fill.style.transition = 'width ' + durationMs + 'ms linear';
+                fill.style.width = pct + '%';
+            });
+        });
     } else {
         fill.style.transition = 'none';
         fill.style.width = pct + '%';
     }
 }
 
-// ── DÉCOMPTE AUTO ─────────────────────────────────────
+/* ─────────────────────────────────────────────
+   DÉCOMPTE AUTO
+───────────────────────────────────────────── */
 function startCountdown(secs) {
     clearCountdown();
     if (secs <= 0) return;
     countdownSec = secs;
-    document.getElementById('timer-box').classList.add('show');
-    updateCountdownDisplay();
+    var box = document.getElementById('timer-box');
+    box.classList.add('show');
+    updateTimerDisplay();
     setProgressBar(100, secs * 1000);
-    countdownTimer = setInterval(function() {
+    _cdTimer = setInterval(function() {
         countdownSec--;
-        updateCountdownDisplay();
+        updateTimerDisplay();
         if (countdownSec <= 0) {
             clearCountdown();
             nextCue();
@@ -348,16 +395,18 @@ function startCountdown(secs) {
 }
 
 function clearCountdown() {
-    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+    if (_cdTimer) { clearInterval(_cdTimer); _cdTimer = null; }
     document.getElementById('timer-box').classList.remove('show');
     countdownSec = 0;
 }
 
-function updateCountdownDisplay() {
+function updateTimerDisplay() {
     document.getElementById('timer-val').textContent = fmt(countdownSec);
 }
 
-// ── RENDU D'UNE CUE ───────────────────────────────────
+/* ─────────────────────────────────────────────
+   RENDU
+───────────────────────────────────────────── */
 function render(idx) {
     if (!CUES.length) return;
     if (idx >= CUES.length) { showEnd(); return; }
@@ -366,33 +415,31 @@ function render(idx) {
     isEnded = false;
     cur = idx;
 
-    const cue  = CUES[idx];
-    const prev = idx > 0 ? CUES[idx - 1] : null;
-    const next = idx < CUES.length - 1 ? CUES[idx + 1] : null;
+    var cue  = CUES[idx];
+    var prev = idx > 0             ? CUES[idx - 1] : null;
+    var next = idx < CUES.length-1 ? CUES[idx + 1] : null;
 
-    // — Zone précédente —
-    const zPrev = document.getElementById('zone-prev');
+    /* Zone précédente */
+    var zp = document.getElementById('zone-prev');
     if (prev) {
         document.getElementById('prev-patch').textContent  = prev.patch  || '';
         document.getElementById('prev-action').textContent = prev.action || '';
-        zPrev.classList.remove('hidden');
+        zp.classList.add('visible');
     } else {
         document.getElementById('prev-patch').textContent  = '';
         document.getElementById('prev-action').textContent = '';
-        zPrev.classList.add('hidden');
+        zp.classList.remove('visible');
     }
 
-    // — Zone courante —
+    /* Zone courante */
     document.getElementById('cur-time').textContent =
         cue.time_fmt ? '@ ' + cue.time_fmt : '';
-
-    const pEl = document.getElementById('cur-patch');
+    var pEl = document.getElementById('cur-patch');
     pEl.textContent = cue.patch  || '—';
     pEl.style.color = COLOR_MAP[cue.color] || COLOR_MAP['default'];
-
     document.getElementById('cur-action').textContent = cue.action || '';
 
-    // — Zone suivante —
+    /* Zone suivante */
     if (next) {
         document.getElementById('next-patch').textContent  = next.patch  || '';
         document.getElementById('next-action').textContent = next.action || '';
@@ -401,24 +448,36 @@ function render(idx) {
         document.getElementById('next-action').textContent = '';
     }
 
-    // — Compteur + scrub —
+    /* Compteur + scrub */
     document.getElementById('cue-counter').textContent = (idx + 1) + ' / ' + CUES.length;
     document.getElementById('scrub-bar').value = idx;
 
-    // — Progression / décompte —
+    /* Progression */
     clearCountdown();
-    if (autoMode && next && next.time_s > cue.time_s) {
-        startCountdown(next.time_s - cue.time_s);
-    } else if (autoMode) {
-        // Dernière cue en auto : barre pleine, pas de timer
-        setProgressBar(100, 0);
+
+    if (autoMode) {
+        /* Calcule la durée : différence de temps entre cues, sinon durée par défaut */
+        var dur = 0;
+        if (next) {
+            if (next.time_s > cue.time_s) {
+                dur = next.time_s - cue.time_s;
+            } else {
+                dur = getDefaultDur();
+            }
+            startCountdown(dur);
+        } else {
+            /* Dernière cue : barre pleine, pas de timer */
+            setProgressBar(100, 0);
+        }
     } else {
-        // Mode manuel : barre positionnelle
+        /* Mode manuel : barre proportionnelle à la position */
         setProgressBar(Math.round((idx + 1) / CUES.length * 100), 0);
     }
 }
 
-// ── NAVIGATION ────────────────────────────────────────
+/* ─────────────────────────────────────────────
+   NAVIGATION
+───────────────────────────────────────────── */
 function nextCue() {
     if (isEnded) return;
     clearCountdown();
@@ -448,89 +507,112 @@ function showEnd() {
     isEnded = true;
     clearCountdown();
     setProgressBar(100, 0);
-    document.getElementById('end-screen').classList.add('show');
     document.getElementById('cue-counter').textContent = CUES.length + ' / ' + CUES.length;
+    document.getElementById('end-screen').classList.add('show');
 }
 
-// ── MODE AUTO / MANUEL ────────────────────────────────
+/* ─────────────────────────────────────────────
+   QUITTER AVEC CONFIRMATION
+───────────────────────────────────────────── */
+function quitConfirm() {
+    if (confirm('Quitter le set en cours et retourner à la liste des scripts ?')) {
+        window.location.href = PROMPTER_URL;
+    }
+}
+
+/* ─────────────────────────────────────────────
+   MODE AUTO / MANUEL
+───────────────────────────────────────────── */
 function toggleMode() {
     autoMode = !autoMode;
-    const btn   = document.getElementById('btn-mode');
-    const scrub = document.getElementById('scrub-wrap');
+    var btn   = document.getElementById('btn-mode');
+    var scrub = document.getElementById('scrub-wrap');
+    var durW  = document.getElementById('auto-dur-wrap');
     if (autoMode) {
-        btn.textContent = 'Auto ⏱';
-        btn.classList.add('active');
+        btn.textContent = 'Auto ⏱';  btn.classList.add('active');
         scrub.classList.remove('show');
+        durW.classList.add('show');
     } else {
-        btn.textContent = 'Manuel';
-        btn.classList.remove('active');
+        btn.textContent = 'Manuel';   btn.classList.remove('active');
         scrub.classList.add('show');
+        durW.classList.remove('show');
+        clearCountdown();
     }
-    // Re-render pour appliquer le bon comportement timer/barre
     if (!isEnded) render(cur);
 }
 
-// ── ZOOM POLICE ───────────────────────────────────────
-function setZoom(scale) {
-    fontScale = Math.max(0.4, Math.min(2.5, scale));
-    document.documentElement.style.setProperty('--font-scale', fontScale);
+/* ─────────────────────────────────────────────
+   ZOOM
+───────────────────────────────────────────── */
+function setZoom(s) {
+    fontScale = Math.max(0.4, Math.min(2.5, s));
+    document.documentElement.style.setProperty('--fs', fontScale);
     document.getElementById('zoom-pct').textContent = Math.round(fontScale * 100) + '%';
 }
 function zoomIn()  { setZoom(fontScale + 0.15); }
 function zoomOut() { setZoom(fontScale - 0.15); }
 
-// ── PLEIN ÉCRAN ───────────────────────────────────────
+/* ─────────────────────────────────────────────
+   PLEIN ÉCRAN
+───────────────────────────────────────────── */
 function toggleFS() {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(function() {});
-    } else {
+    if (!document.fullscreenElement)
+        document.documentElement.requestFullscreen().catch(function(){});
+    else
         document.exitFullscreen();
-    }
 }
 
-// ── CHRONO ELAPSED ────────────────────────────────────
+/* ─────────────────────────────────────────────
+   CHRONO GLOBAL
+───────────────────────────────────────────── */
 setInterval(function() {
     elapsedSec++;
     document.getElementById('elapsed').textContent = fmt(elapsedSec);
 }, 1000);
 
-// ── CLAVIER ───────────────────────────────────────────
+/* ─────────────────────────────────────────────
+   CLAVIER
+───────────────────────────────────────────── */
 document.addEventListener('keydown', function(e) {
     if (e.target.tagName === 'INPUT') return;
-    switch(e.code) {
+    switch (e.code) {
         case 'Space':
-        case 'ArrowRight':    e.preventDefault(); nextCue(); break;
-        case 'ArrowLeft':     e.preventDefault(); prevCue(); break;
-        case 'KeyR':          restartSet(); break;
-        case 'KeyF':          toggleFS(); break;
-        case 'KeyA':          toggleMode(); break;
+        case 'ArrowRight':      e.preventDefault(); nextCue();    break;
+        case 'ArrowLeft':       e.preventDefault(); prevCue();    break;
+        case 'KeyR':            restartSet();                      break;
+        case 'KeyF':            toggleFS();                        break;
+        case 'KeyA':            toggleMode();                      break;
+        case 'KeyQ':            quitConfirm();                     break;
         case 'Equal':
-        case 'NumpadAdd':     zoomIn();  break;
+        case 'NumpadAdd':       zoomIn();                          break;
         case 'Minus':
-        case 'NumpadSubtract':zoomOut(); break;
+        case 'NumpadSubtract':  zoomOut();                         break;
         case 'Escape':
             if (document.fullscreenElement) document.exitFullscreen();
             break;
     }
 });
 
-// ── SWIPE MOBILE ──────────────────────────────────────
+/* ─────────────────────────────────────────────
+   SWIPE MOBILE
+───────────────────────────────────────────── */
 var _tx = 0, _ty = 0;
-document.getElementById('zone-cur').addEventListener('touchstart', function(e) {
-    _tx = e.touches[0].clientX;
-    _ty = e.touches[0].clientY;
+var zCur = document.getElementById('zone-cur');
+zCur.addEventListener('touchstart', function(e) {
+    _tx = e.touches[0].clientX; _ty = e.touches[0].clientY;
 }, {passive: true});
-document.getElementById('zone-cur').addEventListener('touchend', function(e) {
+zCur.addEventListener('touchend', function(e) {
     var dx = e.changedTouches[0].clientX - _tx;
     var dy = e.changedTouches[0].clientY - _ty;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy))
         dx < 0 ? nextCue() : prevCue();
-    } else if (Math.abs(dx) < 15 && Math.abs(dy) < 15) {
+    else if (Math.abs(dx) < 15 && Math.abs(dy) < 15)
         nextCue();
-    }
 }, {passive: true});
 
-// ── INIT ─────────────────────────────────────────────
+/* ─────────────────────────────────────────────
+   INIT
+───────────────────────────────────────────── */
 if (CUES.length > 0) {
     render(0);
 } else {
