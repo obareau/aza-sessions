@@ -5,6 +5,17 @@
 
 ---
 
+## v2.0.1 — 2026-05-01 — Hotfix UI
+
+### 🐛 Corrections
+- **Menu hamburger iPad** — breakpoint relevé de 600px à 1024px : le menu hamburger s'active maintenant sur tous les iPads (portrait et paysage) au lieu d'afficher la nav desktop tronquée
+- Liens du drawer agrandis (padding 13px) pour meilleure ergonomie tactile
+
+### ✨ Améliorations
+- **Boutons zoom global A+ / A−** ajoutés dans la barre de menu — toujours visibles, plage 70 % à 160 %, persisté en localStorage
+
+---
+
 ## v2.0.0 — 2026-05-01 — Release majeure
 
 La version 2.0 marque le passage d'un outil de documentation locale à une
