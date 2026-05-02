@@ -1,3 +1,5 @@
+from flask_login import login_required
+
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from constants import VERSION
@@ -8,6 +10,7 @@ bp = Blueprint("influences", __name__)
 
 
 @bp.route("/influences", methods=["GET", "POST"])
+@login_required
 def manage_influences():
     conn = get_db()
     if request.method == "POST":

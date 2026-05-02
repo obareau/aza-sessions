@@ -1,6 +1,8 @@
 import random
 from collections import Counter
 
+from flask_login import login_required
+
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from constants import (CHARACTERS, INSPI_TYPES, INTENTIONS, MIRACK_CATS,
@@ -14,6 +16,7 @@ bp = Blueprint("misc", __name__)
 # ── Samples ───────────────────────────────────────────────────────────────────
 
 @bp.route("/samples", methods=["GET", "POST"])
+@login_required
 def manage_samples():
     conn = get_db()
     if request.method == "POST":
@@ -46,6 +49,7 @@ def manage_samples():
 # ── Morceaux inspirants ────────────────────────────────────────────────────────
 
 @bp.route("/tracks", methods=["GET", "POST"])
+@login_required
 def manage_tracks():
     conn = get_db()
     if request.method == "POST":
@@ -77,6 +81,7 @@ def manage_tracks():
 # ── Wishlist ──────────────────────────────────────────────────────────────────
 
 @bp.route("/wishlist", methods=["GET", "POST"])
+@login_required
 def manage_wishlist():
     conn = get_db()
     if request.method == "POST":
@@ -113,6 +118,7 @@ def manage_wishlist():
 # ── Inspirations ──────────────────────────────────────────────────────────────
 
 @bp.route("/inspirations", methods=["GET", "POST"])
+@login_required
 def manage_inspirations():
     conn = get_db()
     if request.method == "POST":
@@ -142,6 +148,7 @@ def manage_inspirations():
 # ── MiRack ────────────────────────────────────────────────────────────────────
 
 @bp.route("/mirack", methods=["GET", "POST"])
+@login_required
 def manage_mirack():
     conn = get_db()
     if request.method == "POST":
@@ -182,6 +189,7 @@ def manage_mirack():
 # ── Spark ─────────────────────────────────────────────────────────────────────
 
 @bp.route("/spark")
+@login_required
 def spark():
     conn = get_db()
     sessions = conn.execute("SELECT * FROM sessions ORDER BY date DESC").fetchall()
@@ -294,6 +302,7 @@ def spark():
 
 
 @bp.route("/spark/focus")
+@login_required
 def spark_focus():
     conn = get_db()
     sessions = conn.execute("SELECT * FROM sessions ORDER BY date DESC").fetchall()
@@ -361,5 +370,6 @@ def spark_focus():
 # ── About ─────────────────────────────────────────────────────────────────────
 
 @bp.route("/about")
+@login_required
 def about():
     return render_template("about.html", version=VERSION, oblique=rand_oblique())

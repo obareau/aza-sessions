@@ -612,6 +612,11 @@
             <a href="{{ url_for('sessions.form_blank') }}" title="Formulaire papier — mode dégradé">⎙ Form</a>
             <a href="{{ url_for('settings.settings') }}">Paramètres</a>
             <a href="{{ url_for('misc.about') }}">About</a>
+            {% if current_user.is_authenticated %}
+            <span class="sep">|</span>
+            <span style="font-family:var(--mono);font-size:10px;opacity:0.6;">{{ current_user.username }}</span>
+            <a href="{{ url_for('auth.logout') }}" title="Déconnexion" style="opacity:0.7;">⏻</a>
+            {% endif %}
             <span class="version-badge">v{{ version }}</span>
             <!-- THEME PICKER -->
             <div id="theme-picker" style="display:flex;align-items:center;gap:4px;margin-left:6px;position:relative;">
@@ -648,6 +653,21 @@
         <button class="oblique-btn" onclick="refreshOblique()">Autre</button>
     </div>
     {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div style="padding:0 24px;margin-top:8px;">
+        {% for category, message in messages %}
+        <div style="font-family:var(--mono);font-size:12px;padding:10px 14px;border-radius:var(--radius);margin-bottom:6px;
+            {% if category == 'error' %}background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);
+            {% elif category == 'success' %}background:var(--success-soft);border:1px solid var(--success);color:var(--success);
+            {% else %}background:var(--accent2-soft);border:1px solid var(--accent2);color:var(--accent2);{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
 
     <main>{% block content %}{% endblock %}</main>
 

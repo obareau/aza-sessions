@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initialisation — Robōtariis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #111210;
+            --surface: #1F1E1C;
+            --border: #2E2C29;
+            --text: #E8E4DC;
+            --text-muted: #857F78;
+            --accent: #E84B1A;
+            --accent-soft: #2A1710;
+            --accent2: #4D7DB5;
+            --accent2-soft: #111E2E;
+            --success: #3D8A5F;
+            --success-soft: #0F1F15;
+            --warning: #D4890A;
+            --warning-soft: #201500;
+            --mono: 'IBM Plex Mono', monospace;
+            --sans: 'IBM Plex Sans', sans-serif;
+            --radius: 2px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .auth-wrap { width: 100%; max-width: 420px; }
+        .auth-brand { text-align: center; margin-bottom: 32px; }
+        .auth-brand-name {
+            font-family: var(--mono); font-size: 11px;
+            text-transform: uppercase; letter-spacing: 0.25em; color: var(--text-muted);
+        }
+        .auth-brand-dot {
+            display: inline-block; width: 8px; height: 8px;
+            background: var(--accent); border-radius: 50%;
+            margin-right: 6px; vertical-align: middle;
+        }
+        .auth-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+        }
+        .auth-title {
+            font-family: var(--mono); font-size: 13px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.12em;
+            color: var(--text-muted); margin-bottom: 6px;
+        }
+        .auth-subtitle {
+            font-size: 12px; color: var(--text-muted);
+            font-family: var(--mono); margin-bottom: 24px;
+            padding: 10px 12px; background: var(--warning-soft);
+            border: 1px solid var(--warning); border-radius: var(--radius);
+            color: var(--warning);
+        }
+        .form-group { margin-bottom: 16px; }
+        label {
+            display: block; font-family: var(--mono); font-size: 10px;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--text-muted); font-weight: 600; margin-bottom: 6px;
+        }
+        input[type="text"], input[type="email"], input[type="password"] {
+            width: 100%; font-family: var(--mono); font-size: 13px;
+            background: var(--bg); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 10px 12px;
+            color: var(--text); transition: border-color 0.15s;
+        }
+        input:focus { outline: none; border-color: var(--accent2); }
+        .btn-submit {
+            width: 100%; margin-top: 20px;
+            font-family: var(--mono); font-size: 12px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            background: var(--accent); color: white;
+            border: none; border-radius: var(--radius);
+            padding: 12px; cursor: pointer; transition: background 0.15s;
+        }
+        .btn-submit:hover { background: #c53d10; }
+        .flash {
+            font-family: var(--mono); font-size: 11px;
+            padding: 10px 12px; border-radius: var(--radius);
+            margin-bottom: 16px;
+        }
+        .flash-error   { background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); }
+        .flash-success { background: var(--success-soft); border: 1px solid var(--success); color: var(--success); }
+    </style>
+</head>
+<body>
+<div class="auth-wrap">
+    <div class="auth-brand">
+        <div class="auth-brand-name"><span class="auth-brand-dot"></span>Robōtariis Sessions</div>
+    </div>
+
+    <div class="auth-card">
+        <div class="auth-title">Initialisation</div>
+        <div class="auth-subtitle">
+            ⚠ Aucun compte trouvé — création du premier compte administrateur.
+            Cette page sera inaccessible dès qu'un compte existera.
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endwith %}
+
+        <form method="POST">
+            <div class="form-group">
+                <label for="username">Nom d'utilisateur</label>
+                <input type="text" id="username" name="username"
+                       value="{{ request.form.get('username', '') }}"
+                       autocomplete="username" autofocus required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email"
+                       value="{{ request.form.get('email', '') }}"
+                       autocomplete="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Mot de passe <span style="color:var(--text-muted)">(8 car. min)</span></label>
+                <input type="password" id="password" name="password"
+                       autocomplete="new-password" required minlength="8">
+            </div>
+            <div class="form-group">
+                <label for="confirm">Confirmer le mot de passe</label>
+                <input type="password" id="confirm" name="confirm"
+                       autocomplete="new-password" required>
+            </div>
+            <button type="submit" class="btn-submit">Créer le compte admin →</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

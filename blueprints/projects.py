@@ -1,3 +1,5 @@
+from flask_login import login_required
+
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from constants import VERSION
@@ -8,6 +10,7 @@ bp = Blueprint("projects", __name__)
 
 
 @bp.route("/projects")
+@login_required
 def list_projects():
     conn = get_db()
     projects = conn.execute("SELECT * FROM projects ORDER BY title").fetchall()
@@ -23,6 +26,7 @@ def list_projects():
 
 
 @bp.route("/projects/new", methods=["POST"])
+@login_required
 def new_project():
     title = request.form.get("title", "").strip()
     if title:
@@ -38,6 +42,7 @@ def new_project():
 
 
 @bp.route("/projects/<int:pid>")
+@login_required
 def view_project(pid):
     conn = get_db()
     project = conn.execute("SELECT * FROM projects WHERE id=?", (pid,)).fetchone()
@@ -53,6 +58,7 @@ def view_project(pid):
 
 
 @bp.route("/projects/<int:pid>/edit", methods=["GET", "POST"])
+@login_required
 def edit_project(pid):
     conn = get_db()
     project = conn.execute("SELECT * FROM projects WHERE id=?", (pid,)).fetchone()
@@ -78,6 +84,7 @@ def edit_project(pid):
 
 
 @bp.route("/projects/<int:pid>/delete", methods=["POST"])
+@login_required
 def delete_project(pid):
     conn = get_db()
     conn.execute("UPDATE sessions SET project_id=NULL WHERE project_id=?", (pid,))

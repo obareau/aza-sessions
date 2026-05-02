@@ -2,6 +2,8 @@ import json
 from collections import Counter
 from datetime import date as _date, timedelta
 
+from flask_login import login_required
+
 from flask import Blueprint, render_template
 
 from constants import VERSION
@@ -12,6 +14,7 @@ bp = Blueprint("stats", __name__)
 
 
 @bp.route("/stats")
+@login_required
 def stats():
     conn = get_db()
     sessions = conn.execute("SELECT * FROM sessions").fetchall()

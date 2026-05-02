@@ -2,6 +2,8 @@ import os
 import sqlite3
 import tempfile
 
+from flask_login import login_required
+
 from flask import Blueprint, Response, redirect, render_template, request, url_for
 
 from config import get_config, save_config
@@ -13,6 +15,7 @@ bp = Blueprint("settings", __name__)
 
 
 @bp.route("/settings")
+@login_required
 def settings():
     conn = get_db()
     nb_sessions = conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
@@ -22,6 +25,7 @@ def settings():
 
 
 @bp.route("/settings/backup")
+@login_required
 def settings_backup():
     with open(DB_PATH, "rb") as f:
         data = f.read()
@@ -32,6 +36,7 @@ def settings_backup():
 
 
 @bp.route("/settings/import", methods=["POST"])
+@login_required
 def settings_import():
     f = request.files.get("db_file")
     if not f or not f.filename.endswith(".db"):
@@ -103,6 +108,7 @@ def settings_import():
 
 
 @bp.route("/settings/reset-sessions", methods=["POST"])
+@login_required
 def settings_reset_sessions():
     conn = get_db()
     conn.execute("DELETE FROM sessions")
@@ -115,6 +121,7 @@ def settings_reset_sessions():
 
 
 @bp.route("/settings/obsidian", methods=["POST"])
+@login_required
 def settings_obsidian():
     cfg = get_config()
     cfg["obsidian_vault"] = request.form.get("obsidian_vault", "").strip()

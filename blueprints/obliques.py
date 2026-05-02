@@ -1,3 +1,5 @@
+from flask_login import login_required
+
 from flask import Blueprint, jsonify, redirect, render_template, request, url_for
 
 from constants import VERSION
@@ -8,11 +10,13 @@ bp = Blueprint("obliques", __name__)
 
 
 @bp.route("/oblique")
+@login_required
 def get_oblique():
     return jsonify({"text": rand_oblique()})
 
 
 @bp.route("/obliques", methods=["GET", "POST"])
+@login_required
 def manage_obliques():
     conn = get_db()
     if request.method == "POST":

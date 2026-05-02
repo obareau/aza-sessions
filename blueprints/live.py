@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from flask_login import login_required
+
 from flask import Blueprint, jsonify, redirect, render_template, request, url_for
 
 from constants import INTENTIONS, ITEM_TYPES, MODES, VERSION
@@ -10,6 +12,7 @@ bp = Blueprint("live", __name__)
 
 
 @bp.route("/live")
+@login_required
 def live():
     conn = get_db()
     ls = conn.execute("SELECT * FROM live_session LIMIT 1").fetchone()
@@ -27,6 +30,7 @@ def live():
 
 
 @bp.route("/live/start", methods=["POST"])
+@login_required
 def live_start():
     conn = get_db()
     conn.execute("DELETE FROM live_session")
@@ -47,6 +51,7 @@ def live_start():
 
 
 @bp.route("/live/save", methods=["POST"])
+@login_required
 def live_save():
     data = request.get_json(silent=True) or {}
     conn = get_db()
@@ -71,6 +76,7 @@ def live_save():
 
 
 @bp.route("/live/finish", methods=["POST"])
+@login_required
 def live_finish():
     conn = get_db()
     conn.execute("""
@@ -94,6 +100,7 @@ def live_finish():
 
 
 @bp.route("/live/abandon", methods=["POST"])
+@login_required
 def live_abandon():
     conn = get_db()
     conn.execute("DELETE FROM live_session")

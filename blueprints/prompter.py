@@ -1,5 +1,7 @@
 import json
 
+from flask_login import login_required
+
 from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
 
 from constants import VERSION
@@ -10,6 +12,7 @@ bp = Blueprint("prompter", __name__)
 
 
 @bp.route("/prompter")
+@login_required
 def prompter_list():
     conn = get_db()
     scripts = conn.execute("SELECT * FROM prompter_scripts ORDER BY created_at DESC").fetchall()
@@ -19,6 +22,7 @@ def prompter_list():
 
 @bp.route("/prompter/new", methods=["GET", "POST"])
 @bp.route("/prompter/<int:sid>/edit", methods=["GET", "POST"])
+@login_required
 def prompter_edit(sid=None):
     conn = get_db()
     script = None
@@ -67,6 +71,7 @@ def prompter_edit(sid=None):
 
 
 @bp.route("/prompter/<int:sid>/delete", methods=["POST"])
+@login_required
 def prompter_delete(sid):
     conn = get_db()
     conn.execute("DELETE FROM prompter_scripts WHERE id=?", (sid,))
@@ -76,6 +81,7 @@ def prompter_delete(sid):
 
 
 @bp.route("/prompter/<int:sid>/play")
+@login_required
 def prompter_play(sid):
     conn = get_db()
     script = conn.execute("SELECT * FROM prompter_scripts WHERE id=?", (sid,)).fetchone()
@@ -87,6 +93,7 @@ def prompter_play(sid):
 
 
 @bp.route("/prompter/<int:sid>/export/json")
+@login_required
 def prompter_export_json(sid):
     conn = get_db()
     script = conn.execute("SELECT * FROM prompter_scripts WHERE id=?", (sid,)).fetchone()
@@ -105,6 +112,7 @@ def prompter_export_json(sid):
 
 
 @bp.route("/prompter/<int:sid>/export/md")
+@login_required
 def prompter_export_md(sid):
     conn = get_db()
     script = conn.execute("SELECT * FROM prompter_scripts WHERE id=?", (sid,)).fetchone()
@@ -130,6 +138,7 @@ def prompter_export_md(sid):
 
 
 @bp.route("/prompter/import", methods=["POST"])
+@login_required
 def prompter_import():
     f = request.files.get("import_file")
     if not f:

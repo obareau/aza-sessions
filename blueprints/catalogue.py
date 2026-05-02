@@ -1,3 +1,5 @@
+from flask_login import login_required
+
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from constants import ITEM_TYPES, VERSION
@@ -8,6 +10,7 @@ bp = Blueprint("catalogue", __name__)
 
 
 @bp.route("/catalogue", methods=["GET", "POST"])
+@login_required
 def manage_catalogue():
     conn = get_db()
     if request.method == "POST":

@@ -7,10 +7,12 @@ import socket
 from datetime import datetime
 
 from flask import Flask
+from flask_login import LoginManager
 
 from config import get_config
 from constants import DEFAULT_OBLIQUE, VERSION
 from db import DB_PATH, get_db, init_db
+from models import User
 
 # Se placer dans le dossier du script — évite PermissionError quand lancé via chemin absolu
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -20,8 +22,23 @@ app.secret_key = os.environ.get("SECRET_KEY", "robotariis-dev-key-change-in-prod
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.jinja_env.filters["fromjson"] = json.loads
 
+# ── Flask-Login ───────────────────────────────────────────────────────────────
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "auth.login"
+login_manager.login_message = "Connexion requise."
+login_manager.login_message_category = "info"
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get(int(user_id))
+
+
 # ── Blueprints ────────────────────────────────────────────────────────────────
 
+from blueprints.auth      import bp as auth_bp
 from blueprints.sessions  import bp as sessions_bp
 from blueprints.projects  import bp as projects_bp
 from blueprints.prompter  import bp as prompter_bp
@@ -33,6 +50,7 @@ from blueprints.settings  import bp as settings_bp
 from blueprints.live      import bp as live_bp
 from blueprints.misc      import bp as misc_bp
 
+app.register_blueprint(auth_bp)
 app.register_blueprint(sessions_bp)
 app.register_blueprint(projects_bp)
 app.register_blueprint(prompter_bp)

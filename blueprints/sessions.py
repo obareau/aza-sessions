@@ -3,6 +3,8 @@ import os
 import tempfile
 from datetime import datetime
 
+from flask_login import login_required
+
 from flask import Blueprint, Response, flash, jsonify, redirect, render_template, request, url_for
 
 from config import get_config, save_config
@@ -14,6 +16,7 @@ bp = Blueprint("sessions", __name__)
 
 
 @bp.route("/")
+@login_required
 def index():
     conn = get_db()
     sessions = conn.execute("""
@@ -31,6 +34,7 @@ def index():
 
 
 @bp.route("/new", methods=["GET", "POST"])
+@login_required
 def new_session():
     if request.method == "POST":
         data = request.form
@@ -138,6 +142,7 @@ def new_session():
 
 
 @bp.route("/session/<int:sid>")
+@login_required
 def view_session(sid):
     conn = get_db()
     session = conn.execute("""
@@ -158,6 +163,7 @@ def view_session(sid):
 
 
 @bp.route("/form/blank")
+@login_required
 def form_blank():
     conn = get_db()
     catalogue = {}
@@ -179,6 +185,7 @@ def form_blank():
 
 
 @bp.route("/session/<int:sid>/print")
+@login_required
 def print_session(sid):
     conn = get_db()
     session = conn.execute("""
@@ -194,6 +201,7 @@ def print_session(sid):
 
 
 @bp.route("/session/<int:sid>/edit", methods=["GET", "POST"])
+@login_required
 def edit_session(sid):
     conn = get_db()
     session = conn.execute(
@@ -274,6 +282,7 @@ def edit_session(sid):
 
 
 @bp.route("/session/<int:sid>/delete", methods=["POST"])
+@login_required
 def delete_session(sid):
     conn = get_db()
     conn.execute("DELETE FROM sessions WHERE id=?", (sid,))
@@ -285,6 +294,7 @@ def delete_session(sid):
 # ── Export ────────────────────────────────────────────────────────────────────
 
 @bp.route("/export/<int:sid>")
+@login_required
 def export_one(sid):
     conn = get_db()
     s = conn.execute("""
@@ -303,6 +313,7 @@ def export_one(sid):
 
 
 @bp.route("/export/all")
+@login_required
 def export_all():
     conn = get_db()
     sessions = conn.execute("""
@@ -342,6 +353,7 @@ Aucune session à exporter.
 
 
 @bp.route("/export/csv")
+@login_required
 def export_csv():
     import csv
     import io
@@ -376,6 +388,7 @@ def export_csv():
 
 
 @bp.route("/session/<int:sid>/obsidian", methods=["POST"])
+@login_required
 def export_obsidian(sid):
     cfg = get_config()
     vault = cfg.get("obsidian_vault", "").strip()
