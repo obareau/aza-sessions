@@ -636,7 +636,7 @@ def _catalogue_blocks(catalogue, block_size=16):
             suffix = f" {i+1}/{n}" if n > 1 else ""
             blocks.append({
                 'title':    label + suffix,
-                'items':    chunk,
+                'entries':  chunk,
                 'add_line': (i == n - 1),   # ligne vierge uniquement sur le dernier bloc
             })
     return blocks
@@ -651,7 +651,7 @@ def _influence_blocks(influences, block_size=20):
     return [
         {
             'title':    f"Influences de session{f' {i+1}/{n}' if n > 1 else ''}",
-            'items':    chunk,
+            'entries':  chunk,
             'add_line': (i == n - 1),
         }
         for i, chunk in enumerate(chunks)

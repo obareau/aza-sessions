@@ -412,7 +412,7 @@
             {{ block.title }}
         </div>
         <div class="check-grid">
-            {% for item in block.items %}
+            {% for item in block.entries %}
             <div class="chk-item"><span class="chk-box"></span>{{ item.name }}</div>
             {% endfor %}
             {% if block.add_line %}
@@ -482,7 +482,7 @@
         </div>
         {% endif %}
         <div class="check-grid" style="grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));">
-            {% for inf in block.items %}
+            {% for inf in block.entries %}
             <div class="chk-item"><span class="chk-box"></span>{{ inf.name }}</div>
             {% endfor %}
             {% if block.add_line %}
