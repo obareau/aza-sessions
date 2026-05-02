@@ -202,14 +202,24 @@
     }
 
     /* ── CHECKBOXES CATALOGUE ── */
+    /* Conteneur 2 colonnes CSS — les blocs coulent naturellement
+       et ne sont JAMAIS coupés en milieu de bloc */
+    .catalogue-columns {
+        column-count: 2;
+        column-gap: 18px;
+        margin-bottom: 6px;
+    }
     .check-section {
         margin-bottom: 8px;
         break-inside: avoid;
+        page-break-inside: avoid;       /* legacy Webkit */
+        -webkit-column-break-inside: avoid;
+        overflow: hidden;               /* aide certains moteurs print */
     }
     .check-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-        gap: 3px 8px;
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 3px 6px;
         margin-top: 4px;
     }
     .chk-item {
@@ -391,60 +401,26 @@
         </div>
     </div>
 
-    <!-- HARDWARE -->
-    {% if catalogue.machine %}
+    <!-- CATALOGUE — blocs auto-paginés, jamais coupés -->
+    <div class="section-head">∙ Matériel &amp; Logiciels</div>
+    <div class="catalogue-columns">
+    {% for block in catalogue_blocks %}
     <div class="check-section">
-        <div class="section-head">∙ Hardware / Machines</div>
+        <div style="font-family:var(--mono);font-size:7px;font-weight:700;text-transform:uppercase;
+                    letter-spacing:.16em;color:var(--ink-soft);margin-bottom:4px;padding-bottom:2px;
+                    border-bottom:1px solid var(--rule);">
+            {{ block.title }}
+        </div>
         <div class="check-grid">
-            {% for item in catalogue.machine %}
+            {% for item in block.items %}
             <div class="chk-item"><span class="chk-box"></span>{{ item.name }}</div>
             {% endfor %}
+            {% if block.add_line %}
             <div class="chk-item add"><span class="chk-box"></span><span class="add-line"></span></div>
+            {% endif %}
         </div>
     </div>
-    {% endif %}
-
-    {% if catalogue.effet %}
-    <div class="check-section">
-        <div class="section-head">∙ Effets Hardware</div>
-        <div class="check-grid">
-            {% for item in catalogue.effet %}
-            <div class="chk-item"><span class="chk-box"></span>{{ item.name }}</div>
-            {% endfor %}
-            <div class="chk-item add"><span class="chk-box"></span><span class="add-line"></span></div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- DAW + iOS + Plugins -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 16px;">
-        {% if catalogue.daw %}
-        <div class="check-section">
-            <div class="section-head">∙ DAW</div>
-            {% for item in catalogue.daw %}
-            <div class="chk-item" style="margin-bottom:3px;"><span class="chk-box"></span>{{ item.name }}</div>
-            {% endfor %}
-            <div class="chk-item add"><span class="chk-box"></span><span class="add-line"></span></div>
-        </div>
-        {% endif %}
-        {% if catalogue.synth_ios %}
-        <div class="check-section">
-            <div class="section-head">∙ Synthés iOS</div>
-            {% for item in catalogue.synth_ios %}
-            <div class="chk-item" style="margin-bottom:3px;"><span class="chk-box"></span>{{ item.name }}</div>
-            {% endfor %}
-            <div class="chk-item add"><span class="chk-box"></span><span class="add-line"></span></div>
-        </div>
-        {% endif %}
-        {% if catalogue.plugin %}
-        <div class="check-section">
-            <div class="section-head">∙ Plugins</div>
-            {% for item in catalogue.plugin %}
-            <div class="chk-item" style="margin-bottom:3px;"><span class="chk-box"></span>{{ item.name }}</div>
-            {% endfor %}
-            <div class="chk-item add"><span class="chk-box"></span><span class="add-line"></span></div>
-        </div>
-        {% endif %}
+    {% endfor %}
     </div>
 
     <!-- CARACTÈRE -->
@@ -492,16 +468,29 @@
 
     <div class="page2-header">Robōtariis — Formulaire terrain (suite)</div>
 
-    <!-- INFLUENCES -->
-    {% if influences %}
+    <!-- INFLUENCES — blocs auto-paginés -->
+    {% if influence_blocks %}
+    <div class="section-head">∙ Influences de session</div>
+    <div class="catalogue-columns">
+    {% for block in influence_blocks %}
     <div class="check-section">
-        <div class="section-head">∙ Influences de session</div>
-        <div class="check-grid" style="grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));">
-            {% for inf in influences %}
+        {% if influence_blocks|length > 1 %}
+        <div style="font-family:var(--mono);font-size:7px;font-weight:700;text-transform:uppercase;
+                    letter-spacing:.16em;color:var(--ink-soft);margin-bottom:4px;padding-bottom:2px;
+                    border-bottom:1px solid var(--rule);">
+            {{ block.title }}
+        </div>
+        {% endif %}
+        <div class="check-grid" style="grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));">
+            {% for inf in block.items %}
             <div class="chk-item"><span class="chk-box"></span>{{ inf.name }}</div>
             {% endfor %}
+            {% if block.add_line %}
             <div class="chk-item add"><span class="chk-box"></span><span class="add-line"></span></div>
+            {% endif %}
         </div>
+    </div>
+    {% endfor %}
     </div>
     {% endif %}
 

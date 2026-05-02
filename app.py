@@ -606,6 +606,58 @@ def view_session(sid):
     return render_template("view.html", session=session, linked=linked, version=VERSION)
 
 
+def _chunk_list(lst, n):
+    """Découpe une liste en blocs de taille max n."""
+    lst = list(lst)
+    return [lst[i:i+n] for i in range(0, len(lst), n)]
+
+def _catalogue_blocks(catalogue, block_size=16):
+    """
+    Retourne une liste de blocs prêts pour le template.
+    Les sections dépassant block_size items sont découpées en sous-blocs
+    nommés 'Section 1/2', 'Section 2/2', etc.
+    Seul le dernier bloc d'une section reçoit la ligne d'ajout manuel.
+    """
+    LABELS = {
+        'machine':   'Hardware / Machines',
+        'effet':     'Effets Hardware',
+        'daw':       'DAW',
+        'synth_ios': 'Synthés iOS',
+        'plugin':    'Plugins VST/AU',
+    }
+    blocks = []
+    for key, label in LABELS.items():
+        items = list(catalogue.get(key, []))
+        if not items:
+            continue
+        chunks = _chunk_list(items, block_size)
+        n = len(chunks)
+        for i, chunk in enumerate(chunks):
+            suffix = f" {i+1}/{n}" if n > 1 else ""
+            blocks.append({
+                'title':    label + suffix,
+                'items':    chunk,
+                'add_line': (i == n - 1),   # ligne vierge uniquement sur le dernier bloc
+            })
+    return blocks
+
+def _influence_blocks(influences, block_size=20):
+    """Même logique pour les influences."""
+    items = list(influences)
+    if not items:
+        return []
+    chunks = _chunk_list(items, block_size)
+    n = len(chunks)
+    return [
+        {
+            'title':    f"Influences de session{f' {i+1}/{n}' if n > 1 else ''}",
+            'items':    chunk,
+            'add_line': (i == n - 1),
+        }
+        for i, chunk in enumerate(chunks)
+    ]
+
+
 @app.route("/form/blank")
 def form_blank():
     """Formulaire vierge imprimable — mode dégradé papier."""
@@ -619,8 +671,8 @@ def form_blank():
     oblique = rand_oblique()
     conn.close()
     return render_template("form_blank.html",
-                           catalogue=catalogue,
-                           influences=influences,
+                           catalogue_blocks=_catalogue_blocks(catalogue),
+                           influence_blocks=_influence_blocks(influences),
                            characters=CHARACTERS,
                            modes=MODES,
                            intentions=INTENTIONS,
