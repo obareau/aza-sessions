@@ -7,13 +7,13 @@
         <div class="page-title">⚙ Catalogue</div>
         <div class="page-subtitle">Machines, effets et logiciels</div>
     </div>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+    <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
 </div>
 
 <!-- AJOUTER -->
 <div class="card">
     <div class="card-title">+ Ajouter un élément</div>
-    <form method="POST" action="{{ url_for('manage_catalogue') }}" style="display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:10px;align-items:end;">
+    <form method="POST" action="{{ url_for('catalogue.manage_catalogue') }}" style="display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:10px;align-items:end;">
         <input type="hidden" name="action" value="add">
         <div>
             <label style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px;">Type</label>
@@ -47,7 +47,7 @@
     {% for item in items %}
     <div class="cat-row {{ 'inactive' if not item.active }}">
         <!-- EDIT -->
-        <form method="POST" action="{{ url_for('manage_catalogue') }}"
+        <form method="POST" action="{{ url_for('catalogue.manage_catalogue') }}"
               style="flex:1;display:flex;gap:8px;align-items:center;min-width:0;">
             <input type="hidden" name="action" value="edit">
             <input type="hidden" name="id" value="{{ item.id }}">
@@ -66,13 +66,13 @@
             <button type="submit" class="btn btn-secondary btn-sm">✓</button>
         </form>
         <!-- TOGGLE -->
-        <form method="POST" action="{{ url_for('manage_catalogue') }}">
+        <form method="POST" action="{{ url_for('catalogue.manage_catalogue') }}">
             <input type="hidden" name="action" value="toggle">
             <input type="hidden" name="id" value="{{ item.id }}">
             <button type="submit" class="btn btn-secondary btn-sm" title="{{ 'Désactiver' if item.active else 'Activer' }}">{{ '●' if item.active else '○' }}</button>
         </form>
         <!-- DELETE -->
-        <form method="POST" action="{{ url_for('manage_catalogue') }}" onsubmit="return confirm('Supprimer ?')">
+        <form method="POST" action="{{ url_for('catalogue.manage_catalogue') }}" onsubmit="return confirm('Supprimer ?')">
             <input type="hidden" name="action" value="delete">
             <input type="hidden" name="id" value="{{ item.id }}">
             <button type="submit" class="btn btn-secondary btn-sm" style="color:var(--accent)">✕</button>

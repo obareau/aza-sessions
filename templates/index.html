@@ -7,8 +7,8 @@
         <div class="page-subtitle" id="count-label">{{ sessions|length }} session{% if sessions|length != 1 %}s{% endif %}</div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <a href="{{ url_for('export_all') }}" class="btn btn-secondary">↓ Export tout</a>
-        <a href="{{ url_for('new_session') }}" class="btn btn-primary">+ Nouvelle session</a>
+        <a href="{{ url_for('sessions.export_all') }}" class="btn btn-secondary">↓ Export tout</a>
+        <a href="{{ url_for('sessions.new_session') }}" class="btn btn-primary">+ Nouvelle session</a>
     </div>
 </div>
 
@@ -17,7 +17,7 @@
 {% if sessions %}
 <div id="session-list">
     {% for s in sessions %}
-    <a href="{{ url_for('view_session', sid=s.id) }}" class="session-row">
+    <a href="{{ url_for('sessions.view_session', sid=s.id) }}" class="session-row">
         <span class="session-date">
             {{ s.date[:16] }}
             {% if s.title %}<span style="display:block;font-size:11px;font-weight:600;color:var(--text);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">{{ s.title }}</span>{% endif %}
@@ -47,7 +47,7 @@
     <h3 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Aucune session</h3>
     <p>Les AZA attendent. Commence à enregistrer.</p>
     <br>
-    <a href="{{ url_for('new_session') }}" class="btn btn-primary">Première session</a>
+    <a href="{{ url_for('sessions.new_session') }}" class="btn btn-primary">Première session</a>
 </div>
 {% endif %}
 {% endblock %}

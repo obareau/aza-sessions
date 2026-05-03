@@ -11,7 +11,7 @@
             {% if total_mod %} · {{ mastered }} maîtrisé{% if mastered != 1 %}s{% endif %} ({{ (mastered/total_mod*100)|round|int }}%){% endif %}
         </div>
     </div>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+    <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
 </div>
 
 <!-- AJOUTER -->

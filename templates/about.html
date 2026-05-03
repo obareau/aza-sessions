@@ -7,7 +7,7 @@
         <div class="page-title">∴ À propos</div>
         <div class="page-subtitle">Journal de Sessions AZA — v{{ version }}</div>
     </div>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+    <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
 </div>
 
 <!-- VERSION -->
@@ -181,6 +181,7 @@
     <div class="card-title">∙ Historique des versions</div>
     <div style="margin-top:12px;">
         {% for v, date, desc in [
+            ('v2.1.0',       '2026-05-03', 'Architecture modulaire — Blueprints Flask (sessions, catalogue, obliques, influences, spark, dim)'),
             ('v2.0.0',       '2026-05-01', 'Prompteur Dawless complet, déploiement Fly.io, titres de session'),
             ('v1.1.0-alpha', '2026-04-25', 'Première version du prompteur (MVP)'),
             ('v1.0.0',       '2026-04-25', 'Déploiement cloud Fly.io, fix suppression sessions'),

@@ -8,7 +8,7 @@
         {% set pending = items|rejectattr('acquired')|list %}
         <div class="page-subtitle">{{ pending|length }} en attente{% if items|selectattr('acquired')|list %} · {{ items|selectattr('acquired')|list|length }} acquis{% endif %}</div>
     </div>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+    <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
 </div>
 
 <!-- AJOUTER -->

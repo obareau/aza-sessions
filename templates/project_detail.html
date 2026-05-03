@@ -10,7 +10,7 @@
         {% endif %}
     </div>
     <div style="display:flex;gap:8px;">
-        <a href="{{ url_for('new_session') }}" class="btn btn-primary btn-sm">+ Session</a>
+        <a href="{{ url_for('sessions.new_session') }}" class="btn btn-primary btn-sm">+ Session</a>
         <a href="{{ url_for('edit_project', pid=project.id) }}" class="btn btn-secondary">✎ Éditer</a>
         <a href="{{ url_for('list_projects') }}" class="btn btn-secondary">← Projets</a>
     </div>
@@ -29,7 +29,7 @@
 {% if sessions %}
 <div id="session-list">
 {% for s in sessions %}
-<a href="{{ url_for('view_session', sid=s.id) }}" class="session-row">
+<a href="{{ url_for('sessions.view_session', sid=s.id) }}" class="session-row">
     <span class="session-date">{{ s.date[:16] }}</span>
     <span class="session-machines">{{ s.machines or '—' }}{% if s.daws %} · {{ s.daws }}{% endif %}</span>
     <span style="display:flex;gap:6px;align-items:center;">
@@ -46,7 +46,7 @@
     <div class="empty-icon">◈</div>
     <p>Aucune session dans ce projet pour l'instant.</p>
     <br>
-    <a href="{{ url_for('new_session') }}" class="btn btn-primary">+ Nouvelle session</a>
+    <a href="{{ url_for('sessions.new_session') }}" class="btn btn-primary">+ Nouvelle session</a>
 </div>
 {% endif %}
 

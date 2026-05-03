@@ -589,9 +589,9 @@
             {% endif %}
 
             <span class="nav-group-label">Sessions</span>
-            <a href="{{ url_for('index') }}">Sessions</a>
+            <a href="{{ url_for('sessions.index') }}">Sessions</a>
             <a href="{{ url_for('live') }}">▶ Live</a>
-            <a href="{{ url_for('new_session') }}">+ Nouvelle</a>
+            <a href="{{ url_for('sessions.new_session') }}">+ Nouvelle</a>
             <span class="sep">|</span>
 
             <span class="nav-group-label nav-group">Outils</span>
@@ -602,9 +602,9 @@
             <span class="sep">|</span>
 
             <span class="nav-group-label nav-group">Catalogue</span>
-            <a href="{{ url_for('manage_catalogue') }}">Catalogue</a>
-            <a href="{{ url_for('manage_influences') }}">Influences</a>
-            <a href="{{ url_for('manage_obliques') }}">Stratégies</a>
+            <a href="{{ url_for('catalogue.manage_catalogue') }}">Catalogue</a>
+            <a href="{{ url_for('influences.manage_influences') }}">Influences</a>
+            <a href="{{ url_for('obliques.manage_obliques') }}">Stratégies</a>
             <span class="sep">|</span>
 
             <span class="nav-group-label nav-group">Ressources</span>
@@ -616,8 +616,8 @@
             <span class="sep">|</span>
 
             <span class="nav-group-label nav-group">Config</span>
-            <a href="{{ url_for('form_blank') }}" title="Formulaire papier — mode dégradé">⎙ Form</a>
-            <a href="{{ url_for('settings') }}">Paramètres</a>
+            <a href="{{ url_for('sessions.form_blank') }}" title="Formulaire papier — mode dégradé">⎙ Form</a>
+            <a href="{{ url_for('sessions.settings') }}">Paramètres</a>
             <a href="{{ url_for('about') }}">About</a>
             <span class="version-badge">v{{ version }}</span>
             <!-- THEME PICKER -->

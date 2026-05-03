@@ -7,7 +7,7 @@
         <div class="page-title">📊 Statistiques</div>
         <div class="page-subtitle">Analyse de tes sessions</div>
     </div>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+    <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
 </div>
 
 {% if total == 0 %}
@@ -16,7 +16,7 @@
     <h3 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Pas encore de données</h3>
     <p>Enregistre des sessions pour voir apparaître les statistiques.</p>
     <br>
-    <a href="{{ url_for('new_session') }}" class="btn btn-primary">Première session</a>
+    <a href="{{ url_for('sessions.new_session') }}" class="btn btn-primary">Première session</a>
 </div>
 {% else %}
 

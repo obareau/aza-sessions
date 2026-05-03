@@ -7,13 +7,13 @@
         <div class="page-title">♪ Influences</div>
         <div class="page-subtitle">{{ influences|length }} influence{% if influences|length > 1 %}s{% endif %}</div>
     </div>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>
+    <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
 </div>
 
 <!-- AJOUTER -->
 <div class="card">
     <div class="card-title">+ Ajouter une influence</div>
-    <form method="POST" action="{{ url_for('manage_influences') }}" style="display:grid;grid-template-columns:1fr 140px 2fr auto;gap:10px;align-items:end;">
+    <form method="POST" action="{{ url_for('influences.manage_influences') }}" style="display:grid;grid-template-columns:1fr 140px 2fr auto;gap:10px;align-items:end;">
         <input type="hidden" name="action" value="add">
         <div>
             <label style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px;">Nom</label>
@@ -48,7 +48,7 @@
     </div>
     {% for inf in group_items %}
     <div class="cat-row {{ 'inactive' if not inf.active }}">
-        <form method="POST" action="{{ url_for('manage_influences') }}"
+        <form method="POST" action="{{ url_for('influences.manage_influences') }}"
               style="flex:1;display:flex;gap:8px;align-items:center;min-width:0;">
             <input type="hidden" name="action" value="edit">
             <input type="hidden" name="id" value="{{ inf.id }}">
@@ -77,12 +77,12 @@
             </select>
             <button type="submit" class="btn btn-secondary btn-sm">✓</button>
         </form>
-        <form method="POST" action="{{ url_for('manage_influences') }}">
+        <form method="POST" action="{{ url_for('influences.manage_influences') }}">
             <input type="hidden" name="action" value="toggle">
             <input type="hidden" name="id" value="{{ inf.id }}">
             <button type="submit" class="btn btn-secondary btn-sm">{{ '●' if inf.active else '○' }}</button>
         </form>
-        <form method="POST" action="{{ url_for('manage_influences') }}" onsubmit="return confirm('Supprimer ?')">
+        <form method="POST" action="{{ url_for('influences.manage_influences') }}" onsubmit="return confirm('Supprimer ?')">
             <input type="hidden" name="action" value="delete">
             <input type="hidden" name="id" value="{{ inf.id }}">
             <button type="submit" class="btn btn-secondary btn-sm" style="color:var(--accent)">✕</button>

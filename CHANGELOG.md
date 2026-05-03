@@ -5,6 +5,22 @@
 
 ---
 
+## v2.1.0 — 2026-05-03 — Architecture modulaire (Blueprints)
+
+### ♻️ Refactorisation architecture
+- **`core/`** — utilitaires partagés : `db.py` (get_db), `oblique.py` (rand_oblique), `constants.py` (toutes les listes de référence)
+- **`sessions/`** — Blueprint complet : index, new, view, edit, delete, form_blank, print, export MD/CSV/Obsidian, settings Obsidian, search
+- **`catalogue/`** — Blueprint standalone (GET/POST `/catalogue`)
+- **`obliques/`** — Blueprint standalone (`/oblique` JSON + `/obliques` CRUD)
+- **`influences/`** — Blueprint standalone (GET/POST `/influences`)
+- **`spark/`** — Blueprint standalone (`/spark`, `/spark/focus`)
+- **`dim/`** — Blueprint standalone D.I.M Lite (7 routes `/prompter`)
+- `app.py` réduit au rôle de launcher + `init_db` + modules non encore extraits
+
+### ✨ Comportement inchangé — zéro régression UI
+
+---
+
 ## v2.0.1 — 2026-05-01 — Hotfix UI
 
 ### 🐛 Corrections

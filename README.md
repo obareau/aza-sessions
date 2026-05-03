@@ -3,7 +3,7 @@
 > Application de documentation et de performance musicale pour le projet **AZA** —
 > univers de fiction dystopique dont les sessions de création constituent la bande originale.
 
-**Version : v2.0.0** · [Changelog](CHANGELOG.md)
+**Version : v2.1.0** · [Changelog](CHANGELOG.md)
 
 ---
 
@@ -96,10 +96,20 @@ fly deploy   # depuis le dossier du projet
 ## Structure du projet
 
 ```
-app.py                      # Application principale — routes, DB, logique
+app.py                      # Launcher — init_db, blueprints, modules non encore extraits
 wsgi.py                     # Point d'entrée Gunicorn (Fly.io)
 Dockerfile                  # Build Docker Python 3.11-slim
 fly.toml                    # Config Fly.io (région CDG, 256 MB)
+core/
+  db.py                     # get_db() partagé
+  oblique.py                # rand_oblique() partagé
+  constants.py              # listes de référence (MODES, INTENTIONS, etc.)
+sessions/                   # Blueprint sessions — CRUD, exports, search, settings
+catalogue/                  # Blueprint catalogue matériel
+obliques/                   # Blueprint stratégies obliques
+influences/                 # Blueprint influences
+spark/                      # Blueprint moteur de suggestions
+dim/                        # Blueprint D.I.M Lite — prompteur Dawless
 templates/
   base.html                 # Layout commun — nav, CSS, Pomodoro, dark mode
   index.html                # Liste des sessions
@@ -110,10 +120,7 @@ templates/
   prompter_edit.html        # Éditeur de cues
   prompter_play.html        # Vue performance plein écran
   form_blank.html           # Formulaire PDF vierge
-  catalogue.html            # Gestion matériel
-  projects.html             # Projets
-  settings.html             # Import / Backup / Reset DB
-  about.html                # À propos + raccourcis
+  catalogue.html / projects.html / settings.html / about.html
 requirements.txt            # flask>=3.0.0
 CHANGELOG.md                # Historique complet des versions
 sessions.db                 # Base SQLite — NON VERSIONNÉ

@@ -14,17 +14,30 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.jinja_env.filters['fromjson'] = json.loads
-VERSION = "2.0.1"
+VERSION = "2.1.0"
 DB_PATH      = os.environ.get("DB_PATH",      os.path.join(os.path.dirname(__file__), "sessions.db"))
 CONFIG_PATH  = os.environ.get("CONFIG_PATH",  os.path.join(os.path.dirname(__file__), "config.json"))
-app.config["DB_PATH"]  = DB_PATH
-app.config["VERSION"]  = VERSION
+app.config["DB_PATH"]     = DB_PATH
+app.config["VERSION"]     = VERSION
+app.config["CONFIG_PATH"] = CONFIG_PATH
+
+from sessions import bp as sessions_bp
+app.register_blueprint(sessions_bp)
 
 from spark import bp as spark_bp
 app.register_blueprint(spark_bp)
 
 from dim import bp as dim_bp
 app.register_blueprint(dim_bp)
+
+from catalogue import bp as catalogue_bp
+app.register_blueprint(catalogue_bp)
+
+from obliques import bp as obliques_bp
+app.register_blueprint(obliques_bp)
+
+from influences import bp as influences_bp
+app.register_blueprint(influences_bp)
 
 
 def get_config():
@@ -459,332 +472,7 @@ def inject_globals():
         return {"has_live": False, "obsidian_vault": ""}
 
 
-# ── ROUTES SESSIONS ────────────────────────────────────────────────────────────
-
-@app.route("/")
-def index():
-    conn = get_db()
-    sessions = conn.execute("""
-        SELECT s.*, p.title AS project_title, p.color AS project_color
-        FROM sessions s
-        LEFT JOIN projects p ON s.project_id = p.id
-        ORDER BY s.date DESC
-    """).fetchall()
-    conn.close()
-    return render_template("index.html",
-                           sessions=sessions,
-                           oblique=rand_oblique(),
-                           version=VERSION,
-                           is_search=False)
-
-
-@app.route("/new", methods=["GET", "POST"])
-def new_session():
-    if request.method == "POST":
-        data = request.form
-        conn = get_db()
-        conn.execute("""
-            INSERT INTO sessions (
-                title, date, duration_min, mode, intention, energy_level,
-                machines, effects, daws, synths_ios, plugins,
-                patches, audio_file, timestamps, rating, tags,
-                character, lore_link, to_rework, release_potential,
-                tempo, tonality, signal_routing, microfreak_algo,
-                linked_session, influences, oblique, comments, recap_claude, project_id
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        """, (
-            data.get("title", "").strip(),
-            data.get("date", datetime.now().strftime("%Y-%m-%d %H:%M")),
-            data.get("duration_min") or None,
-            data.get("mode"),
-            data.get("intention"),
-            data.get("energy_level") or None,
-            ", ".join(request.form.getlist("machines")),
-            ", ".join(request.form.getlist("effects")),
-            ", ".join(request.form.getlist("daws")),
-            ", ".join(request.form.getlist("synths_ios")),
-            ", ".join(request.form.getlist("plugins")),
-            data.get("patches"),
-            data.get("audio_file"),
-            data.get("timestamps"),
-            data.get("rating") or None,
-            data.get("tags"),
-            ", ".join(request.form.getlist("character")),
-            data.get("lore_link"),
-            1 if data.get("to_rework") else 0,
-            1 if data.get("release_potential") else 0,
-            data.get("tempo"),
-            data.get("tonality"),
-            data.get("signal_routing"),
-            data.get("microfreak_algo"),
-            data.get("linked_session") or None,
-            ", ".join(request.form.getlist("influences")),
-            data.get("oblique"),
-            data.get("comments"),
-            data.get("recap_claude"),
-            data.get("project_id") or None,
-        ))
-        conn.commit()
-        # Nettoyer la session live si elle a servi de source
-        if data.get("_from_live"):
-            conn.execute("DELETE FROM live_session")
-            conn.commit()
-        conn.close()
-        return redirect(url_for("index"))
-
-    # Prefill depuis session live en cours (?from_live=1)
-    prefill = None
-    from_live = request.args.get("from_live")
-    if from_live:
-        pf_conn = get_db()
-        ls = pf_conn.execute("SELECT * FROM live_session LIMIT 1").fetchone()
-        pf_conn.close()
-        if ls:
-            started_at = datetime.strptime(ls["started_at"], "%Y-%m-%d %H:%M:%S")
-            duration_min = max(1, int((datetime.now() - started_at).total_seconds() // 60))
-            prefill = {
-                "id": None,
-                "_from_live": True,
-                "duration_min": duration_min,
-                "started_at": ls["started_at"],
-                "machines":   ls["machines"] or "",
-                "effects":    ls["effects"] or "",
-                "daws":       ls["daws"] or "",
-                "synths_ios": ls["synths_ios"] or "",
-                "plugins":    ls["plugins"] or "",
-                "mode":       ls["mode"] or "",
-                "intention":  ls["intention"] or "",
-                "oblique":    ls["oblique"] or "",
-                "project_id": ls["project_id"],
-                # champs vides à compléter
-                "character": "", "influences": "",
-            }
-
-    # Prefill depuis une session existante (?from=ID)
-    from_id = request.args.get("from")
-    if from_id and not prefill:
-        pf_conn = get_db()
-        prefill = pf_conn.execute(
-            "SELECT * FROM sessions WHERE id=?", (from_id,)
-        ).fetchone()
-        pf_conn.close()
-
-    cat = get_catalogue()
-    conn = get_db()
-    all_sessions = conn.execute("SELECT id, date, machines FROM sessions ORDER BY date DESC").fetchall()
-    projects = conn.execute("SELECT * FROM projects ORDER BY title").fetchall()
-    conn.close()
-    return render_template("new.html",
-                           catalogue=cat,
-                           item_types=ITEM_TYPES,
-                           characters=CHARACTERS,
-                           modes=MODES,
-                           intentions=INTENTIONS,
-                           influences=get_influences_active(),
-                           oblique=rand_oblique(),
-                           all_sessions=all_sessions,
-                           projects=projects,
-                           prefill=prefill,
-                           version=VERSION,
-                           now=datetime.now().strftime("%Y-%m-%dT%H:%M"))
-
-
-@app.route("/session/<int:sid>")
-def view_session(sid):
-    conn = get_db()
-    session = conn.execute("""
-        SELECT s.*, p.title AS project_title, p.color AS project_color, p.id AS project_id_val
-        FROM sessions s
-        LEFT JOIN projects p ON s.project_id = p.id
-        WHERE s.id = ?
-    """, (sid,)).fetchone()
-    linked = None
-    if session and session["linked_session"]:
-        linked = conn.execute(
-            "SELECT * FROM sessions WHERE id = ?", (session["linked_session"],)
-        ).fetchone()
-    conn.close()
-    if not session:
-        return redirect(url_for("index"))
-    return render_template("view.html", session=session, linked=linked, version=VERSION)
-
-
-def _chunk_list(lst, n):
-    """Découpe une liste en blocs de taille max n."""
-    lst = list(lst)
-    return [lst[i:i+n] for i in range(0, len(lst), n)]
-
-def _catalogue_blocks(catalogue, block_size=16):
-    """
-    Retourne une liste de blocs prêts pour le template.
-    Les sections dépassant block_size items sont découpées en sous-blocs
-    nommés 'Section 1/2', 'Section 2/2', etc.
-    Seul le dernier bloc d'une section reçoit la ligne d'ajout manuel.
-    """
-    LABELS = {
-        'machine':   'Hardware / Machines',
-        'effet':     'Effets Hardware',
-        'daw':       'DAW',
-        'synth_ios': 'Synthés iOS',
-        'plugin':    'Plugins VST/AU',
-    }
-    blocks = []
-    for key, label in LABELS.items():
-        items = list(catalogue.get(key, []))
-        if not items:
-            continue
-        chunks = _chunk_list(items, block_size)
-        n = len(chunks)
-        for i, chunk in enumerate(chunks):
-            suffix = f" {i+1}/{n}" if n > 1 else ""
-            blocks.append({
-                'title':    label + suffix,
-                'entries':  chunk,
-                'add_line': (i == n - 1),   # ligne vierge uniquement sur le dernier bloc
-            })
-    return blocks
-
-def _influence_blocks(influences, block_size=20):
-    """Même logique pour les influences."""
-    items = list(influences)
-    if not items:
-        return []
-    chunks = _chunk_list(items, block_size)
-    n = len(chunks)
-    return [
-        {
-            'title':    f"Influences de session{f' {i+1}/{n}' if n > 1 else ''}",
-            'entries':  chunk,
-            'add_line': (i == n - 1),
-        }
-        for i, chunk in enumerate(chunks)
-    ]
-
-
-@app.route("/form/blank")
-def form_blank():
-    """Formulaire vierge imprimable — mode dégradé papier."""
-    conn = get_db()
-    catalogue = {}
-    for t in ITEM_TYPES:
-        catalogue[t] = conn.execute(
-            "SELECT name FROM catalogue WHERE type=? ORDER BY name", (t,)
-        ).fetchall()
-    influences = conn.execute("SELECT name FROM influences ORDER BY name").fetchall()
-    oblique = rand_oblique()
-    conn.close()
-    return render_template("form_blank.html",
-                           catalogue_blocks=_catalogue_blocks(catalogue),
-                           influence_blocks=_influence_blocks(influences),
-                           characters=CHARACTERS,
-                           modes=MODES,
-                           intentions=INTENTIONS,
-                           oblique=oblique,
-                           version=VERSION)
-
-
-@app.route("/session/<int:sid>/print")
-def print_session(sid):
-    conn = get_db()
-    session = conn.execute("""
-        SELECT s.*, p.title AS project_title, p.color AS project_color
-        FROM sessions s
-        LEFT JOIN projects p ON s.project_id = p.id
-        WHERE s.id = ?
-    """, (sid,)).fetchone()
-    conn.close()
-    if not session:
-        return redirect(url_for("index"))
-    return render_template("print.html", session=session, version=VERSION)
-
-
-@app.route("/session/<int:sid>/edit", methods=["GET", "POST"])
-def edit_session(sid):
-    conn = get_db()
-    session = conn.execute(
-        "SELECT * FROM sessions WHERE id = ?", (sid,)
-    ).fetchone()
-    conn.close()
-    if not session:
-        return redirect(url_for("index"))
-
-    if request.method == "POST":
-        data = request.form
-        conn = get_db()
-        conn.execute("""
-            UPDATE sessions SET
-                title=?, date=?, duration_min=?, mode=?, intention=?, energy_level=?,
-                machines=?, effects=?, daws=?, synths_ios=?, plugins=?,
-                patches=?, audio_file=?, timestamps=?, rating=?, tags=?,
-                character=?, lore_link=?, to_rework=?, release_potential=?,
-                tempo=?, tonality=?, signal_routing=?, microfreak_algo=?,
-                linked_session=?, influences=?, oblique=?, comments=?, recap_claude=?,
-                project_id=?
-            WHERE id=?
-        """, (
-            data.get("title", "").strip(),
-            data.get("date"),
-            data.get("duration_min") or None,
-            data.get("mode"),
-            data.get("intention"),
-            data.get("energy_level") or None,
-            ", ".join(request.form.getlist("machines")),
-            ", ".join(request.form.getlist("effects")),
-            ", ".join(request.form.getlist("daws")),
-            ", ".join(request.form.getlist("synths_ios")),
-            ", ".join(request.form.getlist("plugins")),
-            data.get("patches"),
-            data.get("audio_file"),
-            data.get("timestamps"),
-            data.get("rating") or None,
-            data.get("tags"),
-            ", ".join(request.form.getlist("character")),
-            data.get("lore_link"),
-            1 if data.get("to_rework") else 0,
-            1 if data.get("release_potential") else 0,
-            data.get("tempo"),
-            data.get("tonality"),
-            data.get("signal_routing"),
-            data.get("microfreak_algo"),
-            data.get("linked_session") or None,
-            ", ".join(request.form.getlist("influences")),
-            data.get("oblique"),
-            data.get("comments"),
-            data.get("recap_claude"),
-            data.get("project_id") or None,
-            sid,
-        ))
-        conn.commit()
-        conn.close()
-        return redirect(url_for("view_session", sid=sid))
-
-    cat = get_catalogue()
-    conn2 = get_db()
-    all_sessions = conn2.execute(
-        "SELECT id, date, machines FROM sessions WHERE id != ? ORDER BY date DESC", (sid,)
-    ).fetchall()
-    projects = conn2.execute("SELECT * FROM projects ORDER BY title").fetchall()
-    conn2.close()
-    return render_template("edit.html",
-                           session=session,
-                           catalogue=cat,
-                           item_types=ITEM_TYPES,
-                           characters=CHARACTERS,
-                           modes=MODES,
-                           intentions=INTENTIONS,
-                           influences=get_influences_active(),
-                           all_sessions=all_sessions,
-                           projects=projects,
-                           version=VERSION)
-
-
-@app.route("/session/<int:sid>/delete", methods=["POST"])
-def delete_session(sid):
-    conn = get_db()
-    conn.execute("DELETE FROM sessions WHERE id=?", (sid,))
-    conn.commit()
-    conn.close()
-    return redirect(url_for("index"))
+# ── ROUTES SESSIONS → voir sessions/ package ──────────────────────────────────
 
 
 # ── ROUTES PROJETS ────────────────────────────────────────────────────────────
@@ -870,131 +558,7 @@ def delete_project(pid):
     return redirect(url_for("list_projects"))
 
 
-# ── ROUTES EXPORT ──────────────────────────────────────────────────────────────
-
-@app.route("/export/<int:sid>")
-def export_one(sid):
-    conn = get_db()
-    s = conn.execute("""
-        SELECT s.*, p.title AS project_title
-        FROM sessions s LEFT JOIN projects p ON s.project_id = p.id
-        WHERE s.id = ?
-    """, (sid,)).fetchone()
-    conn.close()
-    if not s:
-        return "Session introuvable", 404
-    return Response(
-        session_to_md(s),
-        mimetype="text/plain",
-        headers={"Content-Disposition": f"attachment; filename=session_{sid}.md"}
-    )
-
-
-@app.route("/export/all")
-def export_all():
-    conn = get_db()
-    sessions = conn.execute("""
-        SELECT s.*, p.title AS project_title
-        FROM sessions s LEFT JOIN projects p ON s.project_id = p.id
-        ORDER BY s.date DESC
-    """).fetchall()
-    conn.close()
-    if not sessions:
-        content = f"""# Journal de Sessions AZA v{VERSION}
-
-*Exporté le {datetime.now().strftime('%Y-%m-%d %H:%M')}*
-*0 session(s)*
-
-Aucune session à exporter.
-"""
-        filename = f"aza_{datetime.now().strftime('%Y%m%d')}.md"
-        return Response(
-            content,
-            mimetype="text/plain",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
-        )
-    parts = [
-        f"# Journal de Sessions AZA v{VERSION}",
-        f"*Exporté le {datetime.now().strftime('%Y-%m-%d %H:%M')}*",
-        f"*{len(sessions)} session(s)*\n\n---\n",
-    ]
-    for s in sessions:
-        parts.append(session_to_md(s))
-        parts.append("\n---\n")
-    filename = f"aza_{datetime.now().strftime('%Y%m%d')}.md"
-    return Response(
-        "\n".join(parts),
-        mimetype="text/plain",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
-
-
-@app.route("/export/csv")
-def export_csv():
-    """Export toutes les sessions en CSV."""
-    import csv, io
-    conn = get_db()
-    sessions = conn.execute("""
-        SELECT s.*, p.title AS project_title
-        FROM sessions s LEFT JOIN projects p ON s.project_id = p.id
-        ORDER BY s.date DESC
-    """).fetchall()
-    conn.close()
-
-    cols = [
-        "id","date","duration_min","mode","intention","energy_level",
-        "machines","effects","daws","synths_ios","plugins",
-        "patches","audio_file","timestamps","rating","tags",
-        "character","lore_link","to_rework","release_potential",
-        "tempo","tonality","signal_routing","microfreak_algo",
-        "influences","oblique","comments","recap_claude","project_title",
-    ]
-    buf = io.StringIO()
-    w = csv.writer(buf)
-    w.writerow(cols)
-    for s in sessions:
-        w.writerow([s[c] if c in s.keys() else "" for c in cols])
-    buf.seek(0)
-    filename = f"aza_{datetime.now().strftime('%Y%m%d')}.csv"
-    return Response(
-        "\ufeff" + buf.getvalue(),   # BOM UTF-8 pour Excel
-        mimetype="text/csv; charset=utf-8",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
-
-
-@app.route("/session/<int:sid>/obsidian", methods=["POST"])
-def export_obsidian(sid):
-    """Copie le fichier Markdown de la session dans le vault Obsidian configuré."""
-    cfg = get_config()
-    vault = cfg.get("obsidian_vault", "").strip()
-    if not vault:
-        return jsonify({"error": "Chemin vault non configuré dans les Paramètres"}), 400
-    conn = get_db()
-    s = conn.execute("""
-        SELECT s.*, p.title AS project_title
-        FROM sessions s LEFT JOIN projects p ON s.project_id = p.id
-        WHERE s.id = ?
-    """, (sid,)).fetchone()
-    conn.close()
-    if not s:
-        return jsonify({"error": "Session introuvable"}), 404
-    try:
-        os.makedirs(vault, exist_ok=True)
-        fname = f"session_{s['date'][:10].replace('-','')}_{sid}.md"
-        with open(os.path.join(vault, fname), "w", encoding="utf-8") as f:
-            f.write(session_to_md(s))
-        return jsonify({"status": "ok", "file": fname})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/settings/obsidian", methods=["POST"])
-def settings_obsidian():
-    cfg = get_config()
-    cfg["obsidian_vault"] = request.form.get("obsidian_vault", "").strip()
-    save_config(cfg)
-    return redirect(url_for("settings", msg="Chemin Obsidian sauvegardé"))
+# ── ROUTES EXPORT / OBSIDIAN / SETTINGS OBSIDIAN → voir sessions/ package ─────
 
 
 # ── ROUTE STATS ────────────────────────────────────────────────────────────────
@@ -1127,123 +691,7 @@ def stats():
                            stats=stats_data, total=total)
 
 
-# ── ROUTES OBLIQUES ────────────────────────────────────────────────────────────
-
-@app.route("/oblique")
-def get_oblique():
-    return jsonify({"text": rand_oblique()})
-
-
-@app.route("/obliques", methods=["GET", "POST"])
-def manage_obliques():
-    conn = get_db()
-    if request.method == "POST":
-        action = request.form.get("action")
-        if action == "add":
-            t = request.form.get("text", "").strip()
-            if t:
-                conn.execute("INSERT INTO obliques (text) VALUES (?)", (t,))
-        elif action == "delete":
-            conn.execute("DELETE FROM obliques WHERE id=?", (request.form.get("id"),))
-        elif action == "edit":
-            conn.execute("UPDATE obliques SET text=? WHERE id=?",
-                         (request.form.get("text","").strip(), request.form.get("id")))
-        elif action == "toggle":
-            conn.execute("UPDATE obliques SET active=1-active WHERE id=?",
-                         (request.form.get("id"),))
-        conn.commit()
-        conn.close()
-        return redirect(url_for("manage_obliques"))
-    obliques = conn.execute("SELECT * FROM obliques ORDER BY id").fetchall()
-    conn.close()
-    return render_template("obliques.html", obliques=obliques,
-                           version=VERSION, oblique=rand_oblique())
-
-
-# ── ROUTES CATALOGUE ───────────────────────────────────────────────────────────
-
-@app.route("/catalogue", methods=["GET", "POST"])
-def manage_catalogue():
-    conn = get_db()
-    if request.method == "POST":
-        action = request.form.get("action")
-        if action == "add":
-            typ = request.form.get("type")
-            name = request.form.get("name", "").strip()
-            notes = request.form.get("notes", "").strip()
-            if typ and name:
-                conn.execute(
-                    "INSERT INTO catalogue (type, name, notes) VALUES (?,?,?)",
-                    (typ, name, notes)
-                )
-        elif action == "delete":
-            conn.execute("DELETE FROM catalogue WHERE id=?", (request.form.get("id"),))
-        elif action == "edit":
-            conn.execute(
-                "UPDATE catalogue SET name=?, notes=? WHERE id=?",
-                (request.form.get("name","").strip(),
-                 request.form.get("notes","").strip(),
-                 request.form.get("id"))
-            )
-        elif action == "toggle":
-            conn.execute("UPDATE catalogue SET active=1-active WHERE id=?",
-                         (request.form.get("id"),))
-        conn.commit()
-        conn.close()
-        return redirect(url_for("manage_catalogue"))
-
-    items = conn.execute(
-        "SELECT * FROM catalogue ORDER BY type, name"
-    ).fetchall()
-    conn.close()
-    grouped = {k: [] for k in ITEM_TYPES}
-    for item in items:
-        if item["type"] in grouped:
-            grouped[item["type"]].append(dict(item))
-    return render_template("catalogue.html", grouped=grouped,
-                           item_types=ITEM_TYPES, version=VERSION,
-                           oblique=rand_oblique())
-
-
-# ── ROUTES INFLUENCES ──────────────────────────────────────────────────────────
-
-@app.route("/influences", methods=["GET", "POST"])
-def manage_influences():
-    conn = get_db()
-    if request.method == "POST":
-        action = request.form.get("action")
-        if action == "add":
-            name = request.form.get("name", "").strip()
-            typ = request.form.get("type", "artiste")
-            notes = request.form.get("notes", "").strip()
-            if name:
-                conn.execute(
-                    "INSERT INTO influences (name, type, notes) VALUES (?,?,?)",
-                    (name, typ, notes)
-                )
-        elif action == "delete":
-            conn.execute("DELETE FROM influences WHERE id=?", (request.form.get("id"),))
-        elif action == "edit":
-            conn.execute(
-                "UPDATE influences SET name=?, type=?, notes=? WHERE id=?",
-                (request.form.get("name","").strip(),
-                 request.form.get("type","artiste"),
-                 request.form.get("notes","").strip(),
-                 request.form.get("id"))
-            )
-        elif action == "toggle":
-            conn.execute("UPDATE influences SET active=1-active WHERE id=?",
-                         (request.form.get("id"),))
-        conn.commit()
-        conn.close()
-        return redirect(url_for("manage_influences"))
-
-    influences = conn.execute(
-        "SELECT * FROM influences ORDER BY type, name"
-    ).fetchall()
-    conn.close()
-    return render_template("influences.html", influences=influences,
-                           version=VERSION, oblique=rand_oblique())
+# ── OBLIQUES / CATALOGUE / INFLUENCES → voir packages dédiés ─────────────────
 
 
 # ── ROUTES PARAMÈTRES ─────────────────────────────────────────────────────────
@@ -1625,7 +1073,7 @@ def live_finish():
     ))
     conn.commit()
     conn.close()
-    return redirect(url_for("new_session", from_live=1))
+    return redirect(url_for("sessions.new_session", from_live=1))
 
 
 @app.route("/live/abandon", methods=["POST"])
@@ -1634,7 +1082,7 @@ def live_abandon():
     conn.execute("DELETE FROM live_session")
     conn.commit()
     conn.close()
-    return redirect(url_for("index"))
+    return redirect(url_for("sessions.index"))
 
 
 # ── BANNER & PORT ─────────────────────────────────────────────────────────────
