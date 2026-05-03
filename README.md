@@ -1,6 +1,6 @@
-# Journal de Sessions Robōtariis
+# Journal de Sessions AZA
 
-> Application de documentation et de performance musicale pour le projet **Robōtariis** —
+> Application de documentation et de performance musicale pour le projet **AZA** —
 > univers de fiction dystopique dont les sessions de création constituent la bande originale.
 
 **Version : v2.0.0** · [Changelog](CHANGELOG.md)
@@ -9,7 +9,7 @@
 
 ## Ce que c'est
 
-**Journal de Sessions Robōtariis** est un outil personnel en deux parties :
+**Journal de Sessions AZA** est un outil personnel en deux parties :
 
 1. **Carnet de bord musical** — documente chaque session de création (machines, patches, tempo,
    influences, notes, rating) et les organise en projets.
@@ -34,7 +34,7 @@ Pour le déploiement cloud :
 
 ```bash
 fly deploy   # depuis le dossier du projet
-# → https://robotariis-sessions.fly.dev/
+# → https://aza-sessions.fly.dev/
 ```
 
 ---
@@ -74,7 +74,7 @@ fly deploy   # depuis le dossier du projet
 ### Catalogue & Références
 - Machines hardware, effets, DAW, synthés iOS, plugins VST/AU
 - Influences (artistes, labels)
-- **Stratégies Obliques Robōtariis** — contraintes créatives aléatoires, style Brian Eno
+- **Stratégies Obliques AZA** — contraintes créatives aléatoires, style Brian Eno
 
 ---
 
@@ -146,7 +146,7 @@ fly launch          # crée l'app et le volume
 fly deploy          # rebuild Docker + rolling deploy
 
 # Logs
-fly logs --app robotariis-sessions
+fly logs --app aza-sessions
 ```
 
 La base SQLite est stockée dans un volume persistant monté sur `/data`.

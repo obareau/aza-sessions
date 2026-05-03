@@ -47,7 +47,7 @@ DEFAULT_OBLIQUE = [
     "Le bruit est une information que tu n'as pas encore comprise.",
     "Répète jusqu'à ce que la répétition devienne quelque chose d'autre.",
     "Inverse le signal. Écoute ce qui était caché.",
-    "Les Robōtariis ne rêvent pas. Ils calculent l'absence.",
+    "Les AZA ne rêvent pas. Ils calculent l'absence.",
     "Retire un élément. Que reste-t-il ?",
     "Le glitch n'est pas une erreur. C'est une vérité accidentelle.",
     "Joue plus lentement que tu ne le penses nécessaire.",
@@ -58,7 +58,7 @@ DEFAULT_OBLIQUE = [
     "La mémoire des machines ne s'efface jamais vraiment.",
     "Travaille avec ce que tu as, pas avec ce que tu voudrais avoir.",
     "Un seul paramètre. Pousse-le à l'extrême.",
-    "Les Robōtariis parlent en fréquences que les humains ont oublié d'entendre.",
+    "Les AZA parlent en fréquences que les humains ont oublié d'entendre.",
     "Ce qui semble cassé est peut-être parfait.",
     "Ferme les yeux. Écoute ce que le setup dit sans toi.",
     "La contrainte est une forme de liberté.",
@@ -102,7 +102,7 @@ DEFAULT_INFLUENCES = [
 
 CHARACTERS = ["Drone","Rythmique","Texturé","Mélodique","Noise","Ambient","Industriel","Génératif","Percussif"]
 MODES = ["Dawless","Hybride","Full DAW","iOS seul","MiRack seul"]
-INTENTIONS = ["Exploration","B.O Robōtariis","Exercice technique","Défouloir","Jam","Post-prod"]
+INTENTIONS = ["Exploration","B.O AZA","Exercice technique","Défouloir","Jam","Post-prod"]
 
 ITEM_TYPES = {
     "machine": "Hardware / Machines",
@@ -425,10 +425,10 @@ def session_to_md(s):
 ## Influences
 {s['influences'] or '—'}
 
-## Lien lore Robōtariis
+## Lien lore AZA
 {s['lore_link'] or '—'}
 
-## Stratégie Robōtariis
+## Stratégie AZA
 > {s['oblique'] or '—'}
 
 ## Notes libres
@@ -439,7 +439,7 @@ def session_to_md(s):
 
 ---
 *À retravailler: {'Oui' if s['to_rework'] else 'Non'} | Potentiel release: {'Oui' if s['release_potential'] else 'Non'}*
-*Journal de Sessions Robōtariis v{VERSION}*
+*Journal de Sessions AZA v{VERSION}*
 """
 
 
@@ -902,28 +902,28 @@ def export_all():
     """).fetchall()
     conn.close()
     if not sessions:
-        content = f"""# Journal de Sessions Robōtariis v{VERSION}
+        content = f"""# Journal de Sessions AZA v{VERSION}
 
 *Exporté le {datetime.now().strftime('%Y-%m-%d %H:%M')}*
 *0 session(s)*
 
 Aucune session à exporter.
 """
-        filename = f"robotariis_{datetime.now().strftime('%Y%m%d')}.md"
+        filename = f"aza_{datetime.now().strftime('%Y%m%d')}.md"
         return Response(
             content,
             mimetype="text/plain",
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
     parts = [
-        f"# Journal de Sessions Robōtariis v{VERSION}",
+        f"# Journal de Sessions AZA v{VERSION}",
         f"*Exporté le {datetime.now().strftime('%Y-%m-%d %H:%M')}*",
         f"*{len(sessions)} session(s)*\n\n---\n",
     ]
     for s in sessions:
         parts.append(session_to_md(s))
         parts.append("\n---\n")
-    filename = f"robotariis_{datetime.now().strftime('%Y%m%d')}.md"
+    filename = f"aza_{datetime.now().strftime('%Y%m%d')}.md"
     return Response(
         "\n".join(parts),
         mimetype="text/plain",
@@ -957,7 +957,7 @@ def export_csv():
     for s in sessions:
         w.writerow([s[c] if c in s.keys() else "" for c in cols])
     buf.seek(0)
-    filename = f"robotariis_{datetime.now().strftime('%Y%m%d')}.csv"
+    filename = f"aza_{datetime.now().strftime('%Y%m%d')}.csv"
     return Response(
         "\ufeff" + buf.getvalue(),   # BOM UTF-8 pour Excel
         mimetype="text/csv; charset=utf-8",
@@ -1264,7 +1264,7 @@ def settings_backup():
     """Télécharger la base de données actuelle."""
     with open(DB_PATH, "rb") as f:
         data = f.read()
-    filename = f"robotariis_backup_{datetime.now().strftime('%Y%m%d_%H%M')}.db"
+    filename = f"aza_backup_{datetime.now().strftime('%Y%m%d_%H%M')}.db"
     return Response(data, mimetype="application/octet-stream",
                     headers={"Content-Disposition": f"attachment; filename={filename}"})
 
@@ -1287,7 +1287,7 @@ def settings_import():
         src = sqlite3.connect(tmp.name)
         src.row_factory = sqlite3.Row
 
-        # Vérifier que c'est bien une DB Robōtariis
+        # Vérifier que c'est bien une DB AZA
         tables = [r[0] for r in src.execute(
             "SELECT name FROM sqlite_master WHERE type='table'"
         ).fetchall()]
@@ -1845,7 +1845,7 @@ def print_banner(port):
     _R   = "\033[0m"
     _B   = "\033[1m"
     _DIM = "\033[2m"
-    _C   = "\033[38;5;208m"   # orange Robōtariis
+    _C   = "\033[38;5;208m"   # orange AZA
     _C2  = "\033[38;5;166m"   # orange foncé (ombres)
     _GR  = "\033[38;5;71m"    # vert URL
     _W   = "\033[97m"         # blanc vif

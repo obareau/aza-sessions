@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Stratégies Robōtariis{% endblock %}
+{% block title %}Stratégies AZA{% endblock %}
 {% block content %}
 
 <div class="page-header">
     <div>
-        <div class="page-title">∴ Stratégies Robōtariis</div>
+        <div class="page-title">∴ Stratégies AZA</div>
         <div class="page-subtitle">{{ obliques|length }} stratégie{% if obliques|length > 1 %}s{% endif %} — {{ obliques|selectattr('active', 'equalto', 1)|list|length }} active{% if obliques|selectattr('active', 'equalto', 1)|list|length > 1 %}s{% endif %}</div>
     </div>
     <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour</a>

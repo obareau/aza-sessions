@@ -1,7 +1,7 @@
-# Journal de Sessions Robōtariis
+# Journal de Sessions AZA
 
 App Flask + SQLite de reporting de sessions musicales pour Olivier (Scaër, Bretagne).
-Fait partie du projet **Robōtariis** — univers de fiction dystopique dont la musique constitue la B.O.
+Fait partie du projet **AZA** — univers de fiction dystopique dont la musique constitue la B.O.
 
 ## Version actuelle : v0.9.6-alpha
 
@@ -29,7 +29,7 @@ templates/
   stats.html            # Dashboard statistiques Chart.js
   catalogue.html        # Gestion catalogue (machines, effets, DAW, iOS, plugins)
   influences.html       # Gestion influences (artistes, labels)
-  obliques.html         # Gestion stratégies Obliques Robōtariis
+  obliques.html         # Gestion stratégies Obliques AZA
 static/                 # Assets statiques (vide pour l'instant)
 requirements.txt        # flask>=3.0.0
 lancer.command          # Script lancement Mac (double-clic)
@@ -78,7 +78,7 @@ influences  -- Artistes et labels : type IN (artiste, label, autre)
 **Logiciels :** daws, synths_ios, plugins  
 **Technique :** patches, signal_routing, microfreak_algo, tempo, tonality  
 **Capture :** audio_file, timestamps, linked_session  
-**Robōtariis :** influences, lore_link  
+**AZA :** influences, lore_link  
 **Évaluation :** rating, tags, character, to_rework, release_potential  
 **Meta :** oblique, comments, recap_claude, created_at
 
@@ -132,16 +132,16 @@ build/
 ### Future
 - Synchronisation réseau local multi-machines
 - Export direct vers Obsidian via API MCP
-- Tags liés aux notes du vault Robōtariis
+- Tags liés aux notes du vault AZA
 - Import automatique depuis fichier audio (date, nom)
 
 ---
 
 ## Contexte projet
 
-Ce projet appartient à l'univers **Robōtariis** — dystopie de fiction personnelle d'Olivier.
+Ce projet appartient à l'univers **AZA** — dystopie de fiction personnelle d'Olivier.
 Chaque session documentée peut correspondre à un élément du lore (scène, lieu, ambiance de la B.O).
-Les **stratégies Obliques Robōtariis** sont inspirées des Oblique Strategies de Brian Eno.
+Les **stratégies Obliques AZA** sont inspirées des Oblique Strategies de Brian Eno.
 Le style musical visé : Dark Ambient / Industriel — tradition PanSonic, Vromb, Synapscape, labels Hands Productions et Ant-Zen.
 
 Pour le lore complet → voir le vault Obsidian (dossier séparé).

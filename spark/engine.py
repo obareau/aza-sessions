@@ -3,7 +3,7 @@ import random
 from collections import Counter
 
 CHARACTERS = ["Drone","Rythmique","Texturé","Mélodique","Noise","Ambient","Industriel","Génératif","Percussif"]
-INTENTIONS = ["Exploration","B.O Robōtariis","Exercice technique","Défouloir","Jam","Post-prod"]
+INTENTIONS = ["Exploration","B.O AZA","Exercice technique","Défouloir","Jam","Post-prod"]
 
 
 class SparkEngine:
@@ -121,7 +121,7 @@ class SparkEngine:
 
         oblique_text = self.rand_oblique()
         result.append({
-            "icon": "∴", "type": "Stratégie Robōtariis",
+            "icon": "∴", "type": "Stratégie AZA",
             "text": f"<em>{oblique_text}</em>",
             "sub": "Laisse la machine te guider"
         })
@@ -138,7 +138,7 @@ class SparkEngine:
         pool = []
 
         for _ in range(3):
-            pool.append({"icon": "∴", "type": "Stratégie Robōtariis",
+            pool.append({"icon": "∴", "type": "Stratégie AZA",
                          "text": self.rand_oblique(), "sub": ""})
 
         if total >= 3:

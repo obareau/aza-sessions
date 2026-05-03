@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Éditer Session #{{ session.id }} — Robōtariis{% endblock %}
+{% block title %}Éditer Session #{{ session.id }} — AZA{% endblock %}
 {% block content %}
 
 {% set sel_machines   = (session.machines   or '').split(', ') %}
@@ -222,7 +222,7 @@
 
 <!-- LORE -->
 <div class="card">
-    <div class="card-title">∙ Univers Robōtariis</div>
+    <div class="card-title">∙ Univers AZA</div>
     <div class="form-grid">
         <div class="form-group full">
             <label>Lien avec le lore</label>
@@ -292,7 +292,7 @@
 
 <!-- OBLIQUE -->
 <div class="card" style="border-color:var(--accent);background:var(--accent-soft);">
-    <div class="card-title" style="color:var(--accent);">∴ Stratégie Robōtariis</div>
+    <div class="card-title" style="color:var(--accent);">∴ Stratégie AZA</div>
     <p style="font-family:var(--mono);font-size:13px;font-style:italic;margin-top:12px;">{{ session.oblique or '—' }}</p>
     <input type="hidden" name="oblique" value="{{ session.oblique or '' }}">
 </div>

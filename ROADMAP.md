@@ -1,4 +1,4 @@
-# ROADMAP — Journal de Sessions Robōtariis
+# ROADMAP — Journal de Sessions AZA
 
 > Idées, améliorations et fonctionnalités futures.
 > Mise à jour au fil du développement — pas de promesses, pas de deadlines.
@@ -42,13 +42,13 @@
 
 ---
 
-## 🌌 Lore Robōtariis
+## 🌌 Lore AZA
 
 | Priorité | Idée | Notes |
 |---|---|---|
 | ★★☆ | **Carte du lore** — canvas interactif (SVG ou canvas HTML) où chaque session occupe un lieu dans l'univers | Visualisation narrative de la B.O. |
 | ★★☆ | **Timeline narrative** — frise chronologique *dans l'univers* (distinct de la date réelle de session) | Ordonner les sessions par ordre lore, pas par date d'enregistrement |
-| ★★☆ | **Générateur de noms Robōtariis** — titres de sessions dans l'esthétique de l'univers | Ex: "SÉQUENCE-09 / MÉMOIRE RÉSIDUELLE / NODE SCAER-7" |
+| ★★☆ | **Générateur de noms AZA** — titres de sessions dans l'esthétique de l'univers | Ex: "SÉQUENCE-09 / MÉMOIRE RÉSIDUELLE / NODE SCAER-7" |
 | ★☆☆ | **Bestiaire / Glossaire** — entités, lieux, factions de l'univers, liables aux sessions | Enrichir le contexte narratif |
 
 ---
@@ -104,7 +104,7 @@
 
 - **"Session fantôme"** — marquer une session comme "perdue" (pas enregistrée, ratée) pour garder la trace sans regrets
 - **Météo/Contexte** — heure de début, lieu (bureau / salon / extérieur), état d'esprit en un mot
-- **Citations Robōtariis** — base de citations de l'univers, affichées dans l'interface (comme les obliques mais narratives)
+- **Citations AZA** — base de citations de l'univers, affichées dans l'interface (comme les obliques mais narratives)
 - **BPM tap tempo** — widget simple dans le formulaire de session
 - **Couleur d'humeur** — palette de 5-6 couleurs symboliques pour caractériser une session en un clic
 

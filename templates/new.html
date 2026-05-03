@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Nouvelle Session — Robōtariis{% endblock %}
+{% block title %}Nouvelle Session — AZA{% endblock %}
 {% block content %}
 
 {% set pf_machines   = (prefill.machines   or '').split(', ') if prefill else [] %}
@@ -240,7 +240,7 @@
 
 <!-- LORE -->
 <div class="card">
-    <div class="card-title">∙ Univers Robōtariis</div>
+    <div class="card-title">∙ Univers AZA</div>
     <div class="form-grid">
         <div class="form-group full">
             <label>Lien avec le lore</label>
@@ -310,7 +310,7 @@
 
 <!-- OBLIQUE -->
 <div class="card" style="border-color:var(--accent);background:var(--accent-soft);">
-    <div class="card-title" style="color:var(--accent);">∴ Stratégie Robōtariis</div>
+    <div class="card-title" style="color:var(--accent);">∴ Stratégie AZA</div>
     {% set effective_oblique = (prefill.oblique if (prefill is mapping and prefill and prefill.get('_from_live')) else none) or oblique %}
     <p style="font-family:var(--mono);font-size:13px;font-style:italic;margin-top:12px;">{{ effective_oblique }}</p>
     <input type="hidden" name="oblique" value="{{ effective_oblique }}">

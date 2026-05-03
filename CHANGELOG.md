@@ -1,4 +1,4 @@
-# CHANGELOG — Journal de Sessions Robōtariis
+# CHANGELOG — Journal de Sessions AZA
 
 > Les versions alpha sont des releases actives en développement continu.
 > Chaque version est datée du jour de développement effectif.
@@ -53,7 +53,7 @@ La version 2.0 marque le passage d'un outil de documentation locale à une
 - `wsgi.py` — init DB au démarrage Gunicorn via `app.app_context()`
 - Volume persistant `/data` (sessions.db + backups)
 - Région CDG (Paris), 256 MB RAM, free tier
-- URL publique : **https://robotariis-sessions.fly.dev/**
+- URL publique : **https://aza-sessions.fly.dev/**
 
 ### 📱 Mobile
 - Menu hamburger fixe en portrait iPhone — nav cachée par défaut, drawer ☰/✕

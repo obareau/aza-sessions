@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Session {{ session.date[:10] }} — Robōtariis</title>
+<title>Session {{ session.date[:10] }} — AZA</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
     /* ── RESET & BASE ── */
@@ -265,7 +265,7 @@
     <div class="doc-header">
         <div class="brand">
             Journal de Sessions
-            <strong>Robōtariis</strong>
+            <strong>AZA</strong>
         </div>
         <div class="doc-meta">
             Session #{{ session.id }}<br>
@@ -339,7 +339,7 @@
     {% endif %}
 
     {% if session.lore_link %}
-    <div class="section-head">∙ Lien Lore Robōtariis</div>
+    <div class="section-head">∙ Lien Lore AZA</div>
     <div class="text-block">{{ session.lore_link }}</div>
     {% endif %}
 
@@ -379,7 +379,7 @@
 
     <!-- FOOTER -->
     <div class="doc-footer">
-        <span>Journal de Sessions Robōtariis · v{{ version }}</span>
+        <span>Journal de Sessions AZA · v{{ version }}</span>
         <span>La machine ne ment pas. Elle déforme.</span>
         <span>Session #{{ session.id }} · {{ session.date[:10] }}</span>
     </div>
