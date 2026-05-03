@@ -1,6 +1,6 @@
-import sqlite3
 import json
-import random
+from core.db import get_db
+from core.oblique import rand_oblique as _rand_oblique
 
 
 class DimEngine:
@@ -8,17 +8,10 @@ class DimEngine:
         self.db_path = db_path
 
     def _get_db(self):
-        conn = sqlite3.connect(self.db_path, timeout=10.0)
-        conn.row_factory = sqlite3.Row
-        return conn
+        return get_db(self.db_path)
 
     def rand_oblique(self):
-        conn = self._get_db()
-        rows = conn.execute("SELECT text FROM obliques WHERE active=1").fetchall()
-        conn.close()
-        if not rows:
-            return "La machine ne ment pas. Elle déforme."
-        return random.choice(rows)["text"]
+        return _rand_oblique(self.db_path)
 
     def list_scripts(self):
         conn = self._get_db()

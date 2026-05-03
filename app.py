@@ -123,10 +123,10 @@ INSPI_TYPES     = ["Phrase","Extrait film","Livre","Image/Photo","Architecture",
 
 # ── DB ────────────────────────────────────────────────────────────────────────
 
+from core.db import get_db as _core_get_db
+
 def get_db():
-    conn = sqlite3.connect(DB_PATH, timeout=10.0)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return _core_get_db(DB_PATH)
 
 
 def init_db():
@@ -346,15 +346,10 @@ def init_db():
 
 # ── HELPERS ───────────────────────────────────────────────────────────────────
 
+from core.oblique import rand_oblique as _core_rand_oblique
+
 def rand_oblique():
-    conn = get_db()
-    rows = conn.execute(
-        "SELECT text FROM obliques WHERE active=1"
-    ).fetchall()
-    conn.close()
-    if not rows:
-        return "La machine ne ment pas. Elle déforme."
-    return random.choice(rows)["text"]
+    return _core_rand_oblique(DB_PATH)
 
 
 def get_catalogue():
