@@ -7,8 +7,8 @@
         <div class="page-title">⚡ Spark</div>
         <div class="page-subtitle">Générateur créatif personnalisé — basé sur {{ total }} session{% if total != 1 %}s{% endif %}</div>
     </div>
-    <a href="{{ url_for('spark_focus') }}" class="btn btn-secondary">⊙ Contrainte unique</a>
-    <a href="{{ url_for('spark') }}" class="btn btn-primary">↺ Regénérer</a>
+    <a href="{{ url_for('spark.spark_focus') }}" class="btn btn-secondary">⊙ Contrainte unique</a>
+    <a href="{{ url_for('spark.spark') }}" class="btn btn-primary">↺ Regénérer</a>
 </div>
 
 {% if total < 3 %}
@@ -38,7 +38,7 @@
 
 <div style="text-align:center;margin-top:32px;padding:24px;font-family:var(--mono);font-size:11px;color:var(--text-muted);">
     Ces suggestions sont générées à partir de tes données.<br>
-    <a href="{{ url_for('spark') }}" style="color:var(--accent2);">↺ Nouvelles suggestions</a>
+    <a href="{{ url_for('spark.spark') }}" style="color:var(--accent2);">↺ Nouvelles suggestions</a>
     &nbsp;·&nbsp;
     <a href="{{ url_for('new_session') }}" style="color:var(--accent);">+ Nouvelle session</a>
 </div>
