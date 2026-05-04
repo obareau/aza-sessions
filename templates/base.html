@@ -148,16 +148,58 @@
         }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-        .header-nav { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-        .header-nav a {
-            color: var(--bg); text-decoration: none;
-            font-family: var(--mono); font-size: 11px;
+        /* ── NAV DESKTOP — dropdowns ── */
+        .header-nav { display: flex; align-items: center; gap: 2px; }
+
+        .nav-dropdown { position: relative; }
+        .nav-btn {
+            background: none; border: none; cursor: pointer;
+            color: rgba(255,255,255,0.72); font-family: var(--mono); font-size: 11px;
             letter-spacing: 0.06em; text-transform: uppercase;
-            padding: 4px 10px; border-radius: var(--radius);
-            opacity: 0.7; transition: all 0.15s;
+            padding: 6px 10px; border-radius: var(--radius);
+            transition: all 0.15s; display: flex; align-items: center; gap: 5px;
+            line-height: 1;
         }
-        .header-nav a:hover { opacity: 1; background: rgba(255,255,255,0.1); }
-        .header-nav .sep { color: rgba(255,255,255,0.2); font-size: 10px; }
+        .nav-btn:hover,
+        .nav-dropdown:focus-within .nav-btn { background: rgba(255,255,255,0.1); color: #fff; }
+        .nav-caret { font-size: 8px; opacity: 0.55; transition: transform 0.15s; display: inline-block; }
+        .nav-dropdown:hover .nav-caret,
+        .nav-dropdown:focus-within .nav-caret,
+        .nav-dropdown.open .nav-caret { transform: rotate(180deg); }
+
+        .nav-drop {
+            display: none;
+            position: absolute; top: calc(100% + 4px); left: 0;
+            background: var(--text);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-top: 2px solid var(--accent);
+            border-radius: 0 0 var(--radius) var(--radius);
+            min-width: 150px; z-index: 300;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+            padding: 4px 0;
+        }
+        .nav-dropdown:hover .nav-drop,
+        .nav-dropdown:focus-within .nav-drop,
+        .nav-dropdown.open .nav-drop { display: block; }
+        .nav-drop a {
+            display: block; color: rgba(255,255,255,0.78); text-decoration: none;
+            font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+            text-transform: uppercase; padding: 8px 16px; transition: all 0.1s;
+            white-space: nowrap;
+        }
+        .nav-drop a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .nav-drop-label {
+            display: block; font-family: var(--mono); font-size: 9px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent);
+            padding: 6px 16px 3px; pointer-events: none;
+        }
+        .nav-sep { width: 1px; height: 18px; background: rgba(255,255,255,0.15); margin: 0 3px; flex-shrink: 0; }
+        .nav-live {
+            color: #ff6b35 !important; font-weight: 700; opacity: 1 !important;
+            animation: pulse 1.2s infinite; font-family: var(--mono); font-size: 11px;
+            letter-spacing: 0.06em; text-transform: uppercase;
+            padding: 4px 10px; text-decoration: none; border-radius: var(--radius);
+        }
 
         /* ── ZOOM GLOBAL ── */
         .zoom-btns {
@@ -432,10 +474,8 @@
 
         /* ── HAMBURGER — iPad + mobiles (≤ 1024px) ── */
         @media (max-width: 1024px) {
-            /* Affiche le bouton hamburger */
             #nav-toggle { display: block; }
 
-            /* Cache la nav desktop, elle devient un drawer */
             .header-nav {
                 display: none;
                 position: fixed;
@@ -443,9 +483,9 @@
                 background: var(--text);
                 border-top: 1px solid rgba(255,255,255,0.1);
                 border-bottom: 2px solid var(--accent);
-                padding: 8px 16px 16px;
+                padding: 8px 0 16px;
                 flex-direction: column;
-                gap: 2px;
+                gap: 0;
                 z-index: 200;
                 max-height: calc(100vh - 52px);
                 overflow-y: auto;
@@ -454,31 +494,26 @@
             }
             .header-nav.open { display: flex; }
 
-            /* Liens touch-friendly */
-            .header-nav a {
-                font-size: 14px;
-                padding: 13px 16px;
-                opacity: 0.85;
-                border-radius: var(--radius);
-                width: 100%;
+            /* Dans le drawer : on cache le bouton dropdown et on déploie le contenu */
+            .nav-dropdown { width: 100%; }
+            .nav-btn { display: none; }
+            .nav-sep { display: none; }
+            .nav-drop {
+                display: block; position: static;
+                background: none; border: none; border-top: 1px solid rgba(255,255,255,0.08);
+                box-shadow: none; padding: 4px 0; min-width: 0;
             }
-            .header-nav a:hover, .header-nav a:active { opacity: 1; background: rgba(255,255,255,0.1); }
-
-            /* Séparateurs → groupes */
-            .header-nav .sep { display: none; }
-            .header-nav .nav-group {
-                border-top: 1px solid rgba(255,255,255,0.1);
-                margin-top: 6px; padding-top: 6px;
+            .nav-drop-label { padding: 10px 20px 3px; }
+            .nav-drop a {
+                font-size: 14px; padding: 12px 20px;
+                opacity: 0.85; border-radius: 0; white-space: normal;
             }
-            .header-nav .nav-group-label {
-                font-family: var(--mono); font-size: 9px; font-weight: 700;
-                text-transform: uppercase; letter-spacing: 0.15em;
-                color: var(--accent); padding: 8px 16px 4px; opacity: 1;
-            }
+            .nav-drop a:hover, .nav-drop a:active { background: rgba(255,255,255,0.08); opacity: 1; }
+            .nav-live { padding: 12px 20px; display: block; }
 
             /* Version badge et theme picker dans le drawer */
-            .header-nav .version-badge { margin: 10px 16px 0; display: inline-block; align-self: flex-start; }
-            #theme-picker { margin: 10px 16px 0; align-self: flex-start; }
+            .header-nav .version-badge { margin: 10px 20px 0; display: inline-block; align-self: flex-start; }
+            #theme-picker { margin: 10px 20px 0; align-self: flex-start; }
         }
 
         /* ── MOBILES (≤ 600px) — ajustements de taille uniquement ── */
@@ -578,47 +613,78 @@
     <header>
         <div class="header-brand"><span class="dot"></span>Journal AZA</div>
         <div class="zoom-btns" title="Zoom global">
-            <button onclick="globalZoomOut()" aria-label="Réduire le zoom">A−</button>
-            <button onclick="globalZoomIn()"  aria-label="Agrandir le zoom">A+</button>
+            <button type="button" onclick="globalZoomOut()" aria-label="Réduire le zoom">A−</button>
+            <button type="button" onclick="globalZoomIn()"  aria-label="Agrandir le zoom">A+</button>
         </div>
-        <button id="nav-toggle" onclick="toggleNav()" aria-label="Menu">☰</button>
+        <button type="button" id="nav-toggle" onclick="toggleNav()" aria-label="Menu">☰</button>
         <nav class="header-nav" id="header-nav">
+
             {% if has_live %}
-            <a href="{{ url_for('live') }}" style="color:#ff6b35;font-weight:700;opacity:1;animation:pulse 1.2s infinite;">● EN COURS</a>
-            <span class="sep">|</span>
+            <a href="{{ url_for('live') }}" class="nav-live">● EN COURS</a>
+            <div class="nav-sep"></div>
             {% endif %}
 
-            <span class="nav-group-label">Sessions</span>
-            <a href="{{ url_for('sessions.index') }}">Sessions</a>
-            <a href="{{ url_for('live') }}">▶ Live</a>
-            <a href="{{ url_for('sessions.new_session') }}">+ Nouvelle</a>
-            <span class="sep">|</span>
+            <div class="nav-dropdown">
+                <button type="button" class="nav-btn" onclick="toggleDrop(this)">Sessions <span class="nav-caret">▾</span></button>
+                <div class="nav-drop">
+                    <span class="nav-drop-label">Sessions</span>
+                    <a href="{{ url_for('sessions.index') }}">Liste</a>
+                    <a href="{{ url_for('live') }}">▶ Live</a>
+                    <a href="{{ url_for('sessions.new_session') }}">+ Nouvelle</a>
+                </div>
+            </div>
 
-            <span class="nav-group-label nav-group">Outils</span>
-            <a href="{{ url_for('stats') }}">Stats</a>
-            <a href="{{ url_for('list_projects') }}">◈ Projets</a>
-            <a href="{{ url_for('spark.spark') }}">⚡ Spark</a>
-            <a href="{{ url_for('dim.prompter_list') }}">⬡ Prompteur</a>
-            <span class="sep">|</span>
+            <div class="nav-sep"></div>
 
-            <span class="nav-group-label nav-group">Catalogue</span>
-            <a href="{{ url_for('catalogue.manage_catalogue') }}">Catalogue</a>
-            <a href="{{ url_for('influences.manage_influences') }}">Influences</a>
-            <a href="{{ url_for('obliques.manage_obliques') }}">Stratégies</a>
-            <span class="sep">|</span>
+            <div class="nav-dropdown">
+                <button type="button" class="nav-btn" onclick="toggleDrop(this)">Outils <span class="nav-caret">▾</span></button>
+                <div class="nav-drop">
+                    <span class="nav-drop-label">Outils</span>
+                    <a href="{{ url_for('stats') }}">Stats</a>
+                    <a href="{{ url_for('list_projects') }}">◈ Projets</a>
+                    <a href="{{ url_for('spark.spark') }}">⚡ Spark</a>
+                    <a href="{{ url_for('dim.prompter_list') }}">⬡ Prompteur</a>
+                </div>
+            </div>
 
-            <span class="nav-group-label nav-group">Ressources</span>
-            <a href="{{ url_for('manage_samples') }}">Samples</a>
-            <a href="{{ url_for('manage_tracks') }}">Morceaux</a>
-            <a href="{{ url_for('manage_inspirations') }}">Inspi</a>
-            <a href="{{ url_for('manage_wishlist') }}">Wishlist</a>
-            <a href="{{ url_for('manage_mirack') }}">⬡ MiRack</a>
-            <span class="sep">|</span>
+            <div class="nav-sep"></div>
 
-            <span class="nav-group-label nav-group">Config</span>
-            <a href="{{ url_for('sessions.form_blank') }}" title="Formulaire papier — mode dégradé">⎙ Form</a>
-            <a href="{{ url_for('sessions.settings') }}">Paramètres</a>
-            <a href="{{ url_for('about') }}">About</a>
+            <div class="nav-dropdown">
+                <button type="button" class="nav-btn" onclick="toggleDrop(this)">Catalogue <span class="nav-caret">▾</span></button>
+                <div class="nav-drop">
+                    <span class="nav-drop-label">Catalogue</span>
+                    <a href="{{ url_for('catalogue.manage_catalogue') }}">Matériel</a>
+                    <a href="{{ url_for('influences.manage_influences') }}">Influences</a>
+                    <a href="{{ url_for('obliques.manage_obliques') }}">Stratégies</a>
+                </div>
+            </div>
+
+            <div class="nav-sep"></div>
+
+            <div class="nav-dropdown">
+                <button type="button" class="nav-btn" onclick="toggleDrop(this)">Ressources <span class="nav-caret">▾</span></button>
+                <div class="nav-drop">
+                    <span class="nav-drop-label">Ressources</span>
+                    <a href="{{ url_for('manage_samples') }}">Samples</a>
+                    <a href="{{ url_for('manage_tracks') }}">Morceaux</a>
+                    <a href="{{ url_for('manage_inspirations') }}">Inspi</a>
+                    <a href="{{ url_for('manage_wishlist') }}">Wishlist</a>
+                    <a href="{{ url_for('manage_mirack') }}">⬡ MiRack</a>
+                </div>
+            </div>
+
+            <div class="nav-sep"></div>
+
+            <div class="nav-dropdown">
+                <button type="button" class="nav-btn" onclick="toggleDrop(this)">Config <span class="nav-caret">▾</span></button>
+                <div class="nav-drop">
+                    <span class="nav-drop-label">Config</span>
+                    <a href="{{ url_for('sessions.form_blank') }}">⎙ Form</a>
+                    <a href="{{ url_for('sessions.settings') }}">Paramètres</a>
+                    <a href="{{ url_for('about') }}">About</a>
+                </div>
+            </div>
+
             <span class="version-badge">v{{ version }}</span>
             <!-- THEME PICKER -->
             <div id="theme-picker" style="display:flex;align-items:center;gap:4px;margin-left:6px;position:relative;">
@@ -731,6 +797,21 @@
         const d = document.getElementById('theme-dropdown');
         d.style.display = d.style.display === 'none' ? 'block' : 'none';
     }
+
+    // ── Dropdowns nav desktop ────────────────────────────────────
+    function toggleDrop(btn) {
+        const dropdown = btn.closest('.nav-dropdown');
+        const isOpen = dropdown.classList.contains('open');
+        // fermer tous les autres
+        document.querySelectorAll('.nav-dropdown.open').forEach(d => d.classList.remove('open'));
+        if (!isOpen) dropdown.classList.add('open');
+    }
+    // Fermer les dropdowns en cliquant en dehors
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.nav-dropdown')) {
+            document.querySelectorAll('.nav-dropdown.open').forEach(d => d.classList.remove('open'));
+        }
+    });
 
     // ── Menu hamburger ──────────────────────────────────────────
     function toggleNav() {
