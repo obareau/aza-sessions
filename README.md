@@ -3,7 +3,7 @@
 > Application de documentation et de performance musicale pour le projet **AZA** —
 > univers de fiction dystopique dont les sessions de création constituent la bande originale.
 
-**Version : v2.1.0** · [Changelog](CHANGELOG.md)
+**Version : v2.2.0** · [Changelog](CHANGELOG.md)
 
 ---
 
@@ -72,9 +72,15 @@ fly deploy   # depuis le dossier du projet
 | Import / Export | JSON structuré + Markdown compatible Obsidian |
 
 ### Catalogue & Références
-- Machines hardware, effets, DAW, synthés iOS, plugins VST/AU
+- Machines hardware, effets, DAW, synthés iOS, plugins VST/AU — **classés par fabricant**
+- **Ajout inline depuis le formulaire** — modal AJAX, sans quitter la session en cours
 - Influences (artistes, labels)
 - **Stratégies Obliques AZA** — contraintes créatives aléatoires, style Brian Eno
+
+### Ergonomie
+- **Autosave brouillon** — le formulaire nouvelle session se sauvegarde en continu, restauré si on revient sans avoir soumis
+- Zoom global A+ / A− — persisté en localStorage
+- Menu hamburger sur iPad et mobile
 
 ---
 
@@ -163,9 +169,9 @@ La base SQLite est stockée dans un volume persistant monté sur `/data`.
 
 ## Roadmap
 
-- Export direct vers vault Obsidian (API MCP)
-- Vue calendrier des sessions
 - Pagination liste (au-delà de 50 sessions)
+- Lien fichier audio vers Finder
+- Export direct vers vault Obsidian (API MCP)
 - Import automatique depuis métadonnées fichier audio
 
 ---

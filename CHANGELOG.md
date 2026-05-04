@@ -9,10 +9,11 @@
 
 ### ✨ Nouveautés
 - **Colonne `manufacturer`** sur la table `catalogue` (migration automatique `ALTER TABLE`)
-- **Ajout inline depuis le formulaire session** — bouton `+ Ajouter` par section (Machines, Effets, DAW, iOS, Plugins) ouvre un modal AJAX ; l'item est injecté et coché immédiatement sans perdre la session en cours
-- **Classement par fabricant** partout : formulaire session (groupby avec séparateurs), page catalogue (tri + champ éditable en ligne), formulaire vierge (fabricant en texte secondaire)
+- **Ajout inline depuis le formulaire session** — bouton `+ Ajouter` par section (Machines, Effets, DAW, iOS, Plugins) ouvre un modal AJAX ; l'item est injecté et coché immédiatement sans perdre la session en cours — valable sur `new.html` et `edit.html`
+- **Classement par fabricant** partout : formulaires new/edit (groupby avec séparateurs), page catalogue (tri + champ éditable en ligne), formulaire vierge (fabricant en texte secondaire)
 - **Datalist fabricants** dans le modal — autocomplétion sur les fabricants déjà connus
 - **Endpoint JSON** `POST /api/catalogue/add` — `CatalogueEngine.add_inline()`
+- **Autosave brouillon** sur `new.html` — sauvegarde silencieuse en `localStorage` à chaque frappe, restauration au chargement avec bandeau "↩ Brouillon restauré", effacement au submit
 
 ---
 
