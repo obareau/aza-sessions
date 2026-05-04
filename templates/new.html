@@ -346,6 +346,20 @@
     <input type="hidden" name="oblique" value="{{ effective_oblique }}">
 </div>
 
+<!-- BANDEAU BROUILLON (injecté par JS si restauration) -->
+<div id="draft-banner" style="display:none;background:var(--accent-soft);border:1px solid var(--accent);
+     border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;
+     display:none;align-items:center;justify-content:space-between;gap:12px;">
+    <span style="font-family:var(--mono);font-size:11px;color:var(--accent);">
+        ↩ Brouillon restauré — données de ta dernière session non enregistrée
+    </span>
+    <button type="button" onclick="clearDraft(true)"
+            style="font-family:var(--mono);font-size:10px;background:none;border:1px solid var(--accent);
+                   border-radius:var(--radius);padding:3px 10px;color:var(--accent);cursor:pointer;">
+        Effacer
+    </button>
+</div>
+
 <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
     <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">Annuler</a>
     <button type="submit" class="btn btn-primary">Enregistrer →</button>
@@ -480,5 +494,75 @@ document.getElementById('qa-modal').addEventListener('click', function(e) {
     if (e.target === this) closeQuickAdd();
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeQuickAdd(); });
+
+// ── AUTOSAVE BROUILLON ──────────────────────────────────────────────────────
+(function() {
+    const DRAFT_KEY = 'rb_draft_new_session';
+    const SKIP_NAMES = new Set(['date', 'oblique', '_from_live', 'csrfmiddlewaretoken']);
+    const form = document.querySelector('form[data-autosave]');
+    if (!form) return;
+
+    function collectForm() {
+        const data = {};
+        form.querySelectorAll('input, textarea, select').forEach(el => {
+            if (!el.name || SKIP_NAMES.has(el.name)) return;
+            if (el.type === 'checkbox') {
+                if (!Array.isArray(data[el.name])) data[el.name] = [];
+                if (el.checked) data[el.name].push(el.value);
+            } else if (el.type === 'radio') {
+                if (el.checked) data[el.name] = el.value;
+            } else {
+                data[el.name] = el.value;
+            }
+        });
+        return data;
+    }
+
+    function applyDraft(data) {
+        form.querySelectorAll('input, textarea, select').forEach(el => {
+            if (!el.name || SKIP_NAMES.has(el.name)) return;
+            if (el.type === 'checkbox') {
+                el.checked = Array.isArray(data[el.name]) && data[el.name].includes(el.value);
+            } else if (el.type === 'radio') {
+                if (data[el.name] !== undefined) el.checked = el.value === data[el.name];
+            } else {
+                if (data[el.name] !== undefined) el.value = data[el.name];
+            }
+        });
+    }
+
+    window.clearDraft = function(resetForm) {
+        localStorage.removeItem(DRAFT_KEY);
+        document.getElementById('draft-banner').style.display = 'none';
+        if (resetForm) form.reset();
+    };
+
+    // Restaurer au chargement (seulement si pas de prefill serveur)
+    {% if not prefill %}
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            // Ne restaurer que si le brouillon contient des données réelles
+            const hasContent = Object.values(data).some(v =>
+                Array.isArray(v) ? v.length > 0 : v && v.trim && v.trim() !== ''
+            );
+            if (hasContent) {
+                applyDraft(data);
+                const banner = document.getElementById('draft-banner');
+                banner.style.display = 'flex';
+            }
+        } catch(e) { localStorage.removeItem(DRAFT_KEY); }
+    }
+    {% endif %}
+
+    // Sauvegarder à chaque changement (debounce 800ms)
+    let saveTimer;
+    form.addEventListener('input',  () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => localStorage.setItem(DRAFT_KEY, JSON.stringify(collectForm())), 800); });
+    form.addEventListener('change', () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => localStorage.setItem(DRAFT_KEY, JSON.stringify(collectForm())), 800); });
+
+    // Effacer au submit
+    form.addEventListener('submit', () => localStorage.removeItem(DRAFT_KEY));
+})();
 </script>
 {% endblock %}
