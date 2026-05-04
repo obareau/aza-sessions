@@ -221,7 +221,9 @@ class SessionsEngine:
 
     def get_catalogue(self):
         conn = self._get_db()
-        rows = conn.execute("SELECT * FROM catalogue WHERE active=1 ORDER BY type, name").fetchall()
+        rows = conn.execute(
+            "SELECT * FROM catalogue WHERE active=1 ORDER BY type, manufacturer, name"
+        ).fetchall()
         conn.close()
         result = {k: [] for k in ITEM_TYPES}
         for r in rows:

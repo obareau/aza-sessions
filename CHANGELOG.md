@@ -5,6 +5,17 @@
 
 ---
 
+## v2.2.0 — 2026-05-04 — Fabricants + ajout inline catalogue
+
+### ✨ Nouveautés
+- **Colonne `manufacturer`** sur la table `catalogue` (migration automatique `ALTER TABLE`)
+- **Ajout inline depuis le formulaire session** — bouton `+ Ajouter` par section (Machines, Effets, DAW, iOS, Plugins) ouvre un modal AJAX ; l'item est injecté et coché immédiatement sans perdre la session en cours
+- **Classement par fabricant** partout : formulaire session (groupby avec séparateurs), page catalogue (tri + champ éditable en ligne), formulaire vierge (fabricant en texte secondaire)
+- **Datalist fabricants** dans le modal — autocomplétion sur les fabricants déjà connus
+- **Endpoint JSON** `POST /api/catalogue/add` — `CatalogueEngine.add_inline()`
+
+---
+
 ## v2.1.0 — 2026-05-03 — Architecture modulaire (Blueprints)
 
 ### ♻️ Refactorisation architecture

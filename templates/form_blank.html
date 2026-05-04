@@ -413,7 +413,10 @@
         </div>
         <div class="check-grid">
             {% for item in block.entries %}
-            <div class="chk-item"><span class="chk-box"></span>{{ item.name }}</div>
+            <div class="chk-item">
+                <span class="chk-box"></span>
+                <span>{{ item.name }}{% if item.manufacturer %}<span style="font-size:5.5px;opacity:.5;margin-left:2px;">{{ item.manufacturer }}</span>{% endif %}</span>
+            </div>
             {% endfor %}
             {% if block.add_line %}
             <div class="chk-item add"><span class="chk-box"></span><span class="add-line"></span></div>

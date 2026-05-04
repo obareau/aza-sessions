@@ -18,7 +18,9 @@ class CatalogueEngine:
 
     def list_grouped(self):
         conn = self._get_db()
-        items = conn.execute("SELECT * FROM catalogue ORDER BY type, name").fetchall()
+        items = conn.execute(
+            "SELECT * FROM catalogue ORDER BY type, manufacturer, name"
+        ).fetchall()
         conn.close()
         grouped = {k: [] for k in ITEM_TYPES}
         for item in items:
@@ -26,11 +28,46 @@ class CatalogueEngine:
                 grouped[item["type"]].append(dict(item))
         return grouped
 
-    def add(self, typ, name, notes=""):
+    def list_active_grouped(self):
         conn = self._get_db()
-        conn.execute("INSERT INTO catalogue (type, name, notes) VALUES (?,?,?)", (typ, name, notes))
+        items = conn.execute(
+            "SELECT * FROM catalogue WHERE active=1 ORDER BY type, manufacturer, name"
+        ).fetchall()
+        conn.close()
+        result = {k: [] for k in ITEM_TYPES}
+        for item in items:
+            if item["type"] in result:
+                result[item["type"]].append(dict(item))
+        return result
+
+    def add(self, typ, name, manufacturer="", notes=""):
+        conn = self._get_db()
+        conn.execute(
+            "INSERT INTO catalogue (type, name, manufacturer, notes) VALUES (?,?,?,?)",
+            (typ, name, manufacturer, notes)
+        )
         conn.commit()
         conn.close()
+
+    def add_inline(self, typ, name, manufacturer=""):
+        """Ajout rapide inline — retourne le dict du nouvel item ou None si doublon."""
+        conn = self._get_db()
+        existing = conn.execute(
+            "SELECT id FROM catalogue WHERE type=? AND name=?", (typ, name)
+        ).fetchone()
+        if existing:
+            conn.close()
+            return None
+        conn.execute(
+            "INSERT INTO catalogue (type, name, manufacturer) VALUES (?,?,?)",
+            (typ, name, manufacturer)
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT * FROM catalogue WHERE rowid = last_insert_rowid()"
+        ).fetchone()
+        conn.close()
+        return dict(row)
 
     def delete(self, item_id):
         conn = self._get_db()
@@ -38,9 +75,12 @@ class CatalogueEngine:
         conn.commit()
         conn.close()
 
-    def edit(self, item_id, name, notes=""):
+    def edit(self, item_id, name, manufacturer="", notes=""):
         conn = self._get_db()
-        conn.execute("UPDATE catalogue SET name=?, notes=? WHERE id=?", (name, notes, item_id))
+        conn.execute(
+            "UPDATE catalogue SET name=?, manufacturer=?, notes=? WHERE id=?",
+            (name, manufacturer, notes, item_id)
+        )
         conn.commit()
         conn.close()
 

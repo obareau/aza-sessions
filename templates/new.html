@@ -82,14 +82,20 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">∙ Hardware / Machines</span>
-        <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
+        <div style="display:flex;gap:6px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openQuickAdd('machine')">+ Ajouter</button>
+            <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank" title="Gérer le catalogue">⚙</a>
+        </div>
     </div>
-    <div class="check-grid">
-        {% for item in catalogue.machine %}
+    <div class="check-grid" id="grid-machine">
+        {% for mfr, items in catalogue.machine | groupby('manufacturer') %}
+        {% if mfr %}<div class="mfr-label">{{ mfr }}</div>{% endif %}
+        {% for item in items %}
         <label class="chk">
             <input type="checkbox" name="machines" value="{{ item.name }}" {% if item.name in pf_machines %}checked{% endif %}>
             <span>{{ item.name }}</span>
         </label>
+        {% endfor %}
         {% endfor %}
     </div>
 </div>
@@ -98,14 +104,20 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">∙ Effets Hardware</span>
-        <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
+        <div style="display:flex;gap:6px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openQuickAdd('effet')">+ Ajouter</button>
+            <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank" title="Gérer le catalogue">⚙</a>
+        </div>
     </div>
-    <div class="check-grid">
-        {% for item in catalogue.effet %}
+    <div class="check-grid" id="grid-effet">
+        {% for mfr, items in catalogue.effet | groupby('manufacturer') %}
+        {% if mfr %}<div class="mfr-label">{{ mfr }}</div>{% endif %}
+        {% for item in items %}
         <label class="chk">
             <input type="checkbox" name="effects" value="{{ item.name }}" {% if item.name in pf_effects %}checked{% endif %}>
             <span>{{ item.name }}</span>
         </label>
+        {% endfor %}
         {% endfor %}
     </div>
 </div>
@@ -114,14 +126,20 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">∙ DAW</span>
-        <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
+        <div style="display:flex;gap:6px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openQuickAdd('daw')">+ Ajouter</button>
+            <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank" title="Gérer le catalogue">⚙</a>
+        </div>
     </div>
-    <div class="check-grid">
-        {% for item in catalogue.daw %}
+    <div class="check-grid" id="grid-daw">
+        {% for mfr, items in catalogue.daw | groupby('manufacturer') %}
+        {% if mfr %}<div class="mfr-label">{{ mfr }}</div>{% endif %}
+        {% for item in items %}
         <label class="chk">
             <input type="checkbox" name="daws" value="{{ item.name }}" {% if item.name in pf_daws %}checked{% endif %}>
             <span>{{ item.name }}</span>
         </label>
+        {% endfor %}
         {% endfor %}
     </div>
 </div>
@@ -130,14 +148,20 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">∙ Synthés iOS</span>
-        <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
+        <div style="display:flex;gap:6px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openQuickAdd('synth_ios')">+ Ajouter</button>
+            <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank" title="Gérer le catalogue">⚙</a>
+        </div>
     </div>
-    <div class="check-grid">
-        {% for item in catalogue.synth_ios %}
+    <div class="check-grid" id="grid-synth_ios">
+        {% for mfr, items in catalogue.synth_ios | groupby('manufacturer') %}
+        {% if mfr %}<div class="mfr-label">{{ mfr }}</div>{% endif %}
+        {% for item in items %}
         <label class="chk">
             <input type="checkbox" name="synths_ios" value="{{ item.name }}" {% if item.name in pf_ios %}checked{% endif %}>
             <span>{{ item.name }}</span>
         </label>
+        {% endfor %}
         {% endfor %}
     </div>
 </div>
@@ -146,14 +170,20 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">∙ Plugins VST/AU</span>
-        <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
+        <div style="display:flex;gap:6px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openQuickAdd('plugin')">+ Ajouter</button>
+            <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank" title="Gérer le catalogue">⚙</a>
+        </div>
     </div>
-    <div class="check-grid">
-        {% for item in catalogue.plugin %}
+    <div class="check-grid" id="grid-plugin">
+        {% for mfr, items in catalogue.plugin | groupby('manufacturer') %}
+        {% if mfr %}<div class="mfr-label">{{ mfr }}</div>{% endif %}
+        {% for item in items %}
         <label class="chk">
             <input type="checkbox" name="plugins" value="{{ item.name }}" {% if item.name in pf_plugins %}checked{% endif %}>
             <span>{{ item.name }}</span>
         </label>
+        {% endfor %}
         {% endfor %}
     </div>
 </div>
@@ -321,4 +351,134 @@
     <button type="submit" class="btn btn-primary">Enregistrer →</button>
 </div>
 </form>
+
+<!-- MODAL QUICK-ADD CATALOGUE -->
+<div id="qa-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+     z-index:1000;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+                padding:24px;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.4);">
+        <div style="font-family:var(--mono);font-size:11px;text-transform:uppercase;
+                    letter-spacing:.12em;color:var(--accent);margin-bottom:16px;">
+            + Ajouter — <span id="qa-type-label"></span>
+        </div>
+        <form id="qa-form" onsubmit="submitQuickAdd(event)">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <div>
+                    <label style="font-family:var(--mono);font-size:10px;text-transform:uppercase;
+                                  letter-spacing:.1em;color:var(--text-muted);display:block;margin-bottom:5px;">
+                        Fabricant <span style="font-weight:400;color:var(--text-muted);">(optionnel)</span>
+                    </label>
+                    <input id="qa-manufacturer" type="text" list="qa-mfr-list" autocomplete="off"
+                           placeholder="ex: Korg, Arturia, Native Instruments…"
+                           style="font-family:var(--mono);font-size:13px;background:var(--bg);
+                                  border:1px solid var(--border);border-radius:var(--radius);
+                                  padding:9px 12px;color:var(--text);width:100%;box-sizing:border-box;">
+                    <datalist id="qa-mfr-list">
+                        {% for type_key in ['machine','effet','daw','synth_ios','plugin'] %}
+                        {% for item in catalogue[type_key] %}
+                        {% if item.manufacturer %}
+                        <option value="{{ item.manufacturer }}">
+                        {% endif %}
+                        {% endfor %}
+                        {% endfor %}
+                    </datalist>
+                </div>
+                <div>
+                    <label style="font-family:var(--mono);font-size:10px;text-transform:uppercase;
+                                  letter-spacing:.1em;color:var(--text-muted);display:block;margin-bottom:5px;">
+                        Nom <span style="color:var(--accent);">*</span>
+                    </label>
+                    <input id="qa-name" type="text" required autocomplete="off"
+                           placeholder="ex: Volca Keys, Ableton Live…"
+                           style="font-family:var(--mono);font-size:13px;background:var(--bg);
+                                  border:1px solid var(--border);border-radius:var(--radius);
+                                  padding:9px 12px;color:var(--text);width:100%;box-sizing:border-box;">
+                </div>
+                <div id="qa-error" style="font-family:var(--mono);font-size:11px;
+                                          color:var(--accent);display:none;"></div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeQuickAdd()">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Ajouter →</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.mfr-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .14em;
+    color: var(--text-muted);
+    opacity: .7;
+    padding: 8px 0 2px;
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--border);
+    margin-top: 2px;
+}
+.check-grid .mfr-label:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+.chk.new-item { animation: qaFadeIn .25s ease; }
+@keyframes qaFadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+</style>
+
+<script>
+const QA_FIELD_MAP = {
+    machine: 'machines', effet: 'effects', daw: 'daws',
+    synth_ios: 'synths_ios', plugin: 'plugins'
+};
+const QA_TYPE_LABELS = {
+    machine: 'Hardware / Machines', effet: 'Effets Hardware', daw: 'DAW',
+    synth_ios: 'Synthés iOS', plugin: 'Plugins VST/AU'
+};
+let qaType = '';
+
+function openQuickAdd(type) {
+    qaType = type;
+    document.getElementById('qa-type-label').textContent = QA_TYPE_LABELS[type] || type;
+    document.getElementById('qa-error').style.display = 'none';
+    document.getElementById('qa-form').reset();
+    document.getElementById('qa-modal').style.display = 'flex';
+    setTimeout(() => document.getElementById('qa-manufacturer').focus(), 50);
+}
+
+function closeQuickAdd() {
+    document.getElementById('qa-modal').style.display = 'none';
+}
+
+async function submitQuickAdd(e) {
+    e.preventDefault();
+    const name         = document.getElementById('qa-name').value.trim();
+    const manufacturer = document.getElementById('qa-manufacturer').value.trim();
+    const errEl        = document.getElementById('qa-error');
+    errEl.style.display = 'none';
+
+    const res = await fetch('/api/catalogue/add', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ type: qaType, name, manufacturer })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+        errEl.textContent = data.error || 'Erreur lors de l\'ajout.';
+        errEl.style.display = 'block';
+        return;
+    }
+
+    const grid  = document.getElementById('grid-' + qaType);
+    const label = document.createElement('label');
+    label.className = 'chk new-item';
+    label.innerHTML = `<input type="checkbox" name="${QA_FIELD_MAP[qaType]}" value="${data.name}" checked><span>${data.name}</span>`;
+    grid.appendChild(label);
+    closeQuickAdd();
+}
+
+document.getElementById('qa-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeQuickAdd();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeQuickAdd(); });
+</script>
 {% endblock %}
