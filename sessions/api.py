@@ -1,7 +1,8 @@
 import os
 import json
+import subprocess
 from datetime import datetime
-from flask import Blueprint, render_template, request, redirect, url_for, Response, jsonify, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, Response, jsonify, current_app, flash
 from core.oblique import rand_oblique as _rand_oblique
 from core.constants import CHARACTERS, MODES, INTENTIONS, ITEM_TYPES
 from .engine import SessionsEngine, catalogue_blocks, influence_blocks
@@ -135,6 +136,20 @@ def view_session(sid):
     if not session:
         return redirect(url_for("sessions.index"))
     return render_template("view.html", session=session, linked=linked, version=_version())
+
+
+@bp.route("/session/<int:sid>/reveal")
+def reveal_audio(sid):
+    engine = _engine()
+    session, _ = engine.get(sid)
+    if not session or not session.get("audio_file"):
+        return redirect(url_for("sessions.view_session", sid=sid))
+    path = session["audio_file"].strip()
+    if os.path.isabs(path) and os.path.exists(path):
+        subprocess.Popen(["open", "-R", path])
+    elif os.path.exists(path):
+        subprocess.Popen(["open", "-R", os.path.abspath(path)])
+    return redirect(url_for("sessions.view_session", sid=sid))
 
 
 @bp.route("/form/blank")

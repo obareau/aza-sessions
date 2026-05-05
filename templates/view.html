@@ -111,8 +111,9 @@
             <div class="detail-label">Fichier audio</div>
             {% if session.audio_file %}
             <div class="detail-value" style="display:flex;align-items:center;gap:8px;">
-                <span style="flex:1">{{ session.audio_file }}</span>
-                <button onclick="navigator.clipboard.writeText('{{ session.audio_file }}')" class="btn btn-secondary btn-sm" title="Copier le nom">⎘</button>
+                <span style="flex:1;word-break:break-all;">{{ session.audio_file }}</span>
+                <button onclick="navigator.clipboard.writeText('{{ session.audio_file }}')" class="btn btn-secondary btn-sm" title="Copier le chemin">⎘</button>
+                <a href="{{ url_for('sessions.reveal_audio', sid=session.id) }}" class="btn btn-secondary btn-sm" title="Révéler dans Finder">⌕</a>
             </div>
             {% else %}
             <div class="detail-value">—</div>
