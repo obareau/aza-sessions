@@ -1,114 +1,148 @@
 # ROADMAP — Journal de Sessions AZA
 
-> Idées, améliorations et fonctionnalités futures.
-> Mise à jour au fil du développement — pas de promesses, pas de deadlines.
-> Priorité indicative : ★★★ = vite / ★★☆ = bientôt / ★☆☆ = un jour
+> Carte des possibles — pas un backlog, pas de deadlines.
+> Mis à jour : 2026-05-05 (après release v2.5.0)
 
 ---
 
-## 🎛 Sessions & Workflow
+## ✅ Déjà livré (v1.x → v2.5.0)
 
-| Priorité | Idée | Notes |
-|---|---|---|
-| ★★★ | **Mode session en cours** — timer live qui tourne, notes rapides en temps réel, bouton "Terminer & sauvegarder" | Le workflow naturel : ouvrir l'app *avant* de jouer, pas après |
-| ★★★ | **Brouillon pré-session** — remplir machines/intention *avant* de démarrer, horodatage automatique au lancement | Évite d'oublier les détails techniques après coup |
-| ★★☆ | **Comparaison de deux sessions** — vue côte à côte pour repérer les patterns | Utile pour comprendre pourquoi une session a mieux marché |
-| ★★☆ | **Duplication complète d'une session** — différent de "copier le setup", copie tout sauf date/audio | Pour documenter des variations d'un même morceau |
-| ★☆☆ | **Pagination** sur la liste si > 50 sessions | Pas urgent, mais nécessaire à terme |
-| ★☆☆ | **Import metadata audio** — lire date/durée depuis le fichier audio via `mutagen` | Plus précis que la saisie manuelle |
-
----
-
-## 📊 Stats & Analyse
-
-| Priorité | Idée | Notes |
-|---|---|---|
-| ★★★ | **Heatmap calendrier** — grille jour/semaine des sessions, style GitHub contributions | Visualiser les périodes actives vs creuses |
-| ★★☆ | **Évolution temporelle** — courbe de la note moyenne, de l'énergie, du mode au fil du temps | Voir si la qualité progresse |
-| ★★☆ | **Records & badges** — session la mieux notée, la plus longue, streak de jours consécutifs | Petit côté gamification sans en abuser |
-| ★★☆ | **Corrélations** — note vs durée, énergie vs heure de la journée | Comprendre ses propres patterns créatifs |
-| ★☆☆ | **Stats par projet** — dashboard complet sur la durée/évolution d'un projet | Déjà partiellement dans project_detail, à enrichir |
+| Version | Fonctionnalité |
+|---|---|
+| v0.3.1 | Flask complet, CRUD sessions, stats Chart.js, export Markdown/Obsidian |
+| v0.5.x | Widget Pomodoro, autosave formulaires localStorage, Paramètres (backup/import/reset) |
+| v0.6.0 | Suppression sessions, Projets, copie setup, tags cliquables, dark mode |
+| v0.7.0 | 6 thèmes terminal, Samples, Morceaux, Wishlist, MiRack, Spark |
+| v1.x   | Prompteur Dawless MVP, déploiement Fly.io |
+| v2.0.0 | Prompteur complet (transport DAW, horloge, barre LED, auto/manuel, zoom, plein écran, import/export JSON/MD) |
+| v2.1.0 | Architecture modulaire Blueprints Flask |
+| v2.2.0 | Fabricants catalogue, ajout inline depuis formulaire session (modal AJAX), autosave brouillon pré-session |
+| v2.5.0 | Pagination (25/page), lien audio → Finder, export vault Obsidian direct, correctifs Pomodoro/zoom/theme picker |
 
 ---
 
-## ⚡ Spark (générateur créatif)
+## 🗺 Plan v3.x
+
+### v3.0 — Workflow live *(priorité maximale)*
+
+> L'axe fondamental : ouvrir l'app *avant* de jouer, pas après.
 
 | Priorité | Idée | Notes |
 |---|---|---|
-| ★★★ | **Spark "contrainte unique"** — mode focus : une seule contrainte radicale, affichée en grand, à suivre jusqu'au bout | Moins de bruit, plus d'impact |
-| ★★☆ | **Challenge du jour** — une contrainte fixe générée à minuit, commune à toute la journée | Crée un fil conducteur sur 24h |
-| ★★☆ | **Historique Spark** — voir les suggestions déjà générées, noter celles qu'on a suivies | Éviter les répétitions, tracer l'influence sur les sessions |
+| ★★★ | **Mode session en cours** — timer live, notes rapides temps réel, bouton "Terminer & sauvegarder" | Workflow naturel — le chrono tourne pendant que tu joues |
+| ★★★ | **Backup automatique** — copie horodatée `sessions.db` au démarrage, garder 5 derniers | Filet de sécurité silencieux |
+| ★★☆ | **Recherche full-text étendue** — couvrir comments, patches, recap_claude, lore_link | La recherche actuelle ne couvre pas tous les champs texte |
+| ★★☆ | **Vue liste compacte vs cartes** — toggle dense (50 lignes visibles) / détail | Survol rapide vs consultation |
+| ★★☆ | **Duplication complète d'une session** — tout copier sauf date/audio | Documenter des variations d'un même morceau |
+| ★☆☆ | **Import métadonnées audio** — lire date/durée via `mutagen` | Plus précis que la saisie manuelle |
+
+---
+
+### v3.1 — Stats & Analyse
+
+| Priorité | Idée | Notes |
+|---|---|---|
+| ★★★ | **Heatmap calendrier** — grille jour/semaine style GitHub contributions | Visualiser périodes actives vs creuses |
+| ★★☆ | **Évolution temporelle** — courbe note moyenne, énergie, mode au fil du temps | Voir si la qualité progresse |
+| ★★☆ | **Records & badges** — session la mieux notée, la plus longue, streak consécutif | Gamification légère |
+| ★★☆ | **Corrélations** — note vs durée, énergie vs heure de la journée | Comprendre ses propres patterns |
+| ★☆☆ | **Stats par projet** — dashboard durée/évolution, enrichir project_detail | Déjà partiellement présent |
+
+---
+
+### v3.2 — Lore AZA
+
+| Priorité | Idée | Notes |
+|---|---|---|
+| ★★☆ | **Générateur de noms AZA** — titres dans l'esthétique de l'univers | Ex : "SÉQUENCE-09 / MÉMOIRE RÉSIDUELLE / NODE SCAER-7" |
+| ★★☆ | **Timeline narrative** — frise chronologique *dans l'univers* (distinct de la date réelle) | Ordonner par ordre lore, pas par date d'enregistrement |
+| ★★☆ | **Carte du lore** — canvas interactif SVG/HTML, chaque session occupe un lieu | Visualisation narrative de la B.O. |
+| ★☆☆ | **Bestiaire / Glossaire** — entités, lieux, factions liables aux sessions | Enrichir le contexte narratif |
+| ★☆☆ | **Citations AZA** — base de citations affichées comme les obliques mais narratives | Ambiance de l'univers dans l'interface |
+
+---
+
+### v3.3 — Spark & Créatif
+
+| Priorité | Idée | Notes |
+|---|---|---|
+| ★★★ | **Spark "contrainte unique"** — une seule contrainte radicale, en grand, à suivre jusqu'au bout | Moins de bruit, plus d'impact |
+| ★★☆ | **Challenge du jour** — contrainte fixe générée à minuit, commune à toute la journée | Fil conducteur sur 24h |
+| ★★☆ | **Historique Spark** — suggestions déjà générées, noter celles suivies | Éviter les répétitions, tracer l'influence |
 | ★☆☆ | **Spark ↔ Session** — lier une suggestion Spark à la session qu'elle a inspirée | Traçabilité créative complète |
 
 ---
 
-## 🌌 Lore AZA
+## 🔗 Ableton Link — Axe performance live *(nouveau)*
+
+> **Contexte :** Ableton Link synchronise tempo et beat-phase entre applications via réseau local (UDP multicast). Couplé au Prompteur Dawless, il ouvre un axe de communication musicien → in-ear monitors (IEM) : cues de changement de patch, clicks de tempo, instructions texte en retour d'oreille.
+
+### Pourquoi c'est pertinent
+
+- Le Prompteur gère déjà les cues avec minutage
+- Ableton Link donne le tempo partagé et la position dans la mesure
+- Les retours oreilles des musiciens peuvent recevoir des **clicks synchronisés** + **annonces vocales de cue** (TTS)
+- Aucun hardware MIDI nécessaire — tout passe par le réseau local Wi-Fi
+
+### Idées à explorer
 
 | Priorité | Idée | Notes |
 |---|---|---|
-| ★★☆ | **Carte du lore** — canvas interactif (SVG ou canvas HTML) où chaque session occupe un lieu dans l'univers | Visualisation narrative de la B.O. |
-| ★★☆ | **Timeline narrative** — frise chronologique *dans l'univers* (distinct de la date réelle de session) | Ordonner les sessions par ordre lore, pas par date d'enregistrement |
-| ★★☆ | **Générateur de noms AZA** — titres de sessions dans l'esthétique de l'univers | Ex: "SÉQUENCE-09 / MÉMOIRE RÉSIDUELLE / NODE SCAER-7" |
-| ★☆☆ | **Bestiaire / Glossaire** — entités, lieux, factions de l'univers, liables aux sessions | Enrichir le contexte narratif |
+| ★★★ | **Sync tempo Ableton Link** — le Prompteur s'accroche à la grille Link (tempo, beat phase) | Librairie Python : `abletonlink` (bindings CPython du SDK officiel) |
+| ★★★ | **Click IEM via réseau** — générer un click audio synced (Web Audio API ou serveur audio) streamé vers iPhone/iPad en retour d'oreille | Le musicien entend le click dans ses IEMs, synchronisé avec le set |
+| ★★☆ | **Annonces vocales de cue** — TTS au changement de cue dans le Prompteur ("Patch Drone — 32 mesures") | Web Speech API côté client ou `pyttsx3` côté serveur |
+| ★★☆ | **Affichage tempo live** — BPM courant Link affiché dans la topbar du Prompteur | Feedback visuel de la sync |
+| ★★☆ | **Quantize changement de cue** — l'avance automatique attend le prochain temps fort Link | Changements toujours musicaux, jamais au milieu d'une mesure |
+| ★☆☆ | **Multi-musiciens** — plusieurs instances de l'app sur le même réseau, toutes sync Link | Chaque musicien voit les cues sur son propre appareil |
+| ★☆☆ | **Export set vers Ableton Live** — générer une piste MIDI marker depuis les cues du Prompteur | Automatiser les marqueurs de scène dans Live |
+
+### Piste technique
+
+```
+App Flask (Prompteur)
+    ↓ abletonlink (Python SDK)
+    → sync tempo/beat avec Ableton Live / tout app Link sur le réseau
+
+    ↓ Web Audio API (côté client)
+    → AudioContext oscillator click, tempo = Link.bpm
+    → StreamedToIEM via AirPlay / réseau local / app iPhone dédiée
+
+    ↓ Web Speech API
+    → speechSynthesis.speak("Patch suivant : DRONE 9")
+```
 
 ---
 
-## 🎵 MiRack & Modules
+## 🎨 Interface & UX — Backlog
 
 | Priorité | Idée | Notes |
 |---|---|---|
-| ★★☆ | **Notes par module** — texte libre sur chaque module (tips, patches découverts, liens vidéo) | Carnet de bord du modulaire virtuel |
-| ★★☆ | **Patches sauvegardés** — documenter des configurations de patch intéressantes avec schéma texte | Éviter de perdre une découverte |
-| ★☆☆ | **Export liste modules** — Markdown/CSV de la collection pour Obsidian | Sync avec le vault |
-| ★☆☆ | **Catégories personnalisables** — ajouter/renommer les catégories MiRack | Adapter à l'évolution de la collection |
+| ★★☆ | **Mode focus** — cacher nav, fond épuré, une seule page visible | Ne pas être distrait pendant la session |
+| ★★☆ | **Thème personnalisable** — éditeur couleurs CSS custom, sauvegardé localStorage | Au-delà des 6 thèmes fixes |
+| ★☆☆ | **Animations subtiles** — transitions CSS sur cards, Pomodoro, filtres | Peaufinage visuel |
 
 ---
 
-## 🔗 Export & Intégrations
+## 🛠 Tech & Qualité — Backlog
 
 | Priorité | Idée | Notes |
 |---|---|---|
-| ★★★ | **Export PDF** — une session formatée comme une page de carnet de bord, style zine industriel | Archivage physique / partage |
-| ★★☆ | **Export Obsidian direct** — copier les .md générés dans un chemin configurable du vault | Configurable dans Paramètres |
-| ★★☆ | **Export CSV global** — toutes les sessions en tableau, importable dans Numbers/Excel | Analyse externe |
-| ★☆☆ | **QR code vers une session** — afficher un QR pointant vers `localhost:5001/session/<id>` | Scanner depuis iPhone en studio |
+| ★★☆ | **Tests automatisés** — suite Flask pour routes critiques | Éviter les régressions |
+| ★☆☆ | **Compilation binaire M4** — `.app` macOS natif Apple Silicon via PyInstaller | Lancement sans terminal |
+| ★☆☆ | **Mode multi-machines** — sync `sessions.db` réseau local (rsync ou SQLite over LAN) | Mac + iPad dans le même studio |
+| ★☆☆ | **QR code vers session** — pointe vers `localhost:5001/session/<id>` | Scanner depuis iPhone en studio |
 
 ---
 
-## 🎨 Interface & UX
+## 💡 Idées en vrac
 
-| Priorité | Idée | Notes |
-|---|---|---|
-| ★★★ | **Raccourcis clavier** — `n` nouvelle session, `s` stats, `j/k` naviguer la liste, `/` recherche | Fluidité pour un outil qu'on ouvre souvent |
-| ★★☆ | **Mode focus** — cacher la navigation, une seule page visible, fond épuré | Pour ne pas être distrait pendant la session |
-| ★★☆ | **Thème personnalisable** — éditeur de couleurs CSS custom, sauvegardé en localStorage | Aller plus loin que les 6 thèmes prédéfinis |
-| ★★☆ | **Vue liste compacte vs cartes** — toggle entre mode dense (beaucoup de sessions visibles) et mode cartes | Selon l'usage : survol rapide ou consultation détaillée |
-| ★☆☆ | **Animations subtiles** — transitions CSS sur les cards, le Pomodoro, les filtres | Peaufinage visuel |
-| ★☆☆ | **Responsive mobile** — rendre l'app utilisable sur iPhone/iPad (saisie rapide en studio) | Complexe mais utile si l'iPad est dans le setup |
+- **Session fantôme** — marquer une session comme "perdue/ratée" pour garder la trace sans regrets
+- **BPM tap tempo** — widget dans le formulaire, ou récupéré depuis Ableton Link directement
+- **Couleur d'humeur** — palette 5-6 couleurs symboliques, un clic pour caractériser la session
+- **Météo/Contexte** — lieu (bureau/salon/extérieur), état d'esprit en un mot
+- **Lecteur audio intégré** — Web Audio API, lecture du fichier directement dans la vue session
 
 ---
 
-## 🛠 Tech & Qualité
-
-| Priorité | Idée | Notes |
-|---|---|---|
-| ★★☆ | **Backup automatique** — copie horodatée de `sessions.db` au démarrage (garder les 5 derniers) | Filet de sécurité automatique |
-| ★★☆ | **Recherche full-text** — chercher dans tous les champs texte (comments, recap_claude, patches…) | La recherche actuelle ne couvre pas tout |
-| ★☆☆ | **Tests automatisés** — suite de tests Flask pour les routes critiques | Éviter les régressions lors des ajouts |
-| ★☆☆ | **Compilation binaire M4** — `.app` macOS natif Apple Silicon via PyInstaller | Lancement sans terminal, sans Python installé |
-| ★☆☆ | **Mode multi-machines** — sync `sessions.db` via réseau local (rsync ou SQLite over LAN) | Si usage Mac + iPad dans le même studio |
-
----
-
-## 💡 Idées en vrac (à affiner)
-
-- **"Session fantôme"** — marquer une session comme "perdue" (pas enregistrée, ratée) pour garder la trace sans regrets
-- **Météo/Contexte** — heure de début, lieu (bureau / salon / extérieur), état d'esprit en un mot
-- **Citations AZA** — base de citations de l'univers, affichées dans l'interface (comme les obliques mais narratives)
-- **BPM tap tempo** — widget simple dans le formulaire de session
-- **Couleur d'humeur** — palette de 5-6 couleurs symboliques pour caractériser une session en un clic
-
----
-
-*Dernière mise à jour : 2026-04-21*
+*Dernière mise à jour : 2026-05-05 — v2.5.0 released*
 *Ce fichier évolue librement — ce n'est pas un backlog, c'est une carte des possibles.*
