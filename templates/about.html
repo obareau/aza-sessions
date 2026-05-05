@@ -18,21 +18,18 @@
                 v{{ version }}
             </div>
             <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-top:4px;letter-spacing:.06em;">
-                RELEASE MAJEURE — 1 MAI 2026
+                RELEASE FINALE v2.x — MAI 2026
             </div>
         </div>
-        <a href="https://github.com/obareau/aza-sessions/releases" target="_blank"
-           class="btn btn-secondary" style="font-size:11px;">
-            → GitHub Releases
-        </a>
         <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:10px;">
             ⚠ Application personnelle — accès non public.
         </div>
     </div>
     <div style="font-family:var(--mono);font-size:12px;line-height:1.8;margin-top:16px;color:var(--text-muted);">
-        La v2.0 marque l'arrivée du <strong style="color:var(--text);">Prompteur Dawless</strong> —
-        vue performance plein écran avec transport DAW, horloge décompte et barre LED segmentée —
-        ainsi que le déploiement en production sur <strong style="color:var(--text);">Fly.io</strong>.
+        La v2.x clôt le cycle avec la pagination, le lien fichier audio vers Finder
+        et l'<strong style="color:var(--text);">export direct vers le vault Obsidian</strong>.
+        La v2.0 avait introduit le <strong style="color:var(--text);">Prompteur Dawless</strong>
+        et le déploiement sur <strong style="color:var(--text);">Fly.io</strong>.
     </div>
 </div>
 
@@ -181,6 +178,8 @@
     <div class="card-title">∙ Historique des versions</div>
     <div style="margin-top:12px;">
         {% for v, date, desc in [
+            ('v2.5.0',       '2026-05-05', 'Release finale v2.x — pagination, révéler audio dans Finder, export vault Obsidian, correctifs Pomodoro / zoom / theme picker'),
+            ('v2.2.0',       '2026-05-04', 'Fabricants catalogue, ajout inline depuis formulaire session, autosave brouillon'),
             ('v2.1.0',       '2026-05-03', 'Architecture modulaire — Blueprints Flask (sessions, catalogue, obliques, influences, spark, dim)'),
             ('v2.0.0',       '2026-05-01', 'Prompteur Dawless complet, déploiement Fly.io, titres de session'),
             ('v1.1.0-alpha', '2026-04-25', 'Première version du prompteur (MVP)'),

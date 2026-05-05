@@ -5,6 +5,24 @@
 
 ---
 
+## v2.5.0 — 2026-05-05 — Release finale v2.x
+
+Version de stabilisation et de complétude du cycle v2. Clôture le roadmap avant la v3.
+
+### ✨ Nouveautés
+- **Pagination liste sessions** — 25 sessions par page, server-side (LIMIT/OFFSET SQLite) ; barre prev/next + numéros avec ellipsis ; compatible avec la recherche ; subtitle affiche le total et la page courante
+- **Révéler dans Finder** — bouton `⌕` dans la vue session : ouvre Finder et sélectionne le fichier audio (`open -R <chemin>`) ; route `GET /session/<id>/reveal`
+- **Export direct vers vault Obsidian** — bouton `⬡ Vault` (AJAX `POST /session/<id>/obsidian`) : écrit le Markdown dans le dossier vault configuré ; toast succès/erreur 3 s
+- **Configuration vault** dans les Paramètres — champ chemin absolu, sauvegardé dans `config.json`
+
+### 🐛 Corrections
+- **Widget Pomodoro restauré** — classe CSS `.pomo { position:fixed; … }` perdue lors d'une refacto ; réinjectée
+- **Zoom A+ / A−** fonctionnel — l'implémentation `document.documentElement.style.fontSize` n'affectait que les unités `rem` (CSS entièrement en `px`) ; remplacé par `document.body.style.zoom`
+- **Theme picker** toujours accessible mobile/tablette — déplacé hors de la `<nav>` (drawer hamburger) dans la barre header ; `position:fixed` sur le dropdown pour éviter le clipping `overflow`
+- **Suppression du double `#theme-dropdown`** — IDs dupliqués entre l'ancien picker (dans nav) et le nouveau (dans header)
+
+---
+
 ## v2.2.0 — 2026-05-04 — Fabricants + ajout inline catalogue
 
 ### ✨ Nouveautés

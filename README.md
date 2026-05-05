@@ -3,7 +3,7 @@
 > Application de documentation et de performance musicale pour le projet **AZA** —
 > univers de fiction dystopique dont les sessions de création constituent la bande originale.
 
-**Version : v2.2.0** · [Changelog](CHANGELOG.md)
+**Version : v2.5.0** · [Changelog](CHANGELOG.md)
 
 ---
 
@@ -167,12 +167,20 @@ La base SQLite est stockée dans un volume persistant monté sur `/data`.
 
 ---
 
-## Roadmap
+## Roadmap v2.x — Complété ✓
 
-- Pagination liste (au-delà de 50 sessions)
-- Lien fichier audio vers Finder
-- Export direct vers vault Obsidian (API MCP)
+| Fonctionnalité | Version |
+|---|---|
+| Pagination liste sessions | v2.5.0 |
+| Lien fichier audio → Finder | v2.5.0 |
+| Export direct → vault Obsidian | v2.5.0 |
+
+## Roadmap v3
+
 - Import automatique depuis métadonnées fichier audio
+- Lecteur audio intégré (Web Audio API)
+- Timeline visuelle des sessions par projet
+- Synchronisation multi-machines (réseau local)
 
 ---
 
