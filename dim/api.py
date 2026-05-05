@@ -1,21 +1,107 @@
 import json
-from flask import Blueprint, render_template, request, redirect, url_for, flash, Response, current_app
+import uuid
+import urllib.request
+import urllib.error
+from flask import Blueprint, render_template, request, redirect, url_for, flash, Response, current_app, jsonify
 from .engine import DimEngine
 
 bp = Blueprint("dim", __name__)
+
+DIM_HOST = "localhost"
+DIM_PORT = 5001
+
+# AZA cue color names → hex pour D.I.M
+_COLOR_MAP = {
+    "blue":   "#4D7DB5",
+    "green":  "#3D8A5F",
+    "red":    "#E84B1A",
+    "yellow": "#D4890A",
+    "purple": "#8B5CF6",
+    "white":  "#E8E4DC",
+    "":       "#2E2C29",
+}
 
 
 def _engine():
     return DimEngine(current_app.config["DB_PATH"])
 
 
+def _detect_dim():
+    """Vérifie si une instance D.I.M tourne sur localhost:5001. Timeout 300ms."""
+    try:
+        req = urllib.request.urlopen(
+            f"http://{DIM_HOST}:{DIM_PORT}/api/state", timeout=0.3
+        )
+        return req.status == 200
+    except Exception:
+        return False
+
+
+def _script_to_dim_json(script):
+    """Convertit un script AZA (cues linéaires) en project D.I.M JSON (1 lane)."""
+    cues = json.loads(script.get("cues") or "[]")
+    sections = []
+    for i, cue in enumerate(cues):
+        # Durée en bars : MM:SS → secondes → bars à 120 BPM (4/4 = 2s/bar)
+        t = cue.get("time", "0:00")
+        try:
+            parts = t.split(":")
+            secs = int(parts[0]) * 60 + int(parts[1]) if len(parts) == 2 else int(parts[0])
+        except (ValueError, IndexError):
+            secs = 0
+        duration_bars = round(secs / 2.0, 1) if secs > 0 else 4.0
+
+        sections.append({
+            "id": f"s-{i}",
+            "name": cue.get("patch") or f"Cue {i + 1}",
+            "type": "custom",
+            "color": _COLOR_MAP.get(cue.get("color", ""), "#2E2C29"),
+            "instruction": {"op": "PLAY"},
+            "playlist": {"mode": "all"},
+            "cues": [{
+                "id": f"c-{i}-0",
+                "label": cue.get("patch") or f"Cue {i + 1}",
+                "content": cue.get("action") or "",
+                "duration_bars": duration_bars,
+                "repeat": 1,
+                "instruction": {"op": "PLAY"},
+                "enabled": True,
+                "order_index": 0,
+            }],
+        })
+
+    return {
+        "dim_version": "1.0",
+        "project": {
+            "id": f"aza-{script['id']}-{uuid.uuid4().hex[:8]}",
+            "name": script.get("title") or "Script AZA",
+            "tempo_bpm": 120.0,
+            "time_signature": "4/4",
+            "gosub_stack_limit": 4,
+            "lanes": [{
+                "id": "lane-0",
+                "name": script.get("title") or "AZA",
+                "color": "#E84B1A",
+                "speed_ratio": "1:1",
+                "is_conductor": False,
+                "sections": sections,
+            }],
+            "arrangement": [],
+        },
+    }
+
+
 @bp.route("/prompter")
 def prompter_list():
     engine = _engine()
     scripts = engine.list_scripts()
+    dim_active = _detect_dim()
+    dim_url = f"http://{DIM_HOST}:{DIM_PORT}" if dim_active else None
     return render_template("prompter_list.html", scripts=scripts,
                            version=current_app.config.get("VERSION", ""),
-                           oblique=engine.rand_oblique())
+                           oblique=engine.rand_oblique(),
+                           dim_active=dim_active,
+                           dim_url=dim_url)
 
 
 @bp.route("/prompter/new", methods=["GET", "POST"])
@@ -70,6 +156,51 @@ def prompter_export_json(sid):
     data, filename = result
     return Response(data, mimetype="application/json",
                     headers={"Content-Disposition": f"attachment; filename=\"{filename}\""})
+
+
+@bp.route("/prompter/<int:sid>/export/dim")
+def prompter_export_dim(sid):
+    """Export au format D.I.M JSON natif — importable directement dans D.I.M."""
+    script = _engine().get_script(sid)
+    if not script:
+        return redirect(url_for("dim.prompter_list"))
+    payload = _script_to_dim_json(script)
+    filename = f"dim_{script['title'].replace(' ', '_')[:40]}.json"
+    return Response(
+        json.dumps(payload, indent=2, ensure_ascii=False),
+        mimetype="application/json",
+        headers={"Content-Disposition": f"attachment; filename=\"{filename}\""},
+    )
+
+
+@bp.route("/api/dim/script/<int:sid>")
+def api_dim_script(sid):
+    """
+    GET /api/dim/script/<id>
+    Retourne le script AZA converti au format D.I.M JSON.
+    D.I.M peut fetch cette URL directement pour importer le script.
+    """
+    script = _engine().get_script(sid)
+    if not script:
+        return jsonify({"error": "script not found"}), 404
+    return jsonify(_script_to_dim_json(script))
+
+
+@bp.route("/api/dim/scripts")
+def api_dim_scripts():
+    """
+    GET /api/dim/scripts
+    Liste tous les scripts AZA avec leur URL d'import D.I.M.
+    """
+    scripts = _engine().list_scripts()
+    return jsonify([{
+        "id": s["id"],
+        "title": s["title"],
+        "description": s.get("description") or "",
+        "cue_count": len(json.loads(s.get("cues") or "[]")),
+        "created_at": s["created_at"],
+        "dim_import_url": url_for("dim.api_dim_script", sid=s["id"], _external=True),
+    } for s in scripts])
 
 
 @bp.route("/prompter/<int:sid>/export/md")
