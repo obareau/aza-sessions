@@ -324,5 +324,7 @@ def settings():
     nb_sessions = conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
     conn.close()
     msg = request.args.get("msg", "")
+    cfg = _get_config()
     return render_template("settings.html", version=_version(),
-                           oblique=_oblique(), nb_sessions=nb_sessions, msg=msg)
+                           oblique=_oblique(), nb_sessions=nb_sessions, msg=msg,
+                           obsidian_vault=cfg.get("obsidian_vault", ""))

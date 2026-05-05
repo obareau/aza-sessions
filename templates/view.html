@@ -9,7 +9,8 @@
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <a href="{{ url_for('sessions.print_session', sid=session.id) }}" class="btn btn-ghost" target="_blank">↓ PDF</a>
-        <a href="{{ url_for('sessions.export_one', sid=session.id) }}" class="btn btn-ghost">↓ Obsidian</a>
+        <a href="{{ url_for('sessions.export_one', sid=session.id) }}" class="btn btn-ghost">↓ MD</a>
+        <button type="button" class="btn btn-ghost" onclick="pushToVault()" id="vault-btn" title="Exporter vers le vault Obsidian configuré">⬡ Vault</button>
         <a href="{{ url_for('sessions.new_session') }}?from={{ session.id }}" class="btn btn-secondary" title="Créer une session avec le même setup">⎘ Copier setup</a>
         <a href="{{ url_for('sessions.edit_session', sid=session.id) }}" class="btn btn-secondary">✎ Éditer</a>
         <form method="POST" action="{{ url_for('sessions.delete_session', sid=session.id) }}" style="display:inline;"
@@ -172,4 +173,33 @@
 </div>
 {% endif %}
 
+<div id="vault-toast" style="display:none;position:fixed;bottom:80px;right:20px;z-index:400;
+     padding:10px 16px;border-radius:var(--radius);font-family:var(--mono);font-size:12px;
+     box-shadow:0 4px 16px rgba(0,0,0,0.25);transition:opacity .3s;"></div>
+
+<script>
+function pushToVault() {
+    const btn = document.getElementById('vault-btn');
+    btn.disabled = true;
+    btn.textContent = '⬡ …';
+    fetch('{{ url_for("sessions.export_obsidian", sid=session.id) }}', { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+            if (d.status === 'ok') showVaultToast('✓ Exporté : ' + d.file, true);
+            else showVaultToast('✕ ' + d.error, false);
+        })
+        .catch(() => showVaultToast('✕ Erreur réseau', false))
+        .finally(() => { btn.disabled = false; btn.textContent = '⬡ Vault'; });
+}
+function showVaultToast(msg, ok) {
+    const t = document.getElementById('vault-toast');
+    t.textContent = msg;
+    t.style.background = ok ? 'var(--success-soft)' : 'var(--accent-soft)';
+    t.style.border = '1px solid ' + (ok ? 'var(--success)' : 'var(--accent)');
+    t.style.color = ok ? 'var(--success)' : 'var(--accent)';
+    t.style.display = 'block';
+    t.style.opacity = '1';
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.style.display = 'none', 300); }, 3000);
+}
+</script>
 {% endblock %}

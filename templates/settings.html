@@ -50,6 +50,24 @@
     </form>
 </div>
 
+<!-- OBSIDIAN -->
+<div class="card">
+    <div class="card-title">∙ Vault Obsidian</div>
+    <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);margin:12px 0;">
+        Chemin absolu vers le dossier du vault (ou un sous-dossier) où exporter les sessions en Markdown.
+    </p>
+    <form method="POST" action="{{ url_for('sessions.settings_obsidian') }}"
+          style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px;">
+        <input type="text" name="obsidian_vault" value="{{ obsidian_vault }}"
+               placeholder="/Users/…/vault/AZA/Sessions"
+               style="font-family:var(--mono);font-size:12px;flex:1;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);">
+        <button type="submit" class="btn btn-primary">Sauvegarder</button>
+    </form>
+    {% if obsidian_vault %}
+    <div style="font-family:var(--mono);font-size:10px;color:var(--success);margin-top:8px;">✓ Configuré : {{ obsidian_vault }}</div>
+    {% endif %}
+</div>
+
 <!-- DANGER ZONE -->
 <div class="card" style="border-color:var(--accent);">
     <div class="card-title" style="color:var(--accent);">∙ Zone dangereuse</div>
