@@ -4,7 +4,10 @@
 <div class="page-header">
     <div>
         <div class="page-title">Sessions</div>
-        <div class="page-subtitle" id="count-label">{{ sessions|length }} session{% if sessions|length != 1 %}s{% endif %}</div>
+        <div class="page-subtitle" id="count-label">
+            {{ total }} session{% if total != 1 %}s{% endif %}
+            {% if total_pages > 1 %} — page {{ page }}/{{ total_pages }}{% endif %}
+        </div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <a href="{{ url_for('sessions.export_all') }}" class="btn btn-secondary">↓ Export tout</a>
@@ -12,7 +15,7 @@
     </div>
 </div>
 
-<div class="section-title" id="list-label">Toutes les sessions</div>
+<div class="section-title" id="list-label">{% if is_search %}Résultats{% else %}Toutes les sessions{% endif %}</div>
 
 {% if sessions %}
 <div id="session-list">
@@ -41,6 +44,34 @@
     </a>
     {% endfor %}
 </div>
+
+{% if total_pages > 1 %}
+{% set base_url = url_for('sessions.search') if is_search else url_for('sessions.index') %}
+<div class="pagination">
+    {% if page > 1 %}
+    <a href="{{ base_url }}?{% if is_search and search_q %}q={{ search_q }}&{% endif %}page={{ page - 1 }}" class="page-btn">← Préc.</a>
+    {% else %}
+    <span class="page-btn page-btn-disabled">← Préc.</span>
+    {% endif %}
+
+    {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}
+        <span class="page-btn page-btn-active">{{ p }}</span>
+        {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+        <a href="{{ base_url }}?{% if is_search and search_q %}q={{ search_q }}&{% endif %}page={{ p }}" class="page-btn">{{ p }}</a>
+        {% elif p == page - 3 or p == page + 3 %}
+        <span class="page-btn page-btn-disabled">…</span>
+        {% endif %}
+    {% endfor %}
+
+    {% if page < total_pages %}
+    <a href="{{ base_url }}?{% if is_search and search_q %}q={{ search_q }}&{% endif %}page={{ page + 1 }}" class="page-btn">Suiv. →</a>
+    {% else %}
+    <span class="page-btn page-btn-disabled">Suiv. →</span>
+    {% endif %}
+</div>
+{% endif %}
+
 {% else %}
 <div class="empty">
     <div class="empty-icon">🤖</div>

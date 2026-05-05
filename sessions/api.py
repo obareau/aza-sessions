@@ -73,15 +73,25 @@ def _form_to_data(form):
     }
 
 
+PER_PAGE = 25
+
 @bp.route("/")
 def index():
     engine = _engine()
-    sessions = engine.list_all()
+    page = max(1, request.args.get("page", 1, type=int))
+    sessions, total = engine.list_page(page, PER_PAGE)
+    total_pages = max(1, (total + PER_PAGE - 1) // PER_PAGE)
+    if page > total_pages:
+        page = total_pages
+        sessions, _ = engine.list_page(page, PER_PAGE)
     return render_template("index.html",
                            sessions=sessions,
                            oblique=_oblique(),
                            version=_version(),
-                           is_search=False)
+                           is_search=False,
+                           page=page,
+                           total_pages=total_pages,
+                           total=total)
 
 
 @bp.route("/new", methods=["GET", "POST"])
@@ -270,6 +280,13 @@ def search():
     if project_id:
         sessions = [s for s in sessions if str(s.get("project_id") or "") == project_id]
 
+    total = len(sessions)
+    page = max(1, request.args.get("page", 1, type=int))
+    total_pages = max(1, (total + PER_PAGE - 1) // PER_PAGE)
+    page = min(page, total_pages)
+    offset = (page - 1) * PER_PAGE
+    sessions = sessions[offset:offset + PER_PAGE]
+
     return render_template("index.html",
                            sessions=sessions,
                            oblique=_oblique(),
@@ -278,7 +295,10 @@ def search():
                            search_q=q,
                            modes=MODES,
                            intentions=INTENTIONS,
-                           projects=engine.get_projects())
+                           projects=engine.get_projects(),
+                           page=page,
+                           total_pages=total_pages,
+                           total=total)
 
 
 @bp.route("/settings")

@@ -120,6 +120,18 @@ class SessionsEngine:
         conn.close()
         return [dict(r) for r in rows]
 
+    def list_page(self, page=1, per_page=25):
+        conn = self._get_db()
+        total = conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
+        offset = (page - 1) * per_page
+        rows = conn.execute("""
+            SELECT s.*, p.title AS project_title, p.color AS project_color
+            FROM sessions s LEFT JOIN projects p ON s.project_id = p.id
+            ORDER BY s.date DESC LIMIT ? OFFSET ?
+        """, (per_page, offset)).fetchall()
+        conn.close()
+        return [dict(r) for r in rows], total
+
     def get(self, sid):
         conn = self._get_db()
         row = conn.execute("""
