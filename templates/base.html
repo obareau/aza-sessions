@@ -616,6 +616,39 @@
             <button type="button" onclick="globalZoomOut()" aria-label="Réduire le zoom">A−</button>
             <button type="button" onclick="globalZoomIn()"  aria-label="Agrandir le zoom">A+</button>
         </div>
+        <!-- THEME PICKER — hors nav, toujours visible -->
+        <div id="theme-picker" style="position:relative;">
+            <button type="button" onclick="toggleThemePicker()" title="Thème"
+                style="background:none;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);
+                       font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:var(--radius);
+                       cursor:pointer;letter-spacing:.04em;">
+                ◐
+            </button>
+            <div id="theme-dropdown" style="display:none;position:fixed;top:44px;background:#1A1814;
+                 border:1px solid #2E2C29;border-radius:var(--radius);padding:8px;z-index:500;
+                 min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+                <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.12em;
+                             color:#857F78;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #2E2C29;">Thème</div>
+                {% set themes = [
+                    ('beton',            '#F4F1EC', '#D4380D', 'Béton'),
+                    ('t-machine',        '#111210', '#E84B1A', 'Machine'),
+                    ('t-nord',           '#2E3440', '#BF616A', 'Nord'),
+                    ('t-solarized-dark', '#002B36', '#DC322F', 'Solarized Dark'),
+                    ('t-solarized-light','#FDF6E3', '#DC322F', 'Solarized Light'),
+                    ('t-gruvbox',        '#282828', '#FB4934', 'Gruvbox'),
+                ] %}
+                {% for key, bg, accent, label in themes %}
+                <button type="button" onclick="setTheme('{{ key }}')" id="th-{{ key }}"
+                    style="display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;
+                           cursor:pointer;padding:5px 6px;border-radius:var(--radius);color:#E8E4DC;
+                           font-family:var(--mono);font-size:11px;text-align:left;transition:background .1s;">
+                    <span style="width:24px;height:14px;border-radius:2px;background:{{ bg }};
+                                 border:2px solid {{ accent }};flex-shrink:0;display:inline-block;"></span>
+                    {{ label }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
         <button type="button" id="nav-toggle" onclick="toggleNav()" aria-label="Menu">☰</button>
         <nav class="header-nav" id="header-nav">
 
@@ -686,31 +719,6 @@
             </div>
 
             <span class="version-badge">v{{ version }}</span>
-            <!-- THEME PICKER -->
-            <div id="theme-picker" style="display:flex;align-items:center;gap:4px;margin-left:6px;position:relative;">
-                <button onclick="toggleThemePicker()" title="Thème"
-                    style="background:none;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:var(--radius);cursor:pointer;letter-spacing:.04em;">
-                    ◐ Thème
-                </button>
-                <div id="theme-dropdown" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:#1A1814;border:1px solid #2E2C29;border-radius:var(--radius);padding:8px;z-index:300;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
-                    <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#857F78;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #2E2C29;">Thème</div>
-                    {% set themes = [
-                        ('beton',           '#F4F1EC', '#D4380D', 'Béton'),
-                        ('t-machine',       '#111210', '#E84B1A', 'Machine'),
-                        ('t-nord',          '#2E3440', '#BF616A', 'Nord'),
-                        ('t-solarized-dark','#002B36', '#DC322F', 'Solarized Dark'),
-                        ('t-solarized-light','#FDF6E3','#DC322F', 'Solarized Light'),
-                        ('t-gruvbox',       '#282828', '#FB4934', 'Gruvbox'),
-                    ] %}
-                    {% for key, bg, accent, label in themes %}
-                    <button onclick="setTheme('{{ key }}')" id="th-{{ key }}"
-                        style="display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;cursor:pointer;padding:5px 6px;border-radius:var(--radius);color:#E8E4DC;font-family:var(--mono);font-size:11px;text-align:left;transition:background .1s;">
-                        <span style="width:24px;height:14px;border-radius:2px;background:{{ bg }};border:2px solid {{ accent }};flex-shrink:0;display:inline-block;"></span>
-                        {{ label }}
-                    </button>
-                    {% endfor %}
-                </div>
-            </div>
         </nav>
     </header>
 
