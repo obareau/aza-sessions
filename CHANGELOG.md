@@ -5,6 +5,26 @@
 
 ---
 
+## v3.0.0-alpha — 2026-05-09 — Module Patcher + finalisation architecture
+
+### ✨ Nouveautés
+- **Module Patcher** `/patcher` — mind map SVG interactif pour documenter le patching
+  - Nœuds drag & drop : machines, effets, DAW, iOS, plugins (couleurs par type)
+  - Connexions courbes avec flèches typées : audio (orange), MIDI (bleu), CV (vert), USB (violet)
+  - Import auto depuis une session liée ou depuis tout le catalogue actif (AJAX)
+  - Mode connexion (touche `C`), double-clic édition label, `Del` suppression
+  - Autosave AJAX 1,5 s, rename inline, layouts nommés et multiples
+  - Lien `⬡ Patcher` depuis chaque vue session
+  - Tables `patch_layouts`, `patch_nodes`, `patch_connections`
+
+### ♻️ Architecture
+- **`app.py` 116 lignes** — `init_db()` + données par défaut déplacés dans `core/init_db.py`
+- **`wsgi.py`** corrigé : `init_db(DB_PATH)` après extraction dans `core/`
+- **`fly.toml`** : `dockerfile = "Dockerfile"` explicite (fix deploy Fly.io)
+- **`.gitignore`** : ajout `backups/` et `config.json`
+
+---
+
 ## v2.5.0 — 2026-05-05 — Release finale v2.x
 
 Version de stabilisation et de complétude du cycle v2. Clôture le roadmap avant la v3.

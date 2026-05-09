@@ -18,6 +18,7 @@
 | v2.1.0 | Architecture modulaire Blueprints Flask |
 | v2.2.0 | Fabricants catalogue, ajout inline depuis formulaire session (modal AJAX), autosave brouillon pré-session |
 | v2.5.0 | Pagination (25/page), lien audio → Finder, export vault Obsidian direct, correctifs Pomodoro/zoom/theme picker |
+| v3.0.0-alpha | **Module Patcher** — mind map SVG drag&drop, nœuds typés/colorés, connexions audio/MIDI/CV/USB, import catalogue/session, autosave AJAX ; `app.py` → 116 lignes (`core/init_db.py`) |
 
 ---
 
@@ -144,5 +145,5 @@ App Flask (Prompteur)
 
 ---
 
-*Dernière mise à jour : 2026-05-05 — v2.5.0 released*
+*Dernière mise à jour : 2026-05-09 — v3.0.0-alpha*
 *Ce fichier évolue librement — ce n'est pas un backlog, c'est une carte des possibles.*
