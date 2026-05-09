@@ -62,7 +62,9 @@ def patcher_save(layout_id):
     engine = _engine()
     data = request.get_json(silent=True) or {}
     engine.save_layout(layout_id, data.get("nodes", []), data.get("connections", []))
-    return jsonify({"status": "ok"})
+    # Renvoie les nœuds/connexions avec leurs vrais IDs DB pour que le client se resynchronise
+    layout, nodes, connections = engine.get_layout(layout_id)
+    return jsonify({"status": "ok", "nodes": nodes, "connections": connections})
 
 
 @bp.route("/patcher/<int:layout_id>/rename", methods=["POST"])

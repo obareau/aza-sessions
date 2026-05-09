@@ -117,6 +117,7 @@
 const SAVE_URL    = "{{ url_for('patcher.patcher_save', layout_id=layout.id) }}";
 const RENAME_URL  = "{{ url_for('patcher.patcher_rename', layout_id=layout.id) }}";
 const IMPORT_URL  = "{{ url_for('patcher.patcher_import', layout_id=layout.id) }}";
+const LAYOUT_ID   = {{ layout.id }};
 const NODE_COLORS = {{ node_colors | tojson }};
 const SIG_COLORS  = {{ signal_colors | tojson }};
 
@@ -124,15 +125,18 @@ let nodes = {{ nodes | tojson }};
 let connections = {{ connections | tojson }};
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let selected   = null;   // {type:'node'|'conn', id}
-let dragging   = null;   // {id, ox, oy}
-let connecting = false;
-let connFrom   = null;
-let currentSig = "audio";
-let editTarget = null;   // {type, id}
+let selected    = null;   // {type:'node'|'conn', id}
+let dragging    = null;   // {nodeId, ox, oy, moved}
+let connecting  = false;
+let connFrom    = null;   // id du nœud source en mode connexion
+let currentSig  = "audio";
+let editTarget  = null;
 let autoSaveTimer = null;
-// fix: Math.max sur tableau vide retourne -Infinity
-let nodeIdCounter = (nodes.length ? Math.max(...nodes.map(n=>Number(n.id)||0)) : 0) + 1;
+
+function maxNodeId() {
+  return nodes.length ? Math.max(...nodes.map(n => Number(n.id) || 0)) : 0;
+}
+let nodeIdCounter = maxNodeId() + 1;
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 const svg     = document.getElementById("patcher-svg");
@@ -141,10 +145,10 @@ const gConns  = document.getElementById("g-connections");
 const preview = document.getElementById("conn-preview");
 
 function init() {
-  gNodes.innerHTML  = "";
-  gConns.innerHTML  = "";
-  nodes.forEach(n => renderNode(n));
+  gNodes.innerHTML = "";
+  gConns.innerHTML = "";
   connections.forEach(c => renderConn(c));
+  nodes.forEach(n => renderNode(n));
 }
 init();
 
@@ -328,7 +332,6 @@ function svgMouseMove(e) {
 
 function svgMouseUp(e) {
   dragging = null;
-  svgPan.dragging = false;
 }
 
 // ── CONNECT MODE ─────────────────────────────────────────────────────────────
@@ -344,10 +347,11 @@ function toggleConnectMode() {
 function handleConnectClick(id) {
   if (connFrom === null) {
     connFrom = id;
+    rerender();  // feedback visuel : nœud source en pointillés
   } else {
     if (connFrom !== id) {
       const c = {
-        id: Date.now(),
+        id: "tmp_" + Date.now(),   // ID temporaire côté client
         layout_id: {{ layout.id }},
         from_id: connFrom,
         to_id: id,
@@ -355,11 +359,11 @@ function handleConnectClick(id) {
         signal_type: currentSig,
       };
       connections.push(c);
-      renderConn(c);
-      scheduleAutoSave();
     }
     connFrom = null;
     preview.style.display = "none";
+    rerender();
+    scheduleAutoSave();
   }
 }
 
@@ -382,7 +386,7 @@ function startAddNode() {
   const label = prompt("Nom du nœud :");
   if (!label || !label.trim()) return;
   const n = {
-    id: nodeIdCounter++,
+    id: "tmp_" + Date.now(),   // ID temporaire — sera remplacé par un vrai ID après save
     layout_id: {{ layout.id }},
     label: label.trim(),
     x: 200 + Math.random()*300,
@@ -462,7 +466,10 @@ function importFromCatalogue() {
   fetch(IMPORT_URL, {method:"POST", headers:{"Content-Type":"application/json"},
     body: JSON.stringify({mode:"catalogue"})})
   .then(r=>r.json()).then(data => {
-    nodes = data.nodes; connections = data.connections; init();
+    nodes = data.nodes;
+    connections = data.connections;
+    nodeIdCounter = maxNodeId() + 1;
+    init();
   });
 }
 
@@ -488,8 +495,15 @@ function saveLayout() {
     body: JSON.stringify({nodes, connections}),
   })
   .then(r => r.json())
-  .then(() => {
+  .then(data => {
     btn.textContent = "💾 Save";
+    // Resynchroniser avec les vrais IDs DB (les IDs tmp_… sont remplacés)
+    if (data.nodes) {
+      nodes = data.nodes;
+      connections = data.connections;
+      nodeIdCounter = maxNodeId() + 1;
+      init();
+    }
     showToast();
   });
 }

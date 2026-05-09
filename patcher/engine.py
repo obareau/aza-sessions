@@ -177,51 +177,71 @@ class PatcherEngine:
         return added
 
     # ── SAVE (AJAX) ──────────────────────────────────────────────────────────
-
     def save_layout(self, layout_id, nodes, connections):
-        """Sauvegarde complète nœuds + connexions depuis le front (JSON)."""
+        """Sauvegarde complète nœuds + connexions depuis le front (JSON).
+        Gère les IDs temporaires côté client (chaînes "tmp_…" ou entiers hors DB).
+        Retourne un mapping old_id → new_real_id pour que le client puisse se resynchroniser.
+        """
         conn = self._db()
 
-        # Nœuds existants
+        # IDs réels existant en base
         existing_ids = {r[0] for r in conn.execute(
             "SELECT id FROM patch_nodes WHERE layout_id=?", (layout_id,)
         ).fetchall()}
 
+        id_map = {}   # old_client_id → real_db_id
         seen_ids = set()
+
         for n in nodes:
-            nid = n.get("id")
-            if nid and nid in existing_ids:
+            raw_id = n.get("id")
+            # Essayer de convertir en int ; les IDs temporaires "tmp_…" échoueront
+            try:
+                nid_int = int(raw_id)
+            except (TypeError, ValueError):
+                nid_int = None
+
+            if nid_int and nid_int in existing_ids:
                 conn.execute(
                     "UPDATE patch_nodes SET label=?,x=?,y=?,color=?,node_type=? WHERE id=?",
-                    (n["label"], n["x"], n["y"], n.get("color","#3A3A3A"),
-                     n.get("node_type","free"), nid)
+                    (n["label"], int(n["x"]), int(n["y"]),
+                     n.get("color", "#3A3A3A"), n.get("node_type", "free"), nid_int)
                 )
-                seen_ids.add(nid)
+                seen_ids.add(nid_int)
+                id_map[raw_id] = nid_int
             else:
+                # Nouveau nœud (ID temp ou ID entier inconnu)
                 cur = conn.execute(
-                    "INSERT INTO patch_nodes (layout_id,label,x,y,node_type,color,catalogue_id) "
+                    "INSERT INTO patch_nodes "
+                    "(layout_id,label,x,y,node_type,color,catalogue_id) "
                     "VALUES (?,?,?,?,?,?,?)",
-                    (layout_id, n["label"], n["x"], n["y"],
-                     n.get("node_type","free"), n.get("color","#3A3A3A"),
+                    (layout_id, n["label"], int(n["x"]), int(n["y"]),
+                     n.get("node_type", "free"), n.get("color", "#3A3A3A"),
                      n.get("catalogue_id"))
                 )
-                n["id"] = cur.lastrowid
-                seen_ids.add(cur.lastrowid)
+                real_id = cur.lastrowid
+                seen_ids.add(real_id)
+                id_map[raw_id] = real_id
 
         # Supprimer nœuds retirés
         for old_id in existing_ids - seen_ids:
             conn.execute("DELETE FROM patch_nodes WHERE id=?", (old_id,))
-            conn.execute("DELETE FROM patch_connections WHERE from_id=? OR to_id=?",
-                         (old_id, old_id))
 
-        # Connexions — replace all
+        # Connexions — remplacer entièrement en résolvant les IDs temporaires
         conn.execute("DELETE FROM patch_connections WHERE layout_id=?", (layout_id,))
         for c in connections:
+            from_id = id_map.get(c["from_id"], c["from_id"])
+            to_id   = id_map.get(c["to_id"],   c["to_id"])
+            try:
+                from_id = int(from_id)
+                to_id   = int(to_id)
+            except (TypeError, ValueError):
+                continue  # connexion invalide, on ignore
             conn.execute(
-                "INSERT INTO patch_connections (layout_id,from_id,to_id,label,signal_type) "
+                "INSERT INTO patch_connections "
+                "(layout_id,from_id,to_id,label,signal_type) "
                 "VALUES (?,?,?,?,?)",
-                (layout_id, c["from_id"], c["to_id"],
-                 c.get("label",""), c.get("signal_type","audio"))
+                (layout_id, from_id, to_id,
+                 c.get("label", ""), c.get("signal_type", "audio"))
             )
 
         conn.commit()
