@@ -72,6 +72,7 @@
       </div>
     </div>
 
+    <button type="button" id="btn-editmode" onclick="toggleEditMode()" class="btn btn-ghost btn-sm" title="Basculer mode édition / navigation">✎ Éditer</button>
     <button type="button" onclick="centerContent()" class="btn btn-ghost btn-sm" title="Centrer le contenu">⊙</button>
     <button type="button" id="btn-save" onclick="saveLayout()" class="btn btn-primary btn-sm">💾 Save</button>
     <a href="{{ url_for('patcher.patcher_list') }}" class="btn btn-ghost btn-sm">← Liste</a>
@@ -122,6 +123,17 @@
             <g id="g-nodes"></g>
           </g>
         </svg>
+
+        {# Overlay "toucher pour éditer" — visible en mode navigation sur touch #}
+        <div id="canvas-overlay"
+             onclick="setEditMode(true)"
+             style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;
+                    z-index:20;cursor:pointer;background:transparent;">
+          <div style="background:rgba(0,0,0,.6);color:#fff;font-family:var(--mono);font-size:13px;
+                      padding:12px 28px;border:1px solid rgba(255,255,255,.25);letter-spacing:.04em;">
+            ✎ Toucher pour éditer
+          </div>
+        </div>
 
         <div id="save-toast" style="display:none;position:absolute;bottom:16px;right:16px;
              background:var(--surface);border:1px solid var(--accent);padding:6px 14px;
@@ -279,6 +291,23 @@ function typeIcon(t) {
 let nodes       = {{ nodes | tojson }};
 let connections = {{ connections | tojson }};
 
+// ── MODE ÉDITION / NAVIGATION ─────────────────────────────────────────────────
+const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+let editMode = !isTouchDevice;  // desktop → toujours édition ; mobile → nav par défaut
+
+function setEditMode(on) {
+  editMode = on;
+  svg.style.touchAction = on ? 'none' : 'auto';
+  const btn = document.getElementById('btn-editmode');
+  btn.textContent        = on ? '⊙ Naviguer' : '✎ Éditer';
+  btn.style.background   = on ? 'var(--accent)' : '';
+  btn.style.color        = on ? 'var(--bg)' : '';
+  const overlay = document.getElementById('canvas-overlay');
+  if (overlay) overlay.style.display = (isTouchDevice && !on) ? 'flex' : 'none';
+}
+
+function toggleEditMode() { setEditMode(!editMode); }
+
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let selected      = null;   // {type:'node'|'conn', id}
 let dragging      = null;
@@ -330,6 +359,7 @@ function init() {
   nodes.forEach(n => renderNode(n));
 }
 init();
+setEditMode(editMode);  // applique touch-action et état bouton dès le départ
 // Centre le contenu au chargement (après le premier rendu)
 requestAnimationFrame(centerContent);
 
@@ -686,6 +716,7 @@ svg.addEventListener("wheel", e => {
 let touchState = null;
 
 svg.addEventListener("touchstart", e => {
+  if (!editMode) return;  // mode navigation → page scroll normal
   e.preventDefault();
   if (e.touches.length === 1) {
     const t = e.touches[0];
@@ -721,6 +752,7 @@ svg.addEventListener("touchstart", e => {
 }, {passive: false});
 
 svg.addEventListener("touchmove", e => {
+  if (!editMode) return;
   e.preventDefault();
   if (!touchState) return;
   if (touchState.type === "node" && e.touches.length === 1) {
@@ -754,6 +786,7 @@ svg.addEventListener("touchmove", e => {
 }, {passive: false});
 
 svg.addEventListener("touchend", e => {
+  if (!editMode) return;
   e.preventDefault();
   if (e.touches.length < 2 && touchState?.type === "pinch") touchState = null;
   if (e.touches.length === 0) { touchState = null; dragging = null; }
