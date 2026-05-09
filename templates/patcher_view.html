@@ -124,6 +124,15 @@
           </g>
         </svg>
 
+        {# Bouton retour haut — toujours accessible, sort du mode édition + scroll top #}
+        <button id="btn-backtop" onclick="backToTop()"
+                style="display:none;position:absolute;top:10px;left:10px;z-index:30;
+                       background:var(--surface);border:1px solid var(--border);
+                       color:var(--text);font-family:var(--mono);font-size:11px;
+                       padding:6px 10px;cursor:pointer;opacity:.85;">
+          ↑ Menu
+        </button>
+
         {# Overlay "toucher pour éditer" — visible en mode navigation sur touch #}
         <div id="canvas-overlay"
              onclick="setEditMode(true)"
@@ -304,9 +313,17 @@ function setEditMode(on) {
   btn.style.color        = on ? 'var(--bg)' : '';
   const overlay = document.getElementById('canvas-overlay');
   if (overlay) overlay.style.display = (isTouchDevice && !on) ? 'flex' : 'none';
+  // Bouton ↑ Menu : visible uniquement sur touch en mode édition
+  const backBtn = document.getElementById('btn-backtop');
+  if (backBtn) backBtn.style.display = (isTouchDevice && on) ? 'block' : 'none';
 }
 
 function toggleEditMode() { setEditMode(!editMode); }
+
+function backToTop() {
+  setEditMode(false);
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let selected      = null;   // {type:'node'|'conn', id}
