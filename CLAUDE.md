@@ -1,151 +1,119 @@
-# Journal de Sessions AZA
+# CLAUDE.md
 
-App Flask + SQLite de reporting de sessions musicales pour Olivier (Scaër, Bretagne).
-Fait partie du projet **AZA** — univers de fiction dystopique dont la musique constitue la B.O.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Version actuelle : v0.9.6-alpha
+## Projet
 
----
+App Flask + SQLite de documentation de sessions musicales pour l'univers de fiction **AZA** (dystopie personnelle d'Olivier — Dark Ambient / Industriel, Scaër, Bretagne). Déployée sur Fly.io à `https://robotariis-sessions.fly.dev/`.
 
-## Stack technique
-
-- **Backend :** Python 3 / Flask
-- **Base de données :** SQLite — fichier `sessions.db`
-- **Frontend :** Jinja2 templates, IBM Plex Mono/Sans, Chart.js (stats interactives)
-- **Port :** 5000 (localhost)
-- **Lancement :** `python app.py`
+Version actuelle : voir `VERSION` dans `app.py` (actuellement **v3.2.0**).
 
 ---
 
-## Structure du projet
+## Commandes
 
-```
-app.py                  # Application principale — routes, DB, logique
-templates/
-  base.html             # Layout commun — nav, bannière oblique, footer
-  index.html            # Liste des sessions
-  new.html              # Formulaire nouvelle session
-  view.html             # Détail session
-  stats.html            # Dashboard statistiques Chart.js
-  catalogue.html        # Gestion catalogue (machines, effets, DAW, iOS, plugins)
-  influences.html       # Gestion influences (artistes, labels)
-  obliques.html         # Gestion stratégies Obliques AZA
-static/                 # Assets statiques (vide pour l'instant)
-requirements.txt        # flask>=3.0.0
-lancer.command          # Script lancement Mac (double-clic)
-lancer.bat              # Script lancement Windows (double-clic)
-build_mac.sh            # Compilation binaire macOS via PyInstaller
-build_windows.bat       # Compilation binaire Windows via PyInstaller
-CHANGELOG.md            # Historique des versions
-sessions.db             # Base de données SQLite — NE PAS COMMITTER
+```bash
+python app.py          # Lancement local — port auto-détecté à partir de 5001
+fly deploy             # Déploiement Fly.io
 ```
 
+Pas de tests automatisés ni de linter configuré à ce jour.
+
 ---
 
-## Base de données — 4 tables
+## Architecture
 
-```sql
-sessions    -- Sessions musicales (table principale, 29 champs)
-obliques    -- Stratégies créatives éditables (style Oblique Strategies)
-catalogue   -- Catalogue matériel : type IN (machine, effet, daw, synth_ios, plugin)
-influences  -- Artistes et labels : type IN (artiste, label, autre)
+### Vue d'ensemble
+
+`app.py` (116 lignes) est le point d'entrée minimal : il crée l'app Flask, enregistre les 18 blueprints, injecte les globals Jinja2 (`has_live`, `obsidian_vault`) et gère le backup automatique de `sessions.db` au démarrage (5 derniers backups dans `backups/`).
+
+`wsgi.py` est le point d'entrée Gunicorn/Fly.io — il appelle `init_db()` explicitement car `app.py.__main__` ne tourne pas sous Gunicorn.
+
+### Blueprints (pattern uniforme)
+
+Chaque module suit le même pattern :
+```
+<module>/
+  __init__.py    # exporte `bp`
+  api.py         # Blueprint Flask + toutes les routes
+  engine.py      # classe XxxEngine(db_path) — toute la logique SQL
 ```
 
----
-
-## Routes
-
-| Route | Méthode | Description |
-|---|---|---|
-| `/` | GET | Liste sessions |
-| `/search` | GET | Recherche et filtrage sessions (côté serveur) |
-| `/new` | GET/POST | Formulaire nouvelle session |
-| `/session/<id>` | GET | Détail session |
-| `/export/<id>` | GET | Export Markdown individuel (Obsidian) |
-| `/export/all` | GET | Export Markdown global toutes sessions |
-| `/stats` | GET | Dashboard statistiques interactif |
-| `/catalogue` | GET/POST | Gestion catalogue |
-| `/influences` | GET/POST | Gestion influences |
-| `/obliques` | GET/POST | Gestion stratégies |
-| `/oblique` | GET | API JSON — stratégie aléatoire |
-
----
-
-## Champs d'une session (table sessions)
-
-**Contexte :** date, duration_min, mode, intention, energy_level  
-**Hardware :** machines, effects  
-**Logiciels :** daws, synths_ios, plugins  
-**Technique :** patches, signal_routing, microfreak_algo, tempo, tonality  
-**Capture :** audio_file, timestamps, linked_session  
-**AZA :** influences, lore_link  
-**Évaluation :** rating, tags, character, to_rework, release_potential  
-**Meta :** oblique, comments, recap_claude, created_at
-
----
-
-## Règles de développement
-
-### Obligatoires avant tout commit
-- Bumper `VERSION` dans `app.py`
-- Mettre à jour `CHANGELOG.md`
-- Lancer les tests Flask en mode test
-- Vérifier que `sessions.db` n'est pas dans le commit (`.gitignore`)
-
-### Conventions code
-- Routes groupées par domaine dans `app.py` avec commentaires `# ── NOM ──`
-- Fonction `session_to_md(s)` centralisée pour tous les exports Markdown
-- Migrations DB via `ALTER TABLE` dans `init_db()` avec `try/except`
-- `get_db()` + `conn.row_factory = sqlite3.Row` systématiquement
-
-### Conventions templates
-- Héritent tous de `base.html`
-- Classes CSS en variables CSS (`var(--accent)`, `var(--mono)` etc.)
-- Typographie : IBM Plex Mono pour les labels/codes, IBM Plex Sans pour le corps
-- Pas de framework CSS externe — tout en vanilla CSS dans `base.html`
-
-### .gitignore minimum
-```
-sessions.db
-__pycache__/
-*.pyc
-dist/
-build/
-*.spec
-.DS_Store
+Dans `api.py`, l'accès au moteur se fait via un helper `_engine()` :
+```python
+def _engine():
+    return XxxEngine(current_app.config["DB_PATH"])
 ```
 
+Les 18 blueprints enregistrés :
+
+| Blueprint | Domaine |
+|---|---|
+| `sessions` | CRUD sessions + export MD/CSV/Obsidian — **module principal** |
+| `live` | Mode session en cours (timer live, notes temps réel) |
+| `patcher` | Éditeur de patch SVG drag&drop (nœuds, connexions audio/MIDI/CV) |
+| `sysex` | Loader SysEx DX7/Volca FM via Web MIDI API, bank editor |
+| `spark` | Générateur de contraintes créatives |
+| `catalogue` | Catalogue matériel (machine, effet, daw, synth_ios, plugin) |
+| `obliques` | Stratégies Obliques AZA (style Brian Eno) |
+| `influences` | Artistes et labels de référence |
+| `projects` | Regroupement de sessions sous un projet |
+| `stats` | Dashboard statistiques Chart.js |
+| `samples` | Bibliothèque de sample banks |
+| `tracks` | Morceaux inspirants |
+| `wishlist` | Liste de matériel désiré |
+| `inspirations` | Inspirations diverses (phrases, images, concepts) |
+| `mirack` | Catalogue de modules MiRack (iOS) |
+| `settings_app` | Paramètres app (backup, import, reset) |
+| `about` | Page À propos |
+| `dim` | Module audio spécialisé |
+
+### Core
+
+- `core/db.py` — `get_db(db_path)` : connexion SQLite avec `row_factory = sqlite3.Row`
+- `core/init_db.py` — `init_db(db_path)` : crée toutes les tables si inexistantes, peuple les données par défaut (obliques, catalogue, influences), applique les migrations via `ALTER TABLE ... ADD COLUMN` dans un `try/except`
+- `core/constants.py` — enums partagés : `CHARACTERS`, `MODES`, `INTENTIONS`, `ITEM_TYPES`, `SAMPLE_TYPES`, etc.
+- `core/oblique.py` — `rand_oblique(db_path)` : stratégie aléatoire depuis la table `obliques`
+
+### Base de données
+
+15 tables SQLite, toutes créées dans `init_db()`. Tables principales :
+
+- `sessions` — 31 champs dont `recap_claude` (résumé IA), `project_id` (FK), `title`
+- `live_session` — session en cours (0 ou 1 ligne)
+- `patch_layouts` / `patch_nodes` / `patch_connections` — module Patcher
+- `sysex_banks` — banks SysEx (BLOB SQLite)
+- `catalogue`, `influences`, `obliques`, `projects`, `sample_banks`, `inspiring_tracks`, `gear_wishlist`, `inspirations`, `mirack_modules`, `prompter_scripts`
+
+Migrations : toujours via `ALTER TABLE` dans `init_db()` avec `try/except` — pas de système de migration versionné.
+
+### Config
+
+`config.json` (non commité) — stocke `obsidian_vault` (chemin du vault Obsidian local). Créé/lu par `sessions/api.py` via `_get_config()` / `_save_config()`.
+
+### Templates
+
+Tous héritent de `base.html`. Système de thèmes via attribut `data-theme` sur `<html>` (6 thèmes terminal). Variables CSS : `var(--accent)`, `var(--mono)`, `var(--bg)`, etc. — pas de framework CSS externe.
+
+Multi-sélection dans les formulaires : `form.getlist("machines")` → jointure `, ` avant stockage.
+
+### Déploiement Fly.io
+
+- App : `robotariis-sessions`, région `cdg`
+- DB et backups dans `/data` (volume persistant `sessions_data`)
+- Détecté via `FLY_APP_NAME` dans `wsgi.py` → `DB_PATH=/data/sessions.db`
+- 1 CPU partagé, 256 MB RAM, auto-stop/start
+
 ---
 
-## Roadmap
+## Règles avant tout commit
 
-### v0.4.0 — Prioritaire
-- Édition d'une session existante (actuellement lecture seule)
-- Filtres et recherche sur la liste (machine, tag, note, date, intention)
-- Pagination (au-delà de 50 sessions)
-
-### v0.5.0
-- Liaison entre sessions (chaîne de travail sur un même morceau)
-- Vue "Projet" — regrouper plusieurs sessions sous un titre
-- Lien fichier audio vers Finder/Explorer
-
-### Future
-- Synchronisation réseau local multi-machines
-- Export direct vers Obsidian via API MCP
-- Tags liés aux notes du vault AZA
-- Import automatique depuis fichier audio (date, nom)
+1. Bumper `VERSION` dans `app.py`
+2. Mettre à jour `CHANGELOG.md`
+3. Vérifier que `sessions.db` n'est pas dans le commit (`.gitignore`)
 
 ---
 
-## Contexte projet
+## Contexte AZA
 
-Ce projet appartient à l'univers **AZA** — dystopie de fiction personnelle d'Olivier.
-Chaque session documentée peut correspondre à un élément du lore (scène, lieu, ambiance de la B.O).
-Les **stratégies Obliques AZA** sont inspirées des Oblique Strategies de Brian Eno.
-Le style musical visé : Dark Ambient / Industriel — tradition PanSonic, Vromb, Synapscape, labels Hands Productions et Ant-Zen.
-
-Pour le lore complet → voir le vault Obsidian (dossier séparé).
-
----
-
-*Dernière mise à jour : Avril 2026 — v0.3.1*
+Univers de fiction dystopique personnel. Chaque session peut correspondre à un élément du lore (scène, lieu, ambiance de la B.O.). Le champ `lore_link` d'une session pointe vers le vault Obsidian. Les stratégies Obliques AZA sont inspirées des Oblique Strategies de Brian Eno. Style musical : Dark Ambient / Industriel — tradition PanSonic, Vromb, Synapscape, Hands Productions, Ant-Zen.
