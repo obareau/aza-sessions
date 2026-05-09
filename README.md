@@ -3,7 +3,7 @@
 > Application de documentation et de performance musicale pour le projet **AZA** —
 > univers de fiction dystopique dont les sessions de création constituent la bande originale.
 
-**Version : v3.0.1-alpha** · [Changelog](CHANGELOG.md) · [Live →](https://robotariis-sessions.fly.dev/)
+**Version : v3.1.0** · [Changelog](CHANGELOG.md) · [Live →](https://robotariis-sessions.fly.dev/)
 
 ---
 
@@ -61,7 +61,7 @@ fly deploy   # depuis le dossier du projet
 | Filtres temps réel | Texte, mode, note |
 | Statistiques | Dashboard Chart.js — machines, influences, timeline mensuelle |
 
-### ⬡ Patcher — v3.0
+### ⬡ Patcher — v3.1
 | Fonction | Description |
 |---|---|
 | Canvas SVG interactif | Nœuds drag & drop, connexions Bézier avec flèches typées |
@@ -71,8 +71,10 @@ fly deploy   # depuis le dossier du projet
 | Barre de propriétés | Label, type, signal, note — éditables en bas, sélection simple clic |
 | Panneau catalogue | Picker latéral — ajouter depuis le catalogue en un clic |
 | Import depuis session | Crée automatiquement les nœuds depuis une session liée |
+| **Export → Session** | Bouton `→ Session` : pré-remplit le formulaire session + signal_routing depuis le graphe |
 | Types custom | synth_android, fx_android, etc. — couleur auto par hash, icône ◈ |
 | Autosave | AJAX 1,5 s |
+| Mode Nav / Édition | Toggle mobile : navigation page ou édition canvas (pinch-to-zoom, pan 1 doigt) |
 | Export Mermaid | `.md` avec `graph LR`, flèches typées, tables nœuds/connexions |
 | Export SVG | Standalone, CSS vars résolus, polices embarquées |
 | Export PDF | Via `window.print()` paysage |
@@ -178,12 +180,28 @@ La base SQLite vit dans un volume persistant monté sur `/data`.
 
 ---
 
-## Roadmap v3.x
+## Roadmap
 
-- Import depuis métadonnées fichier audio
-- Lecteur audio intégré (Web Audio API)
-- Timeline visuelle des sessions par projet
-- Connexions multi-type dans le patcher (audio + MIDI simultanés)
+### v3.2.x — Patcher : polish & puissance
+- Connexions multi-type simultanées (audio + MIDI sur le même câble)
+- Snap-to-grid optionnel
+- Dupliquer un layout
+- Minimap / vue d'ensemble sur les grands patches
+
+### v3.3.x — Sessions : enrichissement
+- Import métadonnées depuis un fichier audio (date, durée automatiques)
+- Lecteur audio intégré (Web Audio API, waveform)
+- BPM / tonalité dans les filtres de recherche
+
+### v3.4.x — Vue Projet & Timeline
+- Timeline visuelle des sessions par projet (Chart.js ou SVG)
+- Page projet dédiée — durée totale, statut WIP / released
+- Lien patch ↔ plusieurs sessions (relation 1-n)
+
+### v4.x — Intégrations
+- Export direct vers Obsidian via plugin AZA (WebSocket ou dossier watch)
+- API REST légère pour scripting externe (Shortcuts iOS, mobile)
+- PWA / offline-first
 
 ---
 

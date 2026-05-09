@@ -5,6 +5,22 @@
 
 ---
 
+## v3.1.0 — 2026-05-09 — Release Patcher complète
+
+Clôture du cycle v3.0.x-alpha. Stabilisation et complétion du module Patcher.
+
+### ✨ Nouveautés
+- **Patcher → Session** — bouton `→ Session` dans la toolbar du Patcher : pré-remplit le formulaire Nouvelle Session avec les nœuds par type (machines, effets, DAW, iOS, plugins) et génère automatiquement le champ `signal_routing` depuis le graphe de connexions (DFS source → feuilles, format `A → B → C`, max 4 chemins)
+- **Mode Navigation / Édition** (mobile) — toggle `✎ Éditer` / `⊙ Naviguer` : en mode Navigation la page défile normalement, en mode Édition le canvas capte tous les gestes tactiles. Bouton flottant `↑ Menu` pour sortir du mode Édition sans chercher le bandeau
+- **Centrage automatique** du canvas au chargement — `centerContent()` cale le layout dans le viewport (pan + zoom ajustés)
+- **Pinch-to-zoom** mobile sur le canvas — 2 doigts, ancré sur le milieu des touches
+
+### 🐛 Corrections
+- **`SECRET_KEY` manquant** — `flask.session` crashait en production Fly.io (500 sur `→ Session` et tout redirect avec prefill via session). Ajout de `app.secret_key = os.environ.get("SECRET_KEY", "aza-sessions-local-dev")`
+- Export JSON portabilité — connexions sérialisées avec `from_index` / `to_index` (numéro dans la liste des nœuds, sans dépendance aux IDs DB)
+
+---
+
 ## v3.0.1-alpha — 2026-05-09 — Patcher : import/export JSON + types dynamiques
 
 ### ✨ Nouveautés
@@ -40,6 +56,7 @@
 - **`wsgi.py`** corrigé : `init_db(DB_PATH)` après extraction dans `core/`
 - **`fly.toml`** : `dockerfile = "Dockerfile"` explicite (fix deploy Fly.io)
 - **`.gitignore`** : ajout `backups/` et `config.json`
+- **`.dockerignore`** : ajout `.claude/` — exclut les git worktrees du build context Fly.io
 
 ---
 
