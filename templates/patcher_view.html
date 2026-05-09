@@ -41,6 +41,32 @@
     <div style="width:1px;height:24px;background:var(--border);"></div>
 
     <button type="button" id="btn-cat" onclick="toggleCataloguePanel()" class="btn btn-ghost btn-sm">＋ Catalogue</button>
+
+    {# Export dropdown #}
+    <div style="position:relative;display:inline-block;">
+      <button type="button" onclick="toggleExportMenu()" id="btn-export"
+              class="btn btn-ghost btn-sm" title="Exporter">⬇ Export ▾</button>
+      <div id="export-menu" style="display:none;position:absolute;right:0;top:100%;
+           background:var(--surface);border:1px solid var(--accent);z-index:200;
+           min-width:160px;margin-top:4px;">
+        <a href="{{ url_for('patcher.patcher_export_mermaid', layout_id=layout.id) }}"
+           onclick="closeExportMenu()"
+           style="display:block;padding:8px 14px;font-family:var(--mono);font-size:12px;
+                  color:var(--text);text-decoration:none;border-bottom:1px solid var(--border);">
+          ⬡ Mermaid .md
+        </a>
+        <button type="button" onclick="exportSVG()" class="btn btn-ghost btn-sm"
+                style="width:100%;text-align:left;border-radius:0;
+                       border-bottom:1px solid var(--border);padding:8px 14px;">
+          ◻ SVG
+        </button>
+        <button type="button" onclick="exportPDF()" class="btn btn-ghost btn-sm"
+                style="width:100%;text-align:left;border-radius:0;padding:8px 14px;">
+          ▤ PDF
+        </button>
+      </div>
+    </div>
+
     <button type="button" id="btn-save" onclick="saveLayout()" class="btn btn-primary btn-sm">💾 Save</button>
     <a href="{{ url_for('patcher.patcher_list') }}" class="btn btn-ghost btn-sm">← Liste</a>
   </div>
@@ -761,6 +787,125 @@ function showToast() {
 function svgPoint(e) {
   const r = svg.getBoundingClientRect();
   return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+function toggleExportMenu() {
+  const m = document.getElementById("export-menu");
+  m.style.display = m.style.display === "none" ? "block" : "none";
+}
+function closeExportMenu() {
+  document.getElementById("export-menu").style.display = "none";
+}
+document.addEventListener("click", e => {
+  if (!e.target.closest("#btn-export") && !e.target.closest("#export-menu"))
+    closeExportMenu();
+});
+
+// Résout les var(--xxx) CSS en vraies valeurs hex/rgb pour export hors navigateur
+function resolveCSSVars(str) {
+  const cs = getComputedStyle(document.documentElement);
+  return str.replace(/var\((--[a-z-]+)\)/g, (_, v) => {
+    const val = cs.getPropertyValue(v).trim();
+    return val || "#888";
+  });
+}
+
+function exportSVG() {
+  closeExportMenu();
+  // Bounding box réel des nœuds pour un viewBox serré
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  nodes.forEach(n => {
+    const w = nodeW(n), h = nodeH(n);
+    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x + w); maxY = Math.max(maxY, n.y + h);
+  });
+  const pad = 24;
+  const vx = (nodes.length ? minX-pad : 0);
+  const vy = (nodes.length ? minY-pad : 0);
+  const vw = (nodes.length ? maxX-minX+pad*2 : 800);
+  const vh = (nodes.length ? maxY-minY+pad*2 : 600);
+
+  const clone = svg.cloneNode(true);
+  clone.setAttribute("viewBox", `${vx} ${vy} ${vw} ${vh}`);
+  clone.setAttribute("width",  vw);
+  clone.setAttribute("height", vh);
+  clone.removeAttribute("style");
+
+  // Fond explicite
+  const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#111";
+  const bgRect = document.createElementNS("http://www.w3.org/2000/svg","rect");
+  bgRect.setAttribute("x",vx); bgRect.setAttribute("y",vy);
+  bgRect.setAttribute("width",vw); bgRect.setAttribute("height",vh);
+  bgRect.setAttribute("fill",bg);
+  clone.insertBefore(bgRect, clone.firstChild);
+
+  // Embarquer la police IBM Plex Mono en @import
+  const styleEl = document.createElementNS("http://www.w3.org/2000/svg","style");
+  styleEl.textContent = `@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap');`;
+  clone.insertBefore(styleEl, clone.firstChild);
+
+  let xml = new XMLSerializer().serializeToString(clone);
+  xml = resolveCSSVars(xml);
+
+  const blob = new Blob([xml], {type:"image/svg+xml;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `patch-{{ layout.id }}-{{ layout.name|lower|replace(' ','-') }}.svg`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function exportPDF() {
+  closeExportMenu();
+  // Même SVG résolu, ouvert dans une nouvelle fenêtre puis impression
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  nodes.forEach(n => {
+    const w = nodeW(n), h = nodeH(n);
+    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x + w); maxY = Math.max(maxY, n.y + h);
+  });
+  const pad = 24;
+  const vx = nodes.length ? minX-pad : 0, vy = nodes.length ? minY-pad : 0;
+  const vw = nodes.length ? maxX-minX+pad*2 : 800, vh = nodes.length ? maxY-minY+pad*2 : 600;
+
+  const clone = svg.cloneNode(true);
+  clone.setAttribute("viewBox", `${vx} ${vy} ${vw} ${vh}`);
+  clone.setAttribute("width","100%"); clone.setAttribute("height","100%");
+  clone.removeAttribute("style");
+
+  const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#111";
+  const bgRect = document.createElementNS("http://www.w3.org/2000/svg","rect");
+  bgRect.setAttribute("x",vx); bgRect.setAttribute("y",vy);
+  bgRect.setAttribute("width",vw); bgRect.setAttribute("height",vh); bgRect.setAttribute("fill",bg);
+  clone.insertBefore(bgRect, clone.firstChild);
+
+  const styleEl = document.createElementNS("http://www.w3.org/2000/svg","style");
+  styleEl.textContent = `@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap');`;
+  clone.insertBefore(styleEl, clone.firstChild);
+
+  let xml = new XMLSerializer().serializeToString(clone);
+  xml = resolveCSSVars(xml);
+
+  const layoutName = {{ layout.name | tojson }};
+  const win = window.open("","_blank");
+  win.document.write(`<!DOCTYPE html><html><head>
+    <title>Patch — ${layoutName}</title>
+    <style>
+      *{margin:0;padding:0;box-sizing:border-box;}
+      html,body{width:100%;height:100%;background:${bg};}
+      svg{display:block;width:100vw;height:100vh;}
+      @media print{
+        @page{margin:10mm;size:landscape;}
+        html,body{background:white;}
+        svg{width:100%;height:100%;}
+      }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  </head><body>${xml}</body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 800);
 }
 </script>
 {% endblock %}
