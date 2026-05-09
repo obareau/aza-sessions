@@ -57,7 +57,7 @@
     <span style="font-family:var(--mono);font-size:10px;color:{{ col }};">━ {{ sig }}</span>
     {% endfor %}
     <span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--muted);">
-      Clic = sélect · Drag = déplacer · Mode relier → clic nœud A puis B · Double-clic = éditer label · Del = supprimer
+      Drag = déplacer · Clic signal = relier · Clic nœud A → B = connexion · Esc = annuler · Dbl-clic = label · Del = supprimer
     </span>
   </div>
 
@@ -125,14 +125,14 @@ let connections = {{ connections | tojson }};
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let selected   = null;   // {type:'node'|'conn', id}
-let dragging   = null;   // {id, ox, oy, sx, sy}
+let dragging   = null;   // {id, ox, oy}
 let connecting = false;
 let connFrom   = null;
 let currentSig = "audio";
 let editTarget = null;   // {type, id}
-let svgPan     = {x:0, y:0, dragging:false, sx:0, sy:0};
-let nodeIdCounter = Math.max(0, ...nodes.map(n=>n.id||0)) + 1;
 let autoSaveTimer = null;
+// fix: Math.max sur tableau vide retourne -Infinity
+let nodeIdCounter = (nodes.length ? Math.max(...nodes.map(n=>Number(n.id)||0)) : 0) + 1;
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 const svg     = document.getElementById("patcher-svg");
@@ -161,12 +161,16 @@ function renderNode(n) {
   const W = Math.max(100, n.label.length * 8 + 24);
   const H = 38;
 
+  const isSelected = selected && selected.type==="node" && selected.id===n.id;
+  const isConnFrom = connFrom === n.id;
+
   const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
   rect.setAttribute("width", W); rect.setAttribute("height", H);
   rect.setAttribute("rx","3");
-  rect.setAttribute("fill","var(--surface)");
-  rect.setAttribute("stroke", n.color || "#3A3A3A");
-  rect.setAttribute("stroke-width", selected && selected.type==="node" && selected.id===n.id ? "2.5" : "1.5");
+  rect.setAttribute("fill", isConnFrom ? (n.color||"#3A3A3A")+"22" : "var(--surface)");
+  rect.setAttribute("stroke", isConnFrom ? (SIG_COLORS[currentSig]||"#888") : (n.color || "#3A3A3A"));
+  rect.setAttribute("stroke-width", isSelected || isConnFrom ? "2.5" : "1.5");
+  if (isConnFrom) rect.setAttribute("stroke-dasharray","5,3");
 
   const txt = document.createElementNS("http://www.w3.org/2000/svg","text");
   txt.setAttribute("x", W/2); txt.setAttribute("y", 15);
@@ -284,12 +288,17 @@ function nodeMouseDown(e, id) {
 }
 
 function svgMouseDown(e) {
-  if (e.target === svg || e.target.tagName === "svg") {
-    clearSelection();
-    if (!connecting) {
-      svgPan.dragging = true;
-      svgPan.sx = e.clientX - svgPan.x;
-      svgPan.sy = e.clientY - svgPan.y;
+  // On est sur le fond si le clic n'est pas sur un nœud ou une connexion
+  const onNode = e.target.closest('g[id^="node-"]');
+  const onConn = e.target.closest('g[id^="conn-"]');
+  if (!onNode && !onConn) {
+    if (connecting) {
+      // Annuler la sélection source en cours sans quitter le mode
+      connFrom = null;
+      preview.style.display = "none";
+      rerender();
+    } else {
+      clearSelection();
     }
   }
 }
@@ -355,14 +364,18 @@ function handleConnectClick(id) {
 }
 
 // ── SIGNAL TYPE ───────────────────────────────────────────────────────────────
-function setSig(s) {
+function setSig(s, activateConnect = true) {
   currentSig = s;
   document.querySelectorAll(".sig-btn").forEach(b => {
-    b.style.fontWeight = b.dataset.sig === s ? "700" : "400";
-    b.style.background = b.dataset.sig === s ? SIG_COLORS[s] + "33" : "transparent";
+    const active = b.dataset.sig === s;
+    b.style.fontWeight = active ? "700" : "400";
+    b.style.background = active ? SIG_COLORS[s] + "44" : "transparent";
+    b.style.borderWidth = active ? "2px" : "1.5px";
   });
+  // Cliquer un signal active directement le mode connexion
+  if (activateConnect && !connecting) toggleConnectMode();
 }
-setSig("audio");
+setSig("audio", false);  // init sans activer connect
 
 // ── ADD NODE ──────────────────────────────────────────────────────────────────
 function startAddNode() {
@@ -398,10 +411,13 @@ function deleteSelected() {
 }
 
 document.addEventListener("keydown", e => {
-  if (e.key === "Delete" || e.key === "Backspace") {
-    if (document.activeElement.tagName !== "INPUT") deleteSelected();
-  }
+  if (document.activeElement.tagName === "INPUT") return;
+  if (e.key === "Delete" || e.key === "Backspace") deleteSelected();
   if (e.key === "c" || e.key === "C") toggleConnectMode();
+  if (e.key === "Escape") {
+    if (connecting) { toggleConnectMode(); }
+    else { clearSelection(); }
+  }
 });
 
 // ── LABEL EDITOR ─────────────────────────────────────────────────────────────
