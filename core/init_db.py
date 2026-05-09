@@ -293,6 +293,17 @@ def init_db(db_path):
         )
     """)
 
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS sysex_banks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL DEFAULT 'bank',
+            format TEXT DEFAULT 'raw',
+            size INTEGER DEFAULT 0,
+            data BLOB,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     for migration in [
         "ALTER TABLE sessions ADD COLUMN recap_claude TEXT",
         "ALTER TABLE sessions ADD COLUMN project_id INTEGER",

@@ -1,0 +1,506 @@
+{% extends "base.html" %}
+{% block title %}SysEx Loader — AZA{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">⎍ SysEx Loader</div>
+        <div class="page-subtitle">Volca FM · DX7 compatible · Web MIDI API</div>
+    </div>
+    <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
+</div>
+
+{# ── AVERTISSEMENT navigateur ── #}
+<div id="midi-unsupported" style="display:none;" class="card"
+     style="border-color:#D4380D;background:rgba(212,56,13,.08);">
+    <div style="color:#D4380D;font-family:var(--mono);font-size:13px;">
+        ⚠ Web MIDI API non disponible — utilise <strong>Google Chrome</strong> ou un navigateur Chromium.
+        Safari et Firefox ne supportent pas le Web MIDI.
+    </div>
+</div>
+
+{# ── PANNEAU MIDI ── #}
+<div class="card" id="midi-panel">
+    <div class="card-title">⎍ Interface MIDI</div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;">
+        <button type="button" onclick="initMIDI()" id="btn-midi-init"
+                class="btn btn-primary btn-sm">⟳ Détecter interfaces</button>
+
+        <select id="midi-output-select"
+                style="font-family:var(--mono);font-size:12px;background:var(--bg-alt);
+                       border:1px solid var(--border);color:var(--text);
+                       padding:6px 10px;border-radius:var(--radius);min-width:240px;">
+            <option value="">— Sélectionner une sortie MIDI —</option>
+        </select>
+
+        <button type="button" onclick="testConnection()" id="btn-test"
+                class="btn btn-ghost btn-sm" disabled title="Envoie une note pour tester">
+            ♪ Tester
+        </button>
+
+        <span id="midi-status"
+              style="font-family:var(--mono);font-size:11px;color:var(--text-muted);">
+            En attente…
+        </span>
+    </div>
+    <div id="midi-log"
+         style="margin-top:10px;font-family:var(--mono);font-size:11px;
+                color:var(--text-muted);min-height:18px;"></div>
+</div>
+
+{# ── LOADER ── #}
+<div class="card">
+    <div class="card-title">⎍ Charger un fichier SysEx</div>
+
+    <div id="drop-zone"
+         ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+         ondragleave="this.style.borderColor='var(--border-strong)'"
+         ondrop="handleDrop(event)"
+         style="margin-top:14px;border:2px dashed var(--border-strong);border-radius:var(--radius);
+                padding:32px;text-align:center;cursor:pointer;transition:border-color .2s;"
+         onclick="document.getElementById('syx-file-input').click()">
+        <div style="font-family:var(--mono);font-size:13px;color:var(--text-muted);">
+            ↑ Glisser un fichier <strong style="color:var(--text);">.syx</strong> ici
+            ou <span style="color:var(--accent);text-decoration:underline;cursor:pointer;">cliquer pour parcourir</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">
+            DX7 bulk 32 voix (4104 bytes) · DX7 single voice (163 bytes) · raw SysEx
+        </div>
+    </div>
+    <input type="file" id="syx-file-input" accept=".syx,.mid,.midi,*"
+           style="display:none" onchange="loadFile(this.files[0])">
+
+    {# Infos fichier chargé #}
+    <div id="file-info" style="display:none;margin-top:14px;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span id="file-name"
+                  style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);"></span>
+            <span id="file-format"
+                  style="font-family:var(--mono);font-size:10px;color:var(--text-muted);
+                         background:var(--bg-alt);padding:2px 8px;border-radius:2px;border:1px solid var(--border);"></span>
+            <span id="file-size"
+                  style="font-family:var(--mono);font-size:10px;color:var(--text-muted);"></span>
+        </div>
+
+        {# Liste des patches #}
+        <div id="patch-list-wrap" style="display:none;margin-top:12px;">
+            <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;
+                        letter-spacing:.1em;color:var(--text-muted);margin-bottom:8px;">
+                Patches détectés
+            </div>
+            <div id="patch-list"
+                 style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+                        gap:4px;max-height:240px;overflow-y:auto;"></div>
+        </div>
+
+        {# Canal MIDI + bouton envoi #}
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;">
+            <label style="font-family:var(--mono);font-size:12px;color:var(--text-muted);">
+                Canal MIDI (Volca FM : 1)
+            </label>
+            <select id="midi-channel"
+                    style="font-family:var(--mono);font-size:12px;background:var(--bg-alt);
+                           border:1px solid var(--border);color:var(--text);
+                           padding:5px 8px;border-radius:var(--radius);width:80px;">
+                {% for ch in range(1, 17) %}
+                <option value="{{ ch }}" {% if ch == 1 %}selected{% endif %}>{{ ch }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="button" onclick="sendSysEx()" id="btn-send"
+                    class="btn btn-primary" disabled>
+                ⎍ Envoyer vers Volca FM
+            </button>
+
+            <div id="send-progress" style="display:none;align-items:center;gap:8px;">
+                <div style="width:160px;height:4px;background:var(--bg-alt);border-radius:2px;overflow:hidden;">
+                    <div id="send-bar"
+                         style="height:100%;background:var(--accent);width:0%;transition:width .3s;"></div>
+                </div>
+                <span id="send-label"
+                      style="font-family:var(--mono);font-size:11px;color:var(--text-muted);"></span>
+            </div>
+        </div>
+
+        {# Save dans la librairie #}
+        <form method="POST" action="{{ url_for('sysex.sysex_save') }}"
+              enctype="multipart/form-data" id="save-form"
+              style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+            <input type="hidden" name="file" id="save-file-hidden">
+            <input type="text" name="name" id="save-name"
+                   placeholder="Nom de la bank…"
+                   style="font-family:var(--mono);font-size:12px;background:var(--bg-alt);
+                          border:1px solid var(--border);color:var(--text);
+                          padding:6px 10px;border-radius:var(--radius);flex:1;max-width:240px;">
+            <button type="button" onclick="saveBank()" class="btn btn-ghost btn-sm">
+                ↓ Sauvegarder dans la librairie
+            </button>
+        </form>
+    </div>
+</div>
+
+{# ── LIBRAIRIE ── #}
+<div class="card">
+    <div class="card-title">⎍ Librairie
+        <span style="font-size:10px;font-weight:400;color:var(--text-muted);margin-left:8px;">
+            {{ banks|length }} bank{{ 's' if banks|length != 1 else '' }}
+        </span>
+    </div>
+
+    {% if not banks %}
+    <div style="font-family:var(--mono);font-size:12px;color:var(--text-muted);margin-top:12px;">
+        Aucune bank sauvegardée. Charge un .syx ci-dessus et clique « Sauvegarder ».
+    </div>
+    {% else %}
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">
+        {% for bank in banks %}
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+                    background:var(--bg-alt);border:1px solid var(--border);
+                    border-radius:var(--radius);flex-wrap:wrap;">
+            <div style="flex:1;min-width:160px;">
+                <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text);">
+                    {{ bank.name }}
+                </div>
+                <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:2px;">
+                    {{ bank.format }} · {{ bank.size }} bytes · {{ bank.created_at[:10] }}
+                </div>
+            </div>
+            <button type="button"
+                    onclick="loadFromLibrary({{ bank.id }}, '{{ bank.name|replace("'","\\'")|e }}')"
+                    class="btn btn-ghost btn-sm">↑ Charger</button>
+            <a href="{{ url_for('sysex.sysex_download', bid=bank.id) }}"
+               class="btn btn-ghost btn-sm">⎙ .syx</a>
+            <form method="POST" action="{{ url_for('sysex.sysex_delete', bid=bank.id) }}"
+                  onsubmit="return confirm('Supprimer « {{ bank.name }} » ?')">
+                <button type="submit" class="btn btn-ghost btn-sm"
+                        style="color:var(--text-muted);">✕</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+{# ── TOAST ── #}
+<div id="toast" style="display:none;position:fixed;bottom:24px;right:24px;z-index:9999;
+     font-family:var(--mono);font-size:12px;padding:10px 18px;border-radius:var(--radius);
+     border:1px solid var(--accent);background:var(--surface);color:var(--text);
+     box-shadow:0 4px 16px rgba(0,0,0,.4);"></div>
+
+<script>
+// ── État global ──────────────────────────────────────────────────────────────
+let midiAccess  = null;
+let loadedBytes = null;   // Uint8Array du fichier chargé
+let loadedFile  = null;   // File object
+let sendingFromLib = null; // {id, name} si on envoie depuis la librairie
+
+// ── Web MIDI ─────────────────────────────────────────────────────────────────
+async function initMIDI() {
+    if (!navigator.requestMIDIAccess) {
+        document.getElementById("midi-unsupported").style.display = "";
+        document.getElementById("midi-panel").style.display = "none";
+        return;
+    }
+    setMidiStatus("Demande d'accès…", "var(--text-muted)");
+    try {
+        midiAccess = await navigator.requestMIDIAccess({ sysex: true });
+        populateOutputs();
+        midiAccess.onstatechange = populateOutputs;
+        setMidiStatus("✓ MIDI initialisé — " + midiAccess.outputs.size + " sortie(s)", "var(--accent)");
+        log("Web MIDI prêt · " + midiAccess.outputs.size + " sortie(s) détectée(s)");
+    } catch(e) {
+        setMidiStatus("✗ Accès MIDI refusé : " + e.message, "#D4380D");
+        log("Erreur : " + e.message);
+    }
+}
+
+function populateOutputs() {
+    const sel = document.getElementById("midi-output-select");
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">— Sélectionner une sortie MIDI —</option>';
+    if (!midiAccess) return;
+    midiAccess.outputs.forEach((output, id) => {
+        const opt = document.createElement("option");
+        opt.value = id;
+        opt.textContent = output.name;
+        sel.appendChild(opt);
+    });
+    if (prev) sel.value = prev;
+    sel.onchange = onOutputChange;
+    onOutputChange();
+}
+
+function onOutputChange() {
+    const hasOutput = !!document.getElementById("midi-output-select").value;
+    document.getElementById("btn-test").disabled = !hasOutput;
+    updateSendButton();
+}
+
+function getSelectedOutput() {
+    if (!midiAccess) return null;
+    const id = document.getElementById("midi-output-select").value;
+    return id ? midiAccess.outputs.get(id) : null;
+}
+
+function testConnection() {
+    const output = getSelectedOutput();
+    if (!output) return;
+    const ch = (parseInt(document.getElementById("midi-channel").value) - 1) & 0x0F;
+    // Note on + note off C4
+    output.send([0x90 | ch, 60, 100]);
+    setTimeout(() => output.send([0x80 | ch, 60, 0]), 300);
+    setMidiStatus("♪ Note envoyée sur ch." + (ch + 1) + " — écoute le Volca", "var(--accent)");
+    log("Test : note C4 → " + output.name);
+}
+
+function setMidiStatus(msg, color) {
+    const el = document.getElementById("midi-status");
+    el.textContent = msg;
+    el.style.color = color || "var(--text-muted)";
+}
+
+function log(msg) {
+    document.getElementById("midi-log").textContent = "› " + msg;
+}
+
+// ── Fichier SysEx ────────────────────────────────────────────────────────────
+function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById("drop-zone").style.borderColor = "var(--border-strong)";
+    const file = e.dataTransfer.files[0];
+    if (file) loadFile(file);
+}
+
+function loadFile(file) {
+    if (!file) return;
+    loadedFile = file;
+    sendingFromLib = null;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        loadedBytes = new Uint8Array(e.target.result);
+        displayFileInfo(file.name, loadedBytes);
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function displayFileInfo(name, bytes) {
+    document.getElementById("file-info").style.display = "";
+    document.getElementById("file-name").textContent = name;
+    document.getElementById("file-size").textContent = bytes.length + " bytes";
+
+    let fmt = "raw SysEx";
+    let patches = null;
+    if (bytes.length === 4104 && bytes[0] === 0xF0 && bytes[1] === 0x43 && bytes[3] === 0x09) {
+        fmt = "DX7 · 32-voice bulk";
+        patches = parseDX7Bulk(bytes);
+    } else if (bytes.length === 163 && bytes[0] === 0xF0 && bytes[1] === 0x43) {
+        fmt = "DX7 · single voice";
+        patches = parseDX7Single(bytes);
+    } else if (bytes[0] === 0xF0) {
+        fmt = "SysEx générique (" + bytes.length + " bytes)";
+    }
+    document.getElementById("file-format").textContent = fmt;
+
+    const listWrap = document.getElementById("patch-list-wrap");
+    const listEl   = document.getElementById("patch-list");
+    listEl.innerHTML = "";
+    if (patches && patches.length) {
+        listWrap.style.display = "";
+        patches.forEach((p, i) => {
+            const div = document.createElement("div");
+            div.style.cssText = "font-family:var(--mono);font-size:11px;padding:4px 8px;" +
+                "background:var(--bg);border:1px solid var(--border);border-radius:2px;" +
+                "color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+            div.title = p;
+            div.textContent = (i + 1).toString().padStart(2, "0") + "  " + (p || "—");
+            listEl.appendChild(div);
+        });
+    } else {
+        listWrap.style.display = "none";
+    }
+
+    // Pré-remplir le nom de save
+    document.getElementById("save-name").value = name.replace(/\.[^.]+$/, "");
+    updateSendButton();
+    log("Fichier chargé : " + name + " · " + fmt);
+}
+
+// ── Parsers DX7 ──────────────────────────────────────────────────────────────
+function parseDX7Bulk(bytes) {
+    // Header 6 bytes : F0 43 0n 09 20 00
+    // 32 voix × 128 bytes, nom aux bytes 118-127 de chaque voix
+    const names = [];
+    const dataStart = 6;
+    for (let i = 0; i < 32; i++) {
+        const offset = dataStart + i * 128 + 118;
+        let name = "";
+        for (let j = 0; j < 10; j++) {
+            const c = bytes[offset + j] & 0x7F;
+            name += (c >= 32 && c < 127) ? String.fromCharCode(c) : " ";
+        }
+        names.push(name.trimEnd());
+    }
+    return names;
+}
+
+function parseDX7Single(bytes) {
+    // Header 6 bytes : F0 43 0n 00 01 1B
+    // Nom aux bytes 6+145 = 151, 10 chars
+    let name = "";
+    for (let j = 0; j < 10; j++) {
+        const c = bytes[151 + j] & 0x7F;
+        name += (c >= 32 && c < 127) ? String.fromCharCode(c) : " ";
+    }
+    return [name.trimEnd()];
+}
+
+// ── Envoi SysEx ──────────────────────────────────────────────────────────────
+function updateSendButton() {
+    const hasOutput = !!document.getElementById("midi-output-select").value;
+    const hasData   = !!(loadedBytes || sendingFromLib);
+    document.getElementById("btn-send").disabled = !(hasOutput && hasData && midiAccess);
+}
+
+async function sendSysEx() {
+    const output = getSelectedOutput();
+    if (!output) { toast("⚠ Aucune sortie MIDI sélectionnée", true); return; }
+
+    let bytes = loadedBytes;
+
+    // Si on envoie depuis la librairie, charger depuis le serveur
+    if (!bytes && sendingFromLib) {
+        setMidiStatus("Chargement…", "var(--text-muted)");
+        try {
+            const resp = await fetch("/sysex/" + sendingFromLib.id + "/data");
+            const json = await resp.json();
+            bytes = new Uint8Array(json.data);
+            loadedBytes = bytes;
+        } catch(e) {
+            toast("✗ Erreur chargement : " + e.message, true);
+            return;
+        }
+    }
+
+    if (!bytes || !bytes.length) { toast("⚠ Aucun fichier chargé", true); return; }
+
+    // Réécrire le byte de canal MIDI dans le header SysEx si DX7
+    const ch = (parseInt(document.getElementById("midi-channel").value) - 1) & 0x0F;
+    if (bytes[0] === 0xF0 && bytes[1] === 0x43) {
+        bytes = new Uint8Array(bytes); // copie mutable
+        bytes[2] = (bytes[2] & 0xF0) | ch;
+    }
+
+    const btn = document.getElementById("btn-send");
+    const prog = document.getElementById("send-progress");
+    const bar  = document.getElementById("send-bar");
+    const label = document.getElementById("send-label");
+
+    btn.disabled = true;
+    prog.style.display = "flex";
+    bar.style.width = "0%";
+    label.textContent = "Envoi…";
+    log("Envoi → " + output.name + " (canal " + (ch + 1) + ", " + bytes.length + " bytes)");
+
+    // Envoi
+    try {
+        output.send(bytes);
+    } catch(e) {
+        toast("✗ Erreur MIDI : " + e.message, true);
+        btn.disabled = false;
+        prog.style.display = "none";
+        return;
+    }
+
+    // Animation
+    let p = 0;
+    const interval = setInterval(() => {
+        p = Math.min(p + 15, 100);
+        bar.style.width = p + "%";
+        if (p >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+                prog.style.display = "none";
+                btn.disabled = false;
+                bar.style.width = "0%";
+            }, 800);
+            label.textContent = "✓ Envoyé";
+            const name = sendingFromLib ? sendingFromLib.name :
+                         (loadedFile ? loadedFile.name : "SysEx");
+            setMidiStatus("✓ " + name + " envoyé vers " + output.name, "var(--accent)");
+            toast("✓ SysEx envoyé vers " + output.name);
+            log("✓ Envoi terminé — " + bytes.length + " bytes");
+        }
+    }, 60);
+}
+
+// ── Librairie ─────────────────────────────────────────────────────────────────
+async function loadFromLibrary(id, name) {
+    sendingFromLib = { id, name };
+    loadedBytes = null;
+    loadedFile  = null;
+    setMidiStatus("Bank « " + name + " » prête à envoyer", "var(--accent)");
+    log("Bank chargée depuis la librairie : " + name);
+
+    // Charger les bytes pour afficher les patches
+    try {
+        const resp = await fetch("/sysex/" + id + "/data");
+        const json = await resp.json();
+        const bytes = new Uint8Array(json.data);
+        loadedBytes = bytes;
+        displayFileInfo(name + ".syx", bytes);
+    } catch(e) {
+        log("Impossible de prévisualiser : " + e.message);
+        // affichage minimal
+        document.getElementById("file-info").style.display = "";
+        document.getElementById("file-name").textContent = name;
+        document.getElementById("file-format").textContent = json ? json.format : "?";
+        document.getElementById("file-size").textContent = "?";
+        document.getElementById("patch-list-wrap").style.display = "none";
+    }
+    updateSendButton();
+}
+
+async function saveBank() {
+    if (!loadedFile && !loadedBytes) { toast("⚠ Aucun fichier chargé", true); return; }
+    const name = document.getElementById("save-name").value.trim() || "bank";
+
+    let blob;
+    if (loadedFile) {
+        blob = loadedFile;
+    } else {
+        blob = new Blob([loadedBytes], { type: "application/octet-stream" });
+    }
+
+    const fd = new FormData();
+    fd.append("file", blob, name + ".syx");
+    fd.append("name", name);
+    const resp = await fetch("{{ url_for('sysex.sysex_save') }}", { method: "POST", body: fd });
+    if (resp.ok || resp.redirected) {
+        toast("✓ Bank « " + name + " » sauvegardée");
+        setTimeout(() => location.reload(), 900);
+    } else {
+        toast("✗ Erreur sauvegarde", true);
+    }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, isError) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.style.borderColor = isError ? "#D4380D" : "var(--accent)";
+    el.style.display = "";
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.style.display = "none", 3000);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+    if (!navigator.requestMIDIAccess) {
+        document.getElementById("midi-unsupported").style.display = "";
+    }
+    // Auto-init MIDI si déjà accordé (pas de prompt la 2ème fois)
+    if (navigator.requestMIDIAccess) initMIDI();
+});
+</script>
+
+{% endblock %}
