@@ -47,12 +47,14 @@ def patcher_view(layout_id):
     layout, nodes, connections = engine.get_layout(layout_id)
     if not layout:
         return redirect(url_for("patcher.patcher_list"))
+    all_types = engine.get_all_catalogue_types()
     return render_template("patcher_view.html",
                            layout=layout,
                            nodes=nodes,
                            connections=connections,
                            node_colors=NODE_COLORS,
                            signal_colors=SIGNAL_COLORS,
+                           all_catalogue_types=all_types,
                            catalogue_groups=engine.get_catalogue_items(),
                            version=_version(),
                            oblique=engine.rand_oblique())

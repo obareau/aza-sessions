@@ -251,6 +251,15 @@ class PatcherEngine:
 
     # ── CATALOGUE (pour le panneau picker) ──────────────────────────────────
 
+    def get_all_catalogue_types(self):
+        """Retourne tous les types distincts présents dans la table catalogue."""
+        conn = self._db()
+        rows = conn.execute(
+            "SELECT DISTINCT type FROM catalogue WHERE active=1 ORDER BY type"
+        ).fetchall()
+        conn.close()
+        return [r["type"] for r in rows]
+
     def get_catalogue_items(self):
         """Retourne tous les items actifs du catalogue, groupés par type."""
         conn = self._db()

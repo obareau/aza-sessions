@@ -17,15 +17,15 @@ class CatalogueEngine:
         return get_db(self.db_path)
 
     def list_grouped(self):
+        """Retourne tous les items groupés par type — types libres inclus."""
         conn = self._get_db()
         items = conn.execute(
             "SELECT * FROM catalogue ORDER BY type, manufacturer, name"
         ).fetchall()
         conn.close()
-        grouped = {k: [] for k in ITEM_TYPES}
+        grouped = {}
         for item in items:
-            if item["type"] in grouped:
-                grouped[item["type"]].append(dict(item))
+            grouped.setdefault(item["type"], []).append(dict(item))
         return grouped
 
     def list_active_grouped(self):
@@ -34,11 +34,19 @@ class CatalogueEngine:
             "SELECT * FROM catalogue WHERE active=1 ORDER BY type, manufacturer, name"
         ).fetchall()
         conn.close()
-        result = {k: [] for k in ITEM_TYPES}
+        result = {}
         for item in items:
-            if item["type"] in result:
-                result[item["type"]].append(dict(item))
+            result.setdefault(item["type"], []).append(dict(item))
         return result
+
+    def get_all_types(self):
+        """Retourne tous les types distincts présents dans la DB (pour datalist)."""
+        conn = self._get_db()
+        rows = conn.execute(
+            "SELECT DISTINCT type FROM catalogue ORDER BY type"
+        ).fetchall()
+        conn.close()
+        return [r["type"] for r in rows]
 
     def add(self, typ, name, manufacturer="", notes=""):
         conn = self._get_db()

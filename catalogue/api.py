@@ -19,7 +19,7 @@ def manage_catalogue():
         notes        = request.form.get("notes", "").strip()
         item_id      = request.form.get("id")
         if action == "add":
-            typ = request.form.get("type")
+            typ = request.form.get("type", "").strip().lower().replace(" ","_")
             if typ and name:
                 engine.add(typ, name, manufacturer, notes)
         elif action == "delete":
@@ -31,9 +31,11 @@ def manage_catalogue():
         return redirect(url_for("catalogue.manage_catalogue"))
 
     db_path = current_app.config["DB_PATH"]
+    all_types = engine.get_all_types()
     return render_template("catalogue.html",
                            grouped=engine.list_grouped(),
                            item_types=ITEM_TYPES,
+                           all_types=all_types,
                            version=current_app.config.get("VERSION", ""),
                            oblique=rand_oblique(db_path))
 
@@ -45,7 +47,7 @@ def api_catalogue_add():
     typ          = data.get("type", "").strip()
     name         = data.get("name", "").strip()
     manufacturer = data.get("manufacturer", "").strip()
-    if not typ or not name or typ not in ITEM_TYPES:
+    if not typ or not name:
         return jsonify({"error": "type et nom requis"}), 400
     row = _engine().add_inline(typ, name, manufacturer)
     if row is None:
