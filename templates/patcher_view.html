@@ -1,0 +1,499 @@
+{% extends "base.html" %}
+{% block title %}{{ layout.name }} — Patcher AZA{% endblock %}
+
+{% block content %}
+<div style="display:flex;flex-direction:column;height:calc(100vh - 56px);">
+
+  {# ── TOOLBAR ── #}
+  <div id="patcher-toolbar" style="
+    background:var(--surface);border-bottom:1px solid var(--border);
+    padding:8px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;">
+
+    {# Nom éditable #}
+    <span id="layout-name" onclick="startRename()" title="Cliquer pour renommer"
+          style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--accent);cursor:pointer;padding:4px 8px;border:1px solid transparent;min-width:120px;">
+      ⬡ {{ layout.name }}
+    </span>
+    {% if layout.session_date %}
+    <span style="font-size:11px;color:var(--muted);font-family:var(--mono);">
+      → Session {{ layout.session_date }}{% if layout.session_title %} — {{ layout.session_title }}{% endif %}
+    </span>
+    {% endif %}
+
+    <div style="flex:1;"></div>
+
+    {# Outils #}
+    <button type="button" id="btn-add-node" onclick="startAddNode()" class="btn btn-ghost btn-sm" title="Ajouter un nœud libre">＋ Nœud</button>
+
+    <div style="display:flex;gap:4px;align-items:center;">
+      <span style="font-family:var(--mono);font-size:11px;color:var(--muted);">Signal :</span>
+      {% for sig, col in signal_colors.items() %}
+      <button type="button" class="sig-btn" data-sig="{{ sig }}" onclick="setSig('{{ sig }}')"
+              style="padding:3px 8px;font-family:var(--mono);font-size:11px;border:2px solid {{ col }};background:transparent;color:{{ col }};cursor:pointer;border-radius:2px;">
+        {{ sig }}
+      </button>
+      {% endfor %}
+    </div>
+
+    <button type="button" onclick="toggleConnectMode()" id="btn-connect"
+            class="btn btn-ghost btn-sm" title="Mode connexion (C)">⇝ Relier</button>
+    <button type="button" onclick="deleteSelected()" class="btn btn-ghost btn-sm" title="Supprimer sélection (Del)">✕ Suppr</button>
+
+    <div style="width:1px;height:24px;background:var(--border);"></div>
+
+    <button type="button" onclick="importFromCatalogue()" class="btn btn-ghost btn-sm">↓ Catalogue</button>
+    <button type="button" id="btn-save" onclick="saveLayout()" class="btn btn-primary btn-sm">💾 Save</button>
+
+    <a href="{{ url_for('patcher.patcher_list') }}" class="btn btn-ghost btn-sm">← Liste</a>
+  </div>
+
+  {# ── LÉGENDE ── #}
+  <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:4px 16px;display:flex;gap:16px;flex-shrink:0;flex-wrap:wrap;">
+    {% for ntype, col in node_colors.items() %}
+    <span style="font-family:var(--mono);font-size:10px;color:{{ col }};">● {{ ntype }}</span>
+    {% endfor %}
+    <span style="margin-left:8px;font-family:var(--mono);font-size:10px;color:var(--muted);">|</span>
+    {% for sig, col in signal_colors.items() %}
+    <span style="font-family:var(--mono);font-size:10px;color:{{ col }};">━ {{ sig }}</span>
+    {% endfor %}
+    <span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--muted);">
+      Clic = sélect · Drag = déplacer · Mode relier → clic nœud A puis B · Double-clic = éditer label · Del = supprimer
+    </span>
+  </div>
+
+  {# ── CANVAS SVG ── #}
+  <div style="flex:1;overflow:hidden;position:relative;background:var(--bg);">
+    <svg id="patcher-svg" width="100%" height="100%"
+         style="display:block;cursor:default;"
+         onmousedown="svgMouseDown(event)"
+         onmousemove="svgMouseMove(event)"
+         onmouseup="svgMouseUp(event)">
+      <defs>
+        {% for sig, col in signal_colors.items() %}
+        <marker id="arrow-{{ sig }}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="{{ col }}" />
+        </marker>
+        {% endfor %}
+        <marker id="arrow-preview" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#888" />
+        </marker>
+      </defs>
+
+      {# Groupe connexions (en dessous des nœuds) #}
+      <g id="g-connections"></g>
+
+      {# Ligne de preview connexion #}
+      <line id="conn-preview" x1="0" y1="0" x2="0" y2="0"
+            stroke="#888" stroke-width="1.5" stroke-dasharray="6,3"
+            marker-end="url(#arrow-preview)" style="display:none;" />
+
+      {# Groupe nœuds #}
+      <g id="g-nodes"></g>
+    </svg>
+
+    {# Tooltip label éditeur #}
+    <div id="label-editor" style="display:none;position:absolute;background:var(--surface);
+         border:1px solid var(--accent);padding:8px 10px;z-index:100;min-width:160px;">
+      <input id="label-input" type="text" placeholder="Label…"
+             style="background:var(--bg);border:1px solid var(--border);color:var(--text);
+                    padding:4px 8px;font-family:var(--mono);font-size:12px;width:100%;display:block;">
+      <div style="display:flex;gap:6px;margin-top:6px;">
+        <button type="button" onclick="confirmLabel()" class="btn btn-primary btn-sm" style="flex:1;">✓</button>
+        <button type="button" onclick="cancelLabel()" class="btn btn-ghost btn-sm">✕</button>
+      </div>
+    </div>
+
+    {# Toast autosave #}
+    <div id="save-toast" style="display:none;position:absolute;bottom:16px;right:16px;
+         background:var(--surface);border:1px solid var(--accent);padding:6px 14px;
+         font-family:var(--mono);font-size:12px;color:var(--accent);">
+      Sauvegardé ✓
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const SAVE_URL    = "{{ url_for('patcher.patcher_save', layout_id=layout.id) }}";
+const RENAME_URL  = "{{ url_for('patcher.patcher_rename', layout_id=layout.id) }}";
+const IMPORT_URL  = "{{ url_for('patcher.patcher_import', layout_id=layout.id) }}";
+const NODE_COLORS = {{ node_colors | tojson }};
+const SIG_COLORS  = {{ signal_colors | tojson }};
+
+let nodes = {{ nodes | tojson }};
+let connections = {{ connections | tojson }};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let selected   = null;   // {type:'node'|'conn', id}
+let dragging   = null;   // {id, ox, oy, sx, sy}
+let connecting = false;
+let connFrom   = null;
+let currentSig = "audio";
+let editTarget = null;   // {type, id}
+let svgPan     = {x:0, y:0, dragging:false, sx:0, sy:0};
+let nodeIdCounter = Math.max(0, ...nodes.map(n=>n.id||0)) + 1;
+let autoSaveTimer = null;
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+const svg     = document.getElementById("patcher-svg");
+const gNodes  = document.getElementById("g-nodes");
+const gConns  = document.getElementById("g-connections");
+const preview = document.getElementById("conn-preview");
+
+function init() {
+  gNodes.innerHTML  = "";
+  gConns.innerHTML  = "";
+  nodes.forEach(n => renderNode(n));
+  connections.forEach(c => renderConn(c));
+}
+init();
+
+// ── RENDER NODE ───────────────────────────────────────────────────────────────
+function renderNode(n) {
+  const old = document.getElementById("node-" + n.id);
+  if (old) old.remove();
+
+  const g = document.createElementNS("http://www.w3.org/2000/svg","g");
+  g.setAttribute("id","node-"+n.id);
+  g.setAttribute("transform",`translate(${n.x},${n.y})`);
+  g.style.cursor = "grab";
+
+  const W = Math.max(100, n.label.length * 8 + 24);
+  const H = 38;
+
+  const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
+  rect.setAttribute("width", W); rect.setAttribute("height", H);
+  rect.setAttribute("rx","3");
+  rect.setAttribute("fill","var(--surface)");
+  rect.setAttribute("stroke", n.color || "#3A3A3A");
+  rect.setAttribute("stroke-width", selected && selected.type==="node" && selected.id===n.id ? "2.5" : "1.5");
+
+  const txt = document.createElementNS("http://www.w3.org/2000/svg","text");
+  txt.setAttribute("x", W/2); txt.setAttribute("y", 15);
+  txt.setAttribute("text-anchor","middle");
+  txt.setAttribute("dominant-baseline","middle");
+  txt.setAttribute("fill", n.color || "#aaa");
+  txt.setAttribute("font-family","'IBM Plex Mono',monospace");
+  txt.setAttribute("font-size","11");
+  txt.textContent = n.label;
+
+  const type_txt = document.createElementNS("http://www.w3.org/2000/svg","text");
+  type_txt.setAttribute("x", W/2); type_txt.setAttribute("y", H - 9);
+  type_txt.setAttribute("text-anchor","middle");
+  type_txt.setAttribute("dominant-baseline","middle");
+  type_txt.setAttribute("fill","#555");
+  type_txt.setAttribute("font-family","'IBM Plex Mono',monospace");
+  type_txt.setAttribute("font-size","9");
+  type_txt.textContent = n.node_type || "";
+
+  g.appendChild(rect); g.appendChild(txt); g.appendChild(type_txt);
+  g.addEventListener("mousedown", e => nodeMouseDown(e, n.id));
+  g.addEventListener("dblclick",  e => { e.stopPropagation(); openLabelEditor(e, "node", n.id, n.label); });
+  gNodes.appendChild(g);
+}
+
+// ── RENDER CONN ───────────────────────────────────────────────────────────────
+function nodeCenter(n) {
+  const W = Math.max(100, n.label.length * 8 + 24);
+  return { x: n.x + W/2, y: n.y + 19 };
+}
+
+function renderConn(c) {
+  const old = document.getElementById("conn-"+c.id);
+  if (old) old.remove();
+
+  const fn = nodes.find(n=>n.id===c.from_id);
+  const tn = nodes.find(n=>n.id===c.to_id);
+  if (!fn || !tn) return;
+
+  const fc = nodeCenter(fn), tc = nodeCenter(tn);
+  const col = SIG_COLORS[c.signal_type] || "#888";
+  const isSelected = selected && selected.type==="conn" && selected.id===c.id;
+
+  const g = document.createElementNS("http://www.w3.org/2000/svg","g");
+  g.setAttribute("id","conn-"+c.id);
+
+  // Courbe de Bézier
+  const dx = (tc.x - fc.x) * 0.5;
+  const path = document.createElementNS("http://www.w3.org/2000/svg","path");
+  const d = `M ${fc.x} ${fc.y} C ${fc.x+dx} ${fc.y}, ${tc.x-dx} ${tc.y}, ${tc.x} ${tc.y}`;
+  path.setAttribute("d", d);
+  path.setAttribute("stroke", col);
+  path.setAttribute("stroke-width", isSelected ? "3" : "1.5");
+  path.setAttribute("fill","none");
+  path.setAttribute("marker-end",`url(#arrow-${c.signal_type})`);
+  if (isSelected) path.setAttribute("stroke-dasharray","");
+  g.appendChild(path);
+
+  // Label connexion
+  if (c.label) {
+    const mx = (fc.x + tc.x) / 2, my = (fc.y + tc.y) / 2 - 10;
+    const lbg = document.createElementNS("http://www.w3.org/2000/svg","rect");
+    lbg.setAttribute("x", mx - c.label.length*4); lbg.setAttribute("y", my-8);
+    lbg.setAttribute("width", c.label.length*8+8); lbg.setAttribute("height",14);
+    lbg.setAttribute("fill","var(--bg)"); lbg.setAttribute("rx","2");
+    const lt = document.createElementNS("http://www.w3.org/2000/svg","text");
+    lt.setAttribute("x", mx); lt.setAttribute("y", my);
+    lt.setAttribute("text-anchor","middle"); lt.setAttribute("dominant-baseline","middle");
+    lt.setAttribute("fill", col); lt.setAttribute("font-size","9");
+    lt.setAttribute("font-family","'IBM Plex Mono',monospace");
+    lt.textContent = c.label;
+    g.appendChild(lbg); g.appendChild(lt);
+  }
+
+  // Zone de clic (invisible, épaisse)
+  const hit = document.createElementNS("http://www.w3.org/2000/svg","path");
+  hit.setAttribute("d", d);
+  hit.setAttribute("stroke","transparent");
+  hit.setAttribute("stroke-width","12");
+  hit.setAttribute("fill","none");
+  hit.style.cursor = "pointer";
+  hit.addEventListener("mousedown", e => { e.stopPropagation(); selectConn(c.id); });
+  hit.addEventListener("dblclick",  e => { e.stopPropagation(); openLabelEditor(e, "conn", c.id, c.label); });
+  g.appendChild(hit);
+
+  gConns.appendChild(g);
+}
+
+// ── SELECTION ─────────────────────────────────────────────────────────────────
+function selectNode(id) {
+  selected = {type:"node", id};
+  rerender();
+}
+function selectConn(id) {
+  selected = {type:"conn", id};
+  rerender();
+}
+function clearSelection() {
+  selected = null;
+  rerender();
+}
+function rerender() {
+  nodes.forEach(n => renderNode(n));
+  connections.forEach(c => renderConn(c));
+}
+
+// ── DRAG NODE ─────────────────────────────────────────────────────────────────
+function nodeMouseDown(e, id) {
+  e.stopPropagation();
+  if (connecting) { handleConnectClick(id); return; }
+  selectNode(id);
+  const n = nodes.find(x=>x.id===id);
+  const pt = svgPoint(e);
+  dragging = { id, ox: n.x - pt.x, oy: n.y - pt.y };
+}
+
+function svgMouseDown(e) {
+  if (e.target === svg || e.target.tagName === "svg") {
+    clearSelection();
+    if (!connecting) {
+      svgPan.dragging = true;
+      svgPan.sx = e.clientX - svgPan.x;
+      svgPan.sy = e.clientY - svgPan.y;
+    }
+  }
+}
+
+function svgMouseMove(e) {
+  if (dragging) {
+    const pt = svgPoint(e);
+    const n = nodes.find(x=>x.id===dragging.id);
+    n.x = pt.x + dragging.ox;
+    n.y = pt.y + dragging.oy;
+    renderNode(n);
+    connections.filter(c=>c.from_id===n.id||c.to_id===n.id).forEach(c=>renderConn(c));
+    scheduleAutoSave();
+    return;
+  }
+  if (connecting && connFrom !== null) {
+    const pt = svgPoint(e);
+    const fn = nodes.find(n=>n.id===connFrom);
+    if (fn) {
+      const fc = nodeCenter(fn);
+      preview.setAttribute("x1",fc.x); preview.setAttribute("y1",fc.y);
+      preview.setAttribute("x2",pt.x); preview.setAttribute("y2",pt.y);
+      preview.style.display = "";
+    }
+  }
+}
+
+function svgMouseUp(e) {
+  dragging = null;
+  svgPan.dragging = false;
+}
+
+// ── CONNECT MODE ─────────────────────────────────────────────────────────────
+function toggleConnectMode() {
+  connecting = !connecting;
+  connFrom = null;
+  preview.style.display = "none";
+  document.getElementById("btn-connect").style.background = connecting ? "var(--accent)" : "";
+  document.getElementById("btn-connect").style.color = connecting ? "var(--bg)" : "";
+  svg.style.cursor = connecting ? "crosshair" : "default";
+}
+
+function handleConnectClick(id) {
+  if (connFrom === null) {
+    connFrom = id;
+  } else {
+    if (connFrom !== id) {
+      const c = {
+        id: Date.now(),
+        layout_id: {{ layout.id }},
+        from_id: connFrom,
+        to_id: id,
+        label: "",
+        signal_type: currentSig,
+      };
+      connections.push(c);
+      renderConn(c);
+      scheduleAutoSave();
+    }
+    connFrom = null;
+    preview.style.display = "none";
+  }
+}
+
+// ── SIGNAL TYPE ───────────────────────────────────────────────────────────────
+function setSig(s) {
+  currentSig = s;
+  document.querySelectorAll(".sig-btn").forEach(b => {
+    b.style.fontWeight = b.dataset.sig === s ? "700" : "400";
+    b.style.background = b.dataset.sig === s ? SIG_COLORS[s] + "33" : "transparent";
+  });
+}
+setSig("audio");
+
+// ── ADD NODE ──────────────────────────────────────────────────────────────────
+function startAddNode() {
+  const label = prompt("Nom du nœud :");
+  if (!label || !label.trim()) return;
+  const n = {
+    id: nodeIdCounter++,
+    layout_id: {{ layout.id }},
+    label: label.trim(),
+    x: 200 + Math.random()*300,
+    y: 100 + Math.random()*200,
+    node_type: "free",
+    color: NODE_COLORS["free"],
+    catalogue_id: null,
+  };
+  nodes.push(n);
+  renderNode(n);
+  scheduleAutoSave();
+}
+
+// ── DELETE SELECTED ───────────────────────────────────────────────────────────
+function deleteSelected() {
+  if (!selected) return;
+  if (selected.type === "node") {
+    nodes = nodes.filter(n=>n.id!==selected.id);
+    connections = connections.filter(c=>c.from_id!==selected.id && c.to_id!==selected.id);
+  } else {
+    connections = connections.filter(c=>c.id!==selected.id);
+  }
+  selected = null;
+  rerender();
+  scheduleAutoSave();
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Delete" || e.key === "Backspace") {
+    if (document.activeElement.tagName !== "INPUT") deleteSelected();
+  }
+  if (e.key === "c" || e.key === "C") toggleConnectMode();
+});
+
+// ── LABEL EDITOR ─────────────────────────────────────────────────────────────
+function openLabelEditor(e, type, id, current) {
+  editTarget = {type, id};
+  const ed = document.getElementById("label-editor");
+  const input = document.getElementById("label-input");
+  input.value = current || "";
+  ed.style.left = (e.clientX - svg.getBoundingClientRect().left + 8) + "px";
+  ed.style.top  = (e.clientY - svg.getBoundingClientRect().top  - 20) + "px";
+  ed.style.display = "block";
+  input.focus(); input.select();
+}
+
+document.getElementById("label-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") confirmLabel();
+  if (e.key === "Escape") cancelLabel();
+});
+
+function confirmLabel() {
+  if (!editTarget) { cancelLabel(); return; }
+  const val = document.getElementById("label-input").value.trim();
+  if (editTarget.type === "node") {
+    const n = nodes.find(x=>x.id===editTarget.id);
+    if (n) { n.label = val; renderNode(n); connections.filter(c=>c.from_id===n.id||c.to_id===n.id).forEach(c=>renderConn(c)); }
+  } else {
+    const c = connections.find(x=>x.id===editTarget.id);
+    if (c) { c.label = val; renderConn(c); }
+  }
+  cancelLabel();
+  scheduleAutoSave();
+}
+
+function cancelLabel() {
+  editTarget = null;
+  document.getElementById("label-editor").style.display = "none";
+}
+
+// ── IMPORT CATALOGUE ─────────────────────────────────────────────────────────
+function importFromCatalogue() {
+  if (!confirm("Importer tout le catalogue actif comme nœuds ?")) return;
+  fetch(IMPORT_URL, {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({mode:"catalogue"})})
+  .then(r=>r.json()).then(data => {
+    nodes = data.nodes; connections = data.connections; init();
+  });
+}
+
+// ── RENAME ────────────────────────────────────────────────────────────────────
+function startRename() {
+  const el = document.getElementById("layout-name");
+  const current = el.textContent.replace("⬡ ","").trim();
+  const name = prompt("Renommer :", current);
+  if (name && name.trim()) {
+    el.textContent = "⬡ " + name.trim();
+    fetch(RENAME_URL, {method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({name: name.trim()})});
+  }
+}
+
+// ── SAVE ─────────────────────────────────────────────────────────────────────
+function saveLayout() {
+  const btn = document.getElementById("btn-save");
+  btn.textContent = "…";
+  fetch(SAVE_URL, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({nodes, connections}),
+  })
+  .then(r => r.json())
+  .then(() => {
+    btn.textContent = "💾 Save";
+    showToast();
+  });
+}
+
+function scheduleAutoSave() {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(saveLayout, 1500);
+}
+
+function showToast() {
+  const t = document.getElementById("save-toast");
+  t.style.display = "block";
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>{ t.style.display="none"; }, 2000);
+}
+
+// ── SVG COORDS ───────────────────────────────────────────────────────────────
+function svgPoint(e) {
+  const rect = svg.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+</script>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Patcher — AZA{% endblock %}
+{% block content %}
+<div style="max-width:960px;margin:0 auto;padding:24px 16px;">
+
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:24px;">
+    <h1 style="font-family:var(--mono);font-size:20px;letter-spacing:2px;color:var(--accent);margin:0;">⬡ PATCHER</h1>
+    <span style="font-size:12px;color:var(--muted);">{{ layouts|length }} layout(s)</span>
+  </div>
+
+  {# ── NOUVEAU LAYOUT ── #}
+  <form method="POST" action="{{ url_for('patcher.patcher_new') }}"
+        style="background:var(--surface);border:1px solid var(--border);padding:20px;margin-bottom:32px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;">
+      <div>
+        <label style="font-family:var(--mono);font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">NOM DU PATCH</label>
+        <input name="name" placeholder="Setup live, Studio A, etc." required
+               style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;font-family:var(--mono);font-size:13px;">
+      </div>
+      <div>
+        <label style="font-family:var(--mono);font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">SESSION LIÉE (optionnel)</label>
+        <select name="session_id" id="sel-session"
+                style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;font-family:var(--mono);font-size:12px;">
+          <option value="">— aucune —</option>
+          {% for s in sessions %}
+          <option value="{{ s.id }}">{{ s.date }}{% if s.title %} · {{ s.title }}{% endif %}{% if s.machines %} · {{ s.machines[:40] }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="font-family:var(--mono);font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">IMPORTER</label>
+        <select name="import_mode"
+                style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;font-family:var(--mono);font-size:12px;">
+          <option value="none">Vide</option>
+          <option value="session">Depuis la session</option>
+          <option value="catalogue">Tout le catalogue</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:12px;text-align:right;">
+      <button type="submit" class="btn btn-primary">+ Créer le layout</button>
+    </div>
+  </form>
+
+  {# ── LISTE DES LAYOUTS ── #}
+  {% if layouts %}
+  <div style="display:grid;gap:12px;">
+    {% for l in layouts %}
+    <div style="background:var(--surface);border:1px solid var(--border);padding:16px 20px;display:flex;align-items:center;gap:16px;">
+      <div style="flex:1;min-width:0;">
+        <a href="{{ url_for('patcher.patcher_view', layout_id=l.id) }}"
+           style="font-family:var(--mono);font-size:15px;font-weight:600;color:var(--accent);text-decoration:none;">
+          ⬡ {{ l.name }}
+        </a>
+        <div style="margin-top:4px;font-size:12px;color:var(--muted);">
+          {{ l.node_count }} nœud(s) · {{ l.conn_count }} connexion(s)
+          {% if l.session_date %} · Session {{ l.session_date }}{% if l.session_title %} — {{ l.session_title }}{% endif %}{% endif %}
+          · {{ l.created_at[:10] }}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <a href="{{ url_for('patcher.patcher_view', layout_id=l.id) }}" class="btn btn-ghost btn-sm">→ Ouvrir</a>
+        <form method="POST" action="{{ url_for('patcher.patcher_delete', layout_id=l.id) }}"
+              onsubmit="return confirm('Supprimer ce layout ?')">
+          <button type="submit" class="btn btn-danger btn-sm">✕</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:60px 20px;color:var(--muted);font-family:var(--mono);font-size:13px;">
+    Aucun layout — crée ton premier patch ci-dessus.
+  </div>
+  {% endif %}
+
+  <div style="margin-top:32px;font-family:var(--mono);font-size:11px;color:var(--muted);font-style:italic;border-top:1px solid var(--border);padding-top:16px;">
+    ∴ {{ oblique }}
+  </div>
+</div>
+{% endblock %}

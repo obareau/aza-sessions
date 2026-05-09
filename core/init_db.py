@@ -256,6 +256,41 @@ def init_db(db_path):
         )
     """)
 
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS patch_layouts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL DEFAULT 'Patch',
+            session_id INTEGER,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS patch_nodes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            layout_id INTEGER NOT NULL,
+            label TEXT NOT NULL,
+            x REAL DEFAULT 100,
+            y REAL DEFAULT 100,
+            node_type TEXT DEFAULT 'free',
+            color TEXT DEFAULT '#3A3A3A',
+            catalogue_id INTEGER,
+            FOREIGN KEY (layout_id) REFERENCES patch_layouts(id)
+        )
+    """)
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS patch_connections (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            layout_id INTEGER NOT NULL,
+            from_id INTEGER NOT NULL,
+            to_id INTEGER NOT NULL,
+            label TEXT DEFAULT '',
+            signal_type TEXT DEFAULT 'audio',
+            FOREIGN KEY (layout_id) REFERENCES patch_layouts(id)
+        )
+    """)
+
     for migration in [
         "ALTER TABLE sessions ADD COLUMN recap_claude TEXT",
         "ALTER TABLE sessions ADD COLUMN project_id INTEGER",

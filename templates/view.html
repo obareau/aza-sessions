@@ -13,6 +13,7 @@
         <button type="button" class="btn btn-ghost" onclick="pushToVault()" id="vault-btn" title="Exporter vers le vault Obsidian configuré">⬡ Vault</button>
         <a href="{{ url_for('sessions.new_session') }}?from={{ session.id }}" class="btn btn-secondary" title="Créer une session avec le même setup">⎘ Copier setup</a>
         <a href="{{ url_for('sessions.edit_session', sid=session.id) }}" class="btn btn-secondary">✎ Éditer</a>
+        <a href="{{ url_for('patcher.patcher_list') }}?session={{ session.id }}" class="btn btn-ghost" title="Voir/créer le patch lié à cette session">⬡ Patcher</a>
         <form method="POST" action="{{ url_for('sessions.delete_session', sid=session.id) }}" style="display:inline;"
               onsubmit="return confirm('Supprimer définitivement cette session ? Action irréversible.')">
             <button type="submit" class="btn btn-danger">✕ Supprimer</button>

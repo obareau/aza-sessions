@@ -33,6 +33,7 @@ from wishlist     import bp as wishlist_bp;     app.register_blueprint(wishlist_
 from inspirations import bp as inspirations_bp; app.register_blueprint(inspirations_bp)
 from mirack       import bp as mirack_bp;       app.register_blueprint(mirack_bp)
 from about        import bp as about_bp;        app.register_blueprint(about_bp)
+from patcher      import bp as patcher_bp;      app.register_blueprint(patcher_bp)
 
 
 # ── CONTEXT PROCESSOR ────────────────────────────────────────────────────────

@@ -1,5 +1,7 @@
 # Base de données SQLite — ne jamais committer
 sessions.db
+backups/
+config.json
 
 # Python
 __pycache__/
