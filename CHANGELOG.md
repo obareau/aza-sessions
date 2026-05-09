@@ -5,6 +5,24 @@
 
 ---
 
+## v3.0.1-alpha — 2026-05-09 — Patcher : import/export JSON + types dynamiques
+
+### ✨ Nouveautés
+- **Export JSON** (`⬇ Export ▾ → { } JSON`) — sérialise nœuds + connexions avec `from_index`/`to_index` (portable, sans dépendance aux IDs DB)
+- **Import JSON** — formulaire dans la liste des patches ; crée un nouveau layout complet depuis un `.json` exporté
+- **Export Mermaid .md** — `graph LR` avec flèches typées et tables nœuds/connexions
+- **Export SVG** — standalone avec CSS vars résolus et polices Google Fonts embarquées
+- **Export PDF** — via `window.print()` paysage
+- **Types custom** dans le catalogue (`synth_android`, `fx_android`, etc.) — le patcher suit automatiquement (couleur par hash, icône générique `◈`)
+- **Icônes par type** et **note courte** affichées dans chaque nœud du canvas
+- **Barre de propriétés inline** — label, type, note éditables en bas de canvas sans popup
+
+### 🐛 Corrections / migrations
+- Migration `ALTER TABLE patch_nodes ADD COLUMN note TEXT DEFAULT ''`
+- Migration `ALTER TABLE patch_connections ADD COLUMN note TEXT DEFAULT ''`
+
+---
+
 ## v3.0.0-alpha — 2026-05-09 — Module Patcher + finalisation architecture
 
 ### ✨ Nouveautés

@@ -167,6 +167,54 @@ def patcher_export_mermaid(layout_id):
                              f'attachment; filename="patch-{layout_id}-{safe_name}.md"'})
 
 
+@bp.route("/patcher/import/json", methods=["POST"])
+def patcher_import_json():
+    """Import d'un patch depuis un fichier .json exporté."""
+    import json as jsonlib
+    f = request.files.get("file")
+    if not f:
+        return redirect(url_for("patcher.patcher_list"))
+    try:
+        data = jsonlib.load(f)
+    except Exception:
+        return redirect(url_for("patcher.patcher_list"))
+
+    engine = _engine()
+    name = data.get("name", "Patch importé")
+    layout_id = engine.create_layout(name)
+
+    raw_nodes = data.get("nodes", [])
+    nodes = [
+        {
+            "id": f"tmp_import_{i}",
+            "label":       n.get("label", "?"),
+            "x":           n.get("x", 100 + i * 20),
+            "y":           n.get("y", 100),
+            "node_type":   n.get("node_type", "free"),
+            "color":       n.get("color", "#3A3A3A"),
+            "note":        n.get("note", ""),
+            "catalogue_id": n.get("catalogue_id"),
+        }
+        for i, n in enumerate(raw_nodes)
+    ]
+
+    connections = []
+    for c in data.get("connections", []):
+        fi = c.get("from_index", -1)
+        ti = c.get("to_index", -1)
+        if 0 <= fi < len(nodes) and 0 <= ti < len(nodes):
+            connections.append({
+                "from_id":    nodes[fi]["id"],
+                "to_id":      nodes[ti]["id"],
+                "label":      c.get("label", ""),
+                "signal_type": c.get("signal_type", "audio"),
+                "note":       c.get("note", ""),
+            })
+
+    engine.save_layout(layout_id, nodes, connections)
+    return redirect(url_for("patcher.patcher_view", layout_id=layout_id))
+
+
 @bp.route("/patcher/<int:layout_id>/delete", methods=["POST"])
 def patcher_delete(layout_id):
     _engine().delete_layout(layout_id)

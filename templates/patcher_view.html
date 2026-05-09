@@ -61,8 +61,13 @@
           ◻ SVG
         </button>
         <button type="button" onclick="exportPDF()" class="btn btn-ghost btn-sm"
-                style="width:100%;text-align:left;border-radius:0;padding:8px 14px;">
+                style="width:100%;text-align:left;border-radius:0;
+                       border-bottom:1px solid var(--border);padding:8px 14px;">
           ▤ PDF
+        </button>
+        <button type="button" onclick="exportJSON()" class="btn btn-ghost btn-sm"
+                style="width:100%;text-align:left;border-radius:0;padding:8px 14px;">
+          { } JSON
         </button>
       </div>
     </div>
@@ -781,6 +786,47 @@ function showToast() {
   t.style.display = "block";
   clearTimeout(t._timer);
   t._timer = setTimeout(()=>{ t.style.display="none"; }, 2000);
+}
+
+// ── EXPORT JSON ───────────────────────────────────────────────────────────────
+function exportJSON() {
+  closeExportMenu();
+  const layoutName = document.getElementById("layout-name").textContent.replace("⬡ ","").trim();
+  const data = {
+    version: "1.0",
+    aza_patcher: true,
+    name: layoutName,
+    exported_at: new Date().toISOString(),
+    nodes: nodes.map(n => ({
+      label:       n.label      || "",
+      x:           Math.round(n.x),
+      y:           Math.round(n.y),
+      node_type:   n.node_type  || "free",
+      color:       n.color      || typeColor(n.node_type),
+      note:        n.note       || "",
+      catalogue_id: n.catalogue_id || null,
+    })),
+    connections: connections.map(c => {
+      const fi = nodes.findIndex(n => String(n.id) === String(c.from_id));
+      const ti = nodes.findIndex(n => String(n.id) === String(c.to_id));
+      return {
+        from_index:  fi,
+        to_index:    ti,
+        from_label:  fi >= 0 ? nodes[fi].label : "",   // lisibilité
+        to_label:    ti >= 0 ? nodes[ti].label : "",
+        label:       c.label       || "",
+        signal_type: c.signal_type || "audio",
+        note:        c.note        || "",
+      };
+    }).filter(c => c.from_index >= 0 && c.to_index >= 0),
+  };
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], {type: "application/json;charset=utf-8"});
+  const a    = document.createElement("a");
+  a.href     = URL.createObjectURL(blob);
+  a.download = `patch-{{ layout.name|lower|replace(' ','-') }}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 // ── SVG COORDS ────────────────────────────────────────────────────────────────
