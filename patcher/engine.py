@@ -276,6 +276,100 @@ class PatcherEngine:
             groups.setdefault(r["type"], []).append(dict(r))
         return groups
 
+    # ── EXPORT VERS SESSION ──────────────────────────────────────────────────
+
+    def to_session_fields(self, layout_id):
+        """Génère les champs de session (machines, effects, daws…) depuis un layout."""
+        layout, nodes, connections = self.get_layout(layout_id)
+        if not layout:
+            return {}
+
+        # Grouper les labels par type de nœud
+        by_type = {}
+        for n in nodes:
+            by_type.setdefault(n["node_type"], []).append(n["label"])
+
+        return {
+            "machines":      ", ".join(by_type.get("machine",   [])),
+            "effects":       ", ".join(by_type.get("effet",     [])),
+            "daws":          ", ".join(by_type.get("daw",       [])),
+            "synths_ios":    ", ".join(by_type.get("synth_ios", [])),
+            "plugins":       ", ".join(by_type.get("plugin",    [])),
+            "signal_routing": self._routing_text(nodes, connections),
+            "_from_patch":   layout["name"],
+            "_layout_id":    layout_id,
+        }
+
+    def _routing_text(self, nodes, connections):
+        """Calcule le texte de routing signal depuis le graphe de connexions."""
+        if not nodes:
+            return ""
+
+        node_map = {str(n["id"]): n["label"] for n in nodes}
+
+        if not connections:
+            # Ordre naturel du signal : sources → processing → DAW → sortie
+            ORDER = ["machine", "synth_ios", "plugin", "effet", "daw", "free"]
+            labels = []
+            by_type = {}
+            for n in nodes:
+                by_type.setdefault(n["node_type"], []).append(n["label"])
+            for t in ORDER:
+                labels.extend(by_type.get(t, []))
+            # Ajouter les types inconnus en fin
+            known = set(ORDER)
+            for t, lbls in by_type.items():
+                if t not in known:
+                    labels.extend(lbls)
+            return " → ".join(labels)
+
+        # Construire le graphe
+        adj      = {str(n["id"]): [] for n in nodes}
+        in_deg   = {str(n["id"]): 0  for n in nodes}
+        for c in connections:
+            fid, tid = str(c["from_id"]), str(c["to_id"])
+            if fid in adj and tid in in_deg:
+                adj[fid].append(tid)
+                in_deg[tid] += 1
+
+        # Sources = nœuds sans parent
+        sources = [nid for nid, deg in in_deg.items() if deg == 0]
+        if not sources:
+            sources = [str(nodes[0]["id"])]
+
+        # DFS : trouve tous les chemins source → feuille
+        paths = []
+        def dfs(nid, path, visited):
+            if nid in visited:
+                return
+            visited = visited | {nid}
+            label = node_map.get(nid, nid)
+            current = path + [label]
+            children = [cid for cid in adj.get(nid, []) if cid not in visited]
+            if not children:
+                paths.append(current)
+            else:
+                for cid in children:
+                    dfs(cid, current, visited)
+
+        for src in sources:
+            dfs(src, [], set())
+
+        if not paths:
+            return " → ".join(node_map.values())
+
+        # Trier par longueur décroissante, dédupliquer, garder max 4 chemins
+        seen, unique = set(), []
+        for p in sorted(paths, key=len, reverse=True):
+            key = "→".join(p)
+            if key not in seen:
+                seen.add(key)
+                unique.append(p)
+            if len(unique) >= 4:
+                break
+
+        return "\n".join(" → ".join(p) for p in unique)
+
     # ── SESSIONS (pour le formulaire) ────────────────────────────────────────
 
     def get_sessions(self):

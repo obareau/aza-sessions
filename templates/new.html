@@ -18,6 +18,8 @@
                 {% if prefill is mapping and prefill.get('_from_live') %}
                     Documenter la session
                     <span style="font-size:14px;color:var(--accent);font-weight:400;">— {{ (prefill.duration_min or 0)|int }} min enregistrées</span>
+                {% elif prefill is mapping and prefill.get('_from_patch') %}
+                    Nouvelle Session <span style="font-size:14px;color:var(--accent);font-weight:400;">— depuis patch ⬡ {{ prefill._from_patch }}</span>
                 {% else %}
                     Nouvelle Session <span style="font-size:14px;color:var(--text-muted);font-weight:400;">— Setup copié de #{{ prefill.id }}</span>
                 {% endif %}
@@ -223,7 +225,8 @@
         </div>
         <div class="form-group full">
             <label>Signal routing</label>
-            <input type="text" name="signal_routing" placeholder="ex: MicroFreak → NTS-1 → R8">
+            <input type="text" name="signal_routing" placeholder="ex: MicroFreak → NTS-1 → R8"
+                   value="{{ prefill.signal_routing if (prefill is mapping and prefill.get('signal_routing')) else '' }}">
         </div>
     </div>
 </div>

@@ -72,6 +72,9 @@
       </div>
     </div>
 
+    <a href="{{ url_for('patcher.patcher_to_session', layout_id=layout.id) }}"
+       class="btn btn-ghost btn-sm" title="Importer ce patch dans une nouvelle session">→ Session</a>
+
     <button type="button" id="btn-editmode" onclick="toggleEditMode()" class="btn btn-ghost btn-sm" title="Basculer mode édition / navigation">✎ Éditer</button>
     <button type="button" onclick="centerContent()" class="btn btn-ghost btn-sm" title="Centrer le contenu">⊙</button>
     <button type="button" id="btn-save" onclick="saveLayout()" class="btn btn-primary btn-sm">💾 Save</button>

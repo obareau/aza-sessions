@@ -112,6 +112,10 @@ def new_session():
     if from_id and not prefill:
         prefill = engine.get_plain(from_id)
 
+    if request.args.get("from_patch") and not prefill:
+        from flask import session as flask_session
+        prefill = flask_session.pop("session_prefill_patch", None)
+
     cat = engine.get_catalogue()
     return render_template("new.html",
                            catalogue=cat,

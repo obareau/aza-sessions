@@ -167,6 +167,17 @@ def patcher_export_mermaid(layout_id):
                              f'attachment; filename="patch-{layout_id}-{safe_name}.md"'})
 
 
+@bp.route("/patcher/<int:layout_id>/to-session")
+def patcher_to_session(layout_id):
+    """Redirige vers /new avec les champs pré-remplis depuis le layout."""
+    from flask import session as flask_session
+    fields = _engine().to_session_fields(layout_id)
+    if not fields:
+        return redirect(url_for("patcher.patcher_list"))
+    flask_session["session_prefill_patch"] = fields
+    return redirect(url_for("sessions.new_session") + "?from_patch=1")
+
+
 @bp.route("/patcher/import/json", methods=["POST"])
 def patcher_import_json():
     """Import d'un patch depuis un fichier .json exporté."""
