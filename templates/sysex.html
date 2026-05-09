@@ -7,7 +7,10 @@
         <div class="page-title">⎍ SysEx Loader</div>
         <div class="page-subtitle">Volca FM · DX7 compatible · Web MIDI API</div>
     </div>
-    <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
+    <div style="display:flex;gap:8px;">
+        <a href="{{ url_for('sysex.sysex_editor') }}" class="btn btn-primary">⎍ Bank Editor</a>
+        <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
+    </div>
 </div>
 
 {# ── AVERTISSEMENT navigateur ── #}

@@ -74,6 +74,16 @@ def sysex_download(bid):
                     headers={"Content-Disposition": f'attachment; filename="{fname}"'})
 
 
+@bp.route("/sysex/editor")
+def sysex_editor():
+    conn = _db()
+    banks = conn.execute(
+        "SELECT id, name, format, size FROM sysex_banks ORDER BY created_at DESC"
+    ).fetchall()
+    conn.close()
+    return render_template("sysex_editor.html", banks=[dict(b) for b in banks], version=_version())
+
+
 @bp.route("/sysex/<int:bid>/delete", methods=["POST"])
 def sysex_delete(bid):
     conn = _db()

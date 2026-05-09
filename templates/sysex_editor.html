@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+{% block title %}Bank Editor — AZA{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">⎍ Bank Editor</div>
+        <div class="page-subtitle">Assembler une banque DX7 custom · Volca FM compatible</div>
+    </div>
+    <a href="{{ url_for('sysex.sysex_index') }}" class="btn btn-secondary">← SysEx</a>
+</div>
+
+{# ── MIDI (compact) ── #}
+<div class="card" style="padding:10px 16px;">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text-muted);">⎍ MIDI</span>
+        <button type="button" onclick="initMIDI()" class="btn btn-ghost btn-sm">⟳ Détecter</button>
+        <select id="midi-output-select"
+                style="font-family:var(--mono);font-size:12px;background:var(--bg-alt);
+                       border:1px solid var(--border);color:var(--text);padding:5px 8px;
+                       border-radius:var(--radius);min-width:200px;">
+            <option value="">— Sortie MIDI —</option>
+        </select>
+        <select id="midi-channel"
+                style="font-family:var(--mono);font-size:12px;background:var(--bg-alt);
+                       border:1px solid var(--border);color:var(--text);padding:5px 8px;
+                       border-radius:var(--radius);width:72px;">
+            {% for ch in range(1,17) %}
+            <option value="{{ ch }}" {% if ch==1 %}selected{% endif %}>ch.{{ ch }}</option>
+            {% endfor %}
+        </select>
+        <span id="midi-status" style="font-family:var(--mono);font-size:11px;color:var(--text-muted);">En attente…</span>
+    </div>
+</div>
+
+{# ── LAYOUT PRINCIPAL ── #}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+
+    {# ── COL GAUCHE : SOURCE ── #}
+    <div class="card" style="min-height:500px;">
+        <div class="card-title">⎍ Source
+            <span id="source-title" style="font-size:11px;font-weight:400;color:var(--accent);margin-left:8px;"></span>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+            {# Charger depuis fichier #}
+            <button type="button" onclick="document.getElementById('src-file').click()"
+                    class="btn btn-ghost btn-sm">↑ Fichier .syx</button>
+            <input type="file" id="src-file" accept=".syx,*" style="display:none"
+                   onchange="loadSourceFile(this.files[0])">
+
+            {# Charger depuis librairie #}
+            {% if banks %}
+            <select id="src-lib-select" onchange="loadSourceFromLib(this.value)"
+                    style="font-family:var(--mono);font-size:12px;background:var(--bg-alt);
+                           border:1px solid var(--border);color:var(--text);padding:5px 8px;
+                           border-radius:var(--radius);">
+                <option value="">Librairie…</option>
+                {% for b in banks %}
+                {% if b.size == 4104 %}
+                <option value="{{ b.id }}">{{ b.name }}</option>
+                {% endif %}
+                {% endfor %}
+            </select>
+            {% endif %}
+
+            <button type="button" onclick="addAllPatches()" id="btn-add-all"
+                    class="btn btn-ghost btn-sm" disabled title="Ajouter tous les patches">+ Tous</button>
+        </div>
+
+        <div id="source-empty" style="margin-top:24px;font-family:var(--mono);
+             font-size:12px;color:var(--text-muted);text-align:center;padding:32px 0;">
+            Charge une banque .syx (32-voice bulk)
+        </div>
+
+        <div id="source-list" style="display:none;margin-top:12px;
+             max-height:520px;overflow-y:auto;"></div>
+    </div>
+
+    {# ── COL DROITE : CUSTOM BANK ── #}
+    <div class="card" style="min-height:500px;">
+        <div class="card-title">⎍ Custom Bank
+            <span id="custom-count" style="font-size:11px;font-weight:400;
+                  color:var(--text-muted);margin-left:8px;">0 / 32</span>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center;">
+            <input type="text" id="custom-name" placeholder="Nom de la bank…"
+                   value="Custom Bank"
+                   style="font-family:var(--mono);font-size:12px;background:var(--bg-alt);
+                          border:1px solid var(--border);color:var(--text);padding:5px 10px;
+                          border-radius:var(--radius);flex:1;min-width:120px;">
+            <button type="button" onclick="exportSyx()" class="btn btn-ghost btn-sm"
+                    title="Télécharger le .syx assemblé">⎙ .syx</button>
+            <button type="button" onclick="saveToLibrary()" class="btn btn-ghost btn-sm"
+                    title="Sauvegarder dans la librairie">↓ Sauver</button>
+            <button type="button" onclick="sendCustomBank()" id="btn-send-custom"
+                    class="btn btn-primary btn-sm" disabled>⎍ Envoyer</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+            <button type="button" onclick="clearCustomBank()"
+                    class="btn btn-ghost btn-sm" style="font-size:10px;color:var(--text-muted);">
+                ✕ Vider tout
+            </button>
+            <span id="send-status" style="font-family:var(--mono);font-size:11px;
+                  color:var(--text-muted);padding:5px 0;"></span>
+        </div>
+
+        <div id="custom-list" style="margin-top:10px;max-height:520px;overflow-y:auto;"></div>
+    </div>
+</div>
+
+{# ── TOAST ── #}
+<div id="toast" style="display:none;position:fixed;bottom:24px;right:24px;z-index:9999;
+     font-family:var(--mono);font-size:12px;padding:10px 18px;border-radius:var(--radius);
+     border:1px solid var(--accent);background:var(--surface);color:var(--text);
+     box-shadow:0 4px 16px rgba(0,0,0,.4);"></div>
+
+<style>
+.patch-row {
+    display:flex;align-items:center;gap:6px;padding:5px 8px;
+    border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;
+    transition:background .1s;
+}
+.patch-row:hover { background:var(--bg-alt); }
+.patch-num {
+    color:var(--text-muted);font-size:10px;min-width:22px;text-align:right;
+}
+.patch-name {
+    flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);
+}
+.patch-name.empty { color:var(--text-muted);font-style:italic; }
+.btn-icon {
+    background:transparent;border:1px solid var(--border);color:var(--text-muted);
+    font-size:10px;padding:2px 6px;border-radius:2px;cursor:pointer;font-family:var(--mono);
+    flex-shrink:0;
+}
+.btn-icon:hover { border-color:var(--accent);color:var(--accent); }
+.btn-add {
+    background:transparent;border:1px solid var(--accent);color:var(--accent);
+    font-size:10px;padding:2px 8px;border-radius:2px;cursor:pointer;font-family:var(--mono);
+    flex-shrink:0;
+}
+.btn-add:hover { background:var(--accent);color:var(--bg); }
+.slot-filled { border-left:2px solid var(--accent); }
+.slot-empty  { border-left:2px solid var(--border); }
+</style>
+
+<script>
+// ── ÉTAT ────────────────────────────────────────────────────────────────────
+let midiAccess  = null;
+let sourceVoices = [];   // array of {name, bytes (Uint8Array 128)}
+let customBank   = new Array(32).fill(null); // null = empty slot
+
+// ── DX7 INIT VOICE (128 bytes packed) ────────────────────────────────────────
+function initVoice() {
+    const v = new Uint8Array(128);
+    for (let op = 0; op < 6; op++) {
+        const b = op * 17;
+        v[b]=99;v[b+1]=99;v[b+2]=99;v[b+3]=99;   // EG rates
+        v[b+4]=99;v[b+5]=99;v[b+6]=99;v[b+7]=0;   // EG levels
+        v[b+14] = (op === 5) ? 99 : 0;              // OP1 output level 99, rest 0
+        v[b+15] = 1;                                 // freq coarse 1
+    }
+    v[102]=99;v[103]=99;v[104]=99;v[105]=99;       // Pitch EG rates
+    v[106]=50;v[107]=50;v[108]=50;v[109]=50;       // Pitch EG levels
+    v[112]=35;                                       // LFO speed
+    v[117]=24;                                       // Transpose (C2)
+    const name = "EMPTY     ";
+    for (let i=0;i<10;i++) v[118+i] = name.charCodeAt(i);
+    return v;
+}
+
+// ── PARSERS DX7 ──────────────────────────────────────────────────────────────
+function parseBulk(bytes) {
+    if (bytes.length !== 4104) return null;
+    const voices = [];
+    for (let i = 0; i < 32; i++) {
+        const offset = 6 + i * 128;
+        const voiceBytes = bytes.slice(offset, offset + 128);
+        let name = "";
+        for (let j = 0; j < 10; j++) {
+            const c = voiceBytes[118 + j] & 0x7F;
+            name += (c >= 32 && c < 127) ? String.fromCharCode(c) : " ";
+        }
+        voices.push({ name: name.trimEnd() || "?", bytes: voiceBytes });
+    }
+    return voices;
+}
+
+// ── CHARGEMENT SOURCE ────────────────────────────────────────────────────────
+function loadSourceFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const bytes = new Uint8Array(e.target.result);
+        applySource(bytes, file.name.replace(/\.[^.]+$/,""));
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+async function loadSourceFromLib(id) {
+    if (!id) return;
+    try {
+        const resp = await fetch("/sysex/" + id + "/data");
+        const json = await resp.json();
+        applySource(new Uint8Array(json.data), json.name);
+        document.getElementById("src-lib-select").value = "";
+    } catch(e) { toast("✗ Erreur : " + e.message, true); }
+}
+
+function applySource(bytes, label) {
+    const voices = parseBulk(bytes);
+    if (!voices) {
+        toast("⚠ Format non reconnu — 32-voice bulk DX7 requis (4104 bytes)", true);
+        return;
+    }
+    sourceVoices = voices;
+    document.getElementById("source-title").textContent = label || "";
+    document.getElementById("source-empty").style.display = "none";
+    document.getElementById("source-list").style.display  = "";
+    document.getElementById("btn-add-all").disabled = false;
+    renderSource();
+    toast("✓ " + label + " chargée — " + voices.length + " patches");
+}
+
+function renderSource() {
+    const el = document.getElementById("source-list");
+    el.innerHTML = "";
+    sourceVoices.forEach((v, i) => {
+        const row = document.createElement("div");
+        row.className = "patch-row";
+        row.innerHTML =
+            `<span class="patch-num">${String(i+1).padStart(2,"0")}</span>` +
+            `<span class="patch-name">${esc(v.name)}</span>` +
+            `<button class="btn-add" onclick="addPatch(${i})" title="Ajouter dans la bank custom">+</button>`;
+        el.appendChild(row);
+    });
+}
+
+// ── CUSTOM BANK ──────────────────────────────────────────────────────────────
+function addPatch(srcIndex) {
+    const voice = sourceVoices[srcIndex];
+    if (!voice) return;
+    const emptySlot = customBank.findIndex(s => s === null);
+    if (emptySlot === -1) { toast("⚠ Bank pleine (32/32)", true); return; }
+    customBank[emptySlot] = { name: voice.name, bytes: new Uint8Array(voice.bytes) };
+    renderCustom();
+    updateSendBtn();
+}
+
+function addAllPatches() {
+    sourceVoices.forEach((_, i) => {
+        const emptySlot = customBank.findIndex(s => s === null);
+        if (emptySlot !== -1) {
+            customBank[emptySlot] = { name: sourceVoices[i].name, bytes: new Uint8Array(sourceVoices[i].bytes) };
+        }
+    });
+    renderCustom();
+    updateSendBtn();
+    toast("✓ " + Math.min(sourceVoices.length, 32) + " patches ajoutés");
+}
+
+function removeSlot(i) {
+    customBank[i] = null;
+    renderCustom();
+    updateSendBtn();
+}
+
+function moveSlot(i, dir) {
+    const j = i + dir;
+    if (j < 0 || j >= 32) return;
+    [customBank[i], customBank[j]] = [customBank[j], customBank[i]];
+    renderCustom();
+}
+
+function clearCustomBank() {
+    if (!confirm("Vider toute la custom bank ?")) return;
+    customBank = new Array(32).fill(null);
+    renderCustom();
+    updateSendBtn();
+}
+
+function renderCustom() {
+    const el = document.getElementById("custom-list");
+    el.innerHTML = "";
+    const filled = customBank.filter(s => s !== null).length;
+    document.getElementById("custom-count").textContent = filled + " / 32";
+
+    customBank.forEach((slot, i) => {
+        const row = document.createElement("div");
+        row.className = "patch-row " + (slot ? "slot-filled" : "slot-empty");
+        if (slot) {
+            row.innerHTML =
+                `<span class="patch-num">${String(i+1).padStart(2,"0")}</span>` +
+                `<span class="patch-name">${esc(slot.name)}</span>` +
+                `<button class="btn-icon" onclick="moveSlot(${i},-1)" title="Monter">↑</button>` +
+                `<button class="btn-icon" onclick="moveSlot(${i},1)"  title="Descendre">↓</button>` +
+                `<button class="btn-icon" onclick="removeSlot(${i})"  title="Retirer" style="color:#D4380D;border-color:#D4380D;">✕</button>`;
+        } else {
+            row.innerHTML =
+                `<span class="patch-num" style="color:var(--border-strong)">${String(i+1).padStart(2,"0")}</span>` +
+                `<span class="patch-name empty">— vide —</span>`;
+        }
+        el.appendChild(row);
+    });
+}
+
+// ── ASSEMBLAGE + EXPORT ──────────────────────────────────────────────────────
+function buildSyx(channel) {
+    const data = new Uint8Array(4096);
+    for (let i = 0; i < 32; i++) {
+        data.set(customBank[i] ? customBank[i].bytes : initVoice(), i * 128);
+    }
+    let sum = 0;
+    for (const b of data) sum += b;
+    const cs = (-sum) & 0x7F;
+
+    const syx = new Uint8Array(4104);
+    syx[0]=0xF0; syx[1]=0x43; syx[2]=(channel||0)&0x0F; syx[3]=0x09; syx[4]=0x20; syx[5]=0x00;
+    syx.set(data, 6);
+    syx[4102]=cs; syx[4103]=0xF7;
+    return syx;
+}
+
+function exportSyx() {
+    const syx  = buildSyx(0);
+    const name = document.getElementById("custom-name").value.trim() || "custom-bank";
+    const blob = new Blob([syx], { type: "application/octet-stream" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = name + ".syx"; a.click();
+    URL.revokeObjectURL(url);
+    toast("✓ " + name + ".syx téléchargé");
+}
+
+async function saveToLibrary() {
+    const name = document.getElementById("custom-name").value.trim() || "Custom Bank";
+    const syx  = buildSyx(0);
+    const blob = new Blob([syx], { type: "application/octet-stream" });
+    const fd   = new FormData();
+    fd.append("file", blob, name + ".syx");
+    fd.append("name", name);
+    const resp = await fetch("{{ url_for('sysex.sysex_save') }}", { method:"POST", body:fd });
+    if (resp.ok || resp.redirected) {
+        toast("✓ « " + name + " » sauvegardée dans la librairie");
+    } else {
+        toast("✗ Erreur sauvegarde", true);
+    }
+}
+
+// ── ENVOI MIDI ────────────────────────────────────────────────────────────────
+function updateSendBtn() {
+    const filled = customBank.some(s => s !== null);
+    document.getElementById("btn-send-custom").disabled = !(filled && midiAccess &&
+        document.getElementById("midi-output-select").value);
+}
+
+async function sendCustomBank() {
+    const id = document.getElementById("midi-output-select").value;
+    if (!id || !midiAccess) { toast("⚠ Aucune sortie MIDI", true); return; }
+    const output = midiAccess.outputs.get(id);
+    if (!output) return;
+    const ch  = (parseInt(document.getElementById("midi-channel").value) - 1) & 0x0F;
+    const syx = buildSyx(ch);
+    const btn = document.getElementById("btn-send-custom");
+    const st  = document.getElementById("send-status");
+    btn.disabled = true;
+    st.textContent = "Envoi…";
+    try {
+        output.send(syx);
+        setTimeout(() => {
+            btn.disabled = false;
+            st.textContent = "✓ Envoyé → " + output.name;
+            toast("✓ Custom bank envoyée vers " + output.name);
+        }, 600);
+    } catch(e) {
+        btn.disabled = false;
+        st.textContent = "";
+        toast("✗ Erreur MIDI : " + e.message, true);
+    }
+}
+
+// ── MIDI ──────────────────────────────────────────────────────────────────────
+async function initMIDI() {
+    if (!navigator.requestMIDIAccess) {
+        toast("⚠ Web MIDI non disponible — utilise Chrome", true); return;
+    }
+    try {
+        midiAccess = await navigator.requestMIDIAccess({ sysex: true });
+        populateOutputs();
+        midiAccess.onstatechange = populateOutputs;
+        document.getElementById("midi-status").textContent =
+            "✓ " + midiAccess.outputs.size + " sortie(s)";
+        document.getElementById("midi-status").style.color = "var(--accent)";
+    } catch(e) {
+        document.getElementById("midi-status").textContent = "✗ " + e.message;
+    }
+}
+
+function populateOutputs() {
+    const sel = document.getElementById("midi-output-select");
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">— Sortie MIDI —</option>';
+    if (!midiAccess) return;
+    midiAccess.outputs.forEach((out, id) => {
+        const o = document.createElement("option");
+        o.value = id; o.textContent = out.name; sel.appendChild(o);
+    });
+    if (prev) sel.value = prev;
+    sel.onchange = updateSendBtn;
+    updateSendBtn();
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function esc(s) {
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function toast(msg, isError) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.style.borderColor = isError ? "#D4380D" : "var(--accent)";
+    el.style.display = "";
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.style.display = "none", 3000);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+    renderCustom();
+    if (navigator.requestMIDIAccess) initMIDI();
+});
+</script>
+
+{% endblock %}
