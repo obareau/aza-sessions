@@ -9,21 +9,19 @@
     background:var(--surface);border-bottom:1px solid var(--border);
     padding:8px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;">
 
-    {# Nom éditable #}
     <span id="layout-name" onclick="startRename()" title="Cliquer pour renommer"
           style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--accent);cursor:pointer;padding:4px 8px;border:1px solid transparent;min-width:120px;">
       ⬡ {{ layout.name }}
     </span>
     {% if layout.session_date %}
     <span style="font-size:11px;color:var(--muted);font-family:var(--mono);">
-      → Session {{ layout.session_date }}{% if layout.session_title %} — {{ layout.session_title }}{% endif %}
+      → {{ layout.session_date }}{% if layout.session_title %} — {{ layout.session_title }}{% endif %}
     </span>
     {% endif %}
 
     <div style="flex:1;"></div>
 
-    {# Outils #}
-    <button type="button" id="btn-add-node" onclick="startAddNode()" class="btn btn-ghost btn-sm" title="Ajouter un nœud libre">＋ Nœud</button>
+    <button type="button" onclick="startAddNode()" class="btn btn-ghost btn-sm">＋ Nœud</button>
 
     <div style="display:flex;gap:4px;align-items:center;">
       <span style="font-family:var(--mono);font-size:11px;color:var(--muted);">Signal :</span>
@@ -37,13 +35,12 @@
 
     <button type="button" onclick="toggleConnectMode()" id="btn-connect"
             class="btn btn-ghost btn-sm" title="Mode connexion (C)">⇝ Relier</button>
-    <button type="button" onclick="deleteSelected()" class="btn btn-ghost btn-sm" title="Supprimer sélection (Del)">✕ Suppr</button>
+    <button type="button" onclick="deleteSelected()" class="btn btn-ghost btn-sm" title="Supprimer (Del)">✕ Suppr</button>
 
     <div style="width:1px;height:24px;background:var(--border);"></div>
 
-    <button type="button" onclick="importFromCatalogue()" class="btn btn-ghost btn-sm">↓ Catalogue</button>
+    <button type="button" id="btn-cat" onclick="toggleCataloguePanel()" class="btn btn-ghost btn-sm" title="Ajouter depuis le catalogue">＋ Catalogue</button>
     <button type="button" id="btn-save" onclick="saveLayout()" class="btn btn-primary btn-sm">💾 Save</button>
-
     <a href="{{ url_for('patcher.patcher_list') }}" class="btn btn-ghost btn-sm">← Liste</a>
   </div>
 
@@ -57,91 +54,158 @@
     <span style="font-family:var(--mono);font-size:10px;color:{{ col }};">━ {{ sig }}</span>
     {% endfor %}
     <span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--muted);">
-      Drag = déplacer · Clic signal = relier · Clic nœud A → B = connexion · Esc = annuler · Dbl-clic = label · Del = supprimer
+      Drag = déplacer · Signal = mode connexion · A→B = connecter · Dbl-clic = éditer · Del = supprimer
     </span>
   </div>
 
-  {# ── CANVAS SVG ── #}
-  <div style="flex:1;overflow:hidden;position:relative;background:var(--bg);">
-    <svg id="patcher-svg" width="100%" height="100%"
-         style="display:block;cursor:default;"
-         onmousedown="svgMouseDown(event)"
-         onmousemove="svgMouseMove(event)"
-         onmouseup="svgMouseUp(event)">
-      <defs>
-        {% for sig, col in signal_colors.items() %}
-        <marker id="arrow-{{ sig }}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-          <path d="M0,0 L0,6 L8,3 z" fill="{{ col }}" />
-        </marker>
-        {% endfor %}
-        <marker id="arrow-preview" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-          <path d="M0,0 L0,6 L8,3 z" fill="#888" />
-        </marker>
-      </defs>
+  {# ── ZONE PRINCIPALE (canvas + panneau catalogue) ── #}
+  <div style="flex:1;display:flex;overflow:hidden;position:relative;">
 
-      {# Groupe connexions (en dessous des nœuds) #}
-      <g id="g-connections"></g>
+    {# ── CANVAS SVG ── #}
+    <div id="canvas-wrap" style="flex:1;overflow:hidden;position:relative;background:var(--bg);">
+      <svg id="patcher-svg" width="100%" height="100%"
+           style="display:block;cursor:default;"
+           onmousedown="svgMouseDown(event)"
+           onmousemove="svgMouseMove(event)"
+           onmouseup="svgMouseUp(event)">
+        <defs>
+          {% for sig, col in signal_colors.items() %}
+          <marker id="arrow-{{ sig }}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="{{ col }}" />
+          </marker>
+          {% endfor %}
+          <marker id="arrow-preview" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#888" />
+          </marker>
+        </defs>
+        <g id="g-connections"></g>
+        <line id="conn-preview" x1="0" y1="0" x2="0" y2="0"
+              stroke="#888" stroke-width="1.5" stroke-dasharray="6,3"
+              marker-end="url(#arrow-preview)" style="display:none;" />
+        <g id="g-nodes"></g>
+      </svg>
 
-      {# Ligne de preview connexion #}
-      <line id="conn-preview" x1="0" y1="0" x2="0" y2="0"
-            stroke="#888" stroke-width="1.5" stroke-dasharray="6,3"
-            marker-end="url(#arrow-preview)" style="display:none;" />
-
-      {# Groupe nœuds #}
-      <g id="g-nodes"></g>
-    </svg>
-
-    {# Tooltip label éditeur #}
-    <div id="label-editor" style="display:none;position:absolute;background:var(--surface);
-         border:1px solid var(--accent);padding:8px 10px;z-index:100;min-width:160px;">
-      <input id="label-input" type="text" placeholder="Label…"
-             style="background:var(--bg);border:1px solid var(--border);color:var(--text);
-                    padding:4px 8px;font-family:var(--mono);font-size:12px;width:100%;display:block;">
-      <div style="display:flex;gap:6px;margin-top:6px;">
-        <button type="button" onclick="confirmLabel()" class="btn btn-primary btn-sm" style="flex:1;">✓</button>
-        <button type="button" onclick="cancelLabel()" class="btn btn-ghost btn-sm">✕</button>
+      {# Toast autosave #}
+      <div id="save-toast" style="display:none;position:absolute;bottom:16px;right:16px;
+           background:var(--surface);border:1px solid var(--accent);padding:6px 14px;
+           font-family:var(--mono);font-size:12px;color:var(--accent);">
+        Sauvegardé ✓
       </div>
     </div>
 
-    {# Toast autosave #}
-    <div id="save-toast" style="display:none;position:absolute;bottom:16px;right:16px;
-         background:var(--surface);border:1px solid var(--accent);padding:6px 14px;
-         font-family:var(--mono);font-size:12px;color:var(--accent);">
-      Sauvegardé ✓
+    {# ── PANNEAU CATALOGUE ── #}
+    <div id="cat-panel" style="display:none;width:240px;flex-shrink:0;
+         background:var(--surface);border-left:1px solid var(--border);
+         display:none;flex-direction:column;overflow:hidden;">
+      <div style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
+        <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);flex:1;">Catalogue</span>
+        <button type="button" onclick="toggleCataloguePanel()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;">×</button>
+      </div>
+      <div style="padding:8px 12px;border-bottom:1px solid var(--border);">
+        <input type="text" id="cat-search" placeholder="Filtrer…" oninput="filterCatalogue(this.value)"
+               style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);
+                      color:var(--text);padding:4px 8px;font-family:var(--mono);font-size:11px;">
+      </div>
+      <div id="cat-list" style="flex:1;overflow-y:auto;padding:6px 0;">
+        {% for ntype, items in catalogue_groups.items() %}
+        <div class="cat-group" data-type="{{ ntype }}">
+          <div style="padding:4px 12px;font-family:var(--mono);font-size:10px;font-weight:700;
+                      color:{{ node_colors.get(ntype, '#888') }};letter-spacing:.08em;text-transform:uppercase;
+                      background:var(--bg);border-bottom:1px solid var(--border);">
+            {{ ntype }}
+          </div>
+          {% for item in items %}
+          <div class="cat-item" data-name="{{ item.name }}" data-type="{{ ntype }}"
+               data-id="{{ item.id }}"
+               onclick="addFromCatalogue('{{ item.name|e }}','{{ ntype }}',{{ item.id }})"
+               style="padding:5px 14px;font-family:var(--mono);font-size:11px;cursor:pointer;
+                      color:var(--text);border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:1px;">
+            <span>{{ item.name }}</span>
+            {% if item.manufacturer %}
+            <span style="font-size:9px;color:var(--muted);">{{ item.manufacturer }}</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding:16px;font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;">
+          Catalogue vide
+        </div>
+        {% endfor %}
+      </div>
     </div>
+
+  </div>{# fin zone principale #}
+</div>
+
+{# ── POPUP ÉDITEUR NŒUD (position:fixed, toujours visible) ── #}
+<div id="node-editor" style="display:none;position:fixed;z-index:1000;
+     background:var(--surface);border:1px solid var(--accent);padding:12px 14px;
+     min-width:200px;box-shadow:0 4px 16px rgba(0,0,0,.4);">
+  <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">
+    Éditer le nœud
+  </div>
+  <input id="node-label-input" type="text" placeholder="Label…"
+         style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);
+                color:var(--text);padding:5px 8px;font-family:var(--mono);font-size:12px;display:block;margin-bottom:8px;">
+  <select id="node-type-select" onchange="previewNodeTypeColor()"
+          style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);
+                 color:var(--text);padding:5px 8px;font-family:var(--mono);font-size:11px;display:block;margin-bottom:10px;">
+    {% for ntype, col in node_colors.items() %}
+    <option value="{{ ntype }}" style="color:{{ col }};">{{ ntype }}</option>
+    {% endfor %}
+  </select>
+  <div style="display:flex;gap:6px;">
+    <button type="button" onclick="confirmNodeEdit()" class="btn btn-primary btn-sm" style="flex:1;">✓ OK</button>
+    <button type="button" onclick="cancelNodeEdit()" class="btn btn-ghost btn-sm">✕</button>
+  </div>
+</div>
+
+{# ── POPUP ÉDITEUR CONNEXION ── #}
+<div id="conn-editor" style="display:none;position:fixed;z-index:1000;
+     background:var(--surface);border:1px solid var(--accent);padding:12px 14px;
+     min-width:180px;box-shadow:0 4px 16px rgba(0,0,0,.4);">
+  <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">
+    Label connexion
+  </div>
+  <input id="conn-label-input" type="text" placeholder="(vide = sans label)"
+         style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);
+                color:var(--text);padding:5px 8px;font-family:var(--mono);font-size:12px;display:block;margin-bottom:10px;">
+  <div style="display:flex;gap:6px;">
+    <button type="button" onclick="confirmConnEdit()" class="btn btn-primary btn-sm" style="flex:1;">✓ OK</button>
+    <button type="button" onclick="cancelConnEdit()" class="btn btn-ghost btn-sm">✕</button>
   </div>
 </div>
 
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
-const SAVE_URL    = "{{ url_for('patcher.patcher_save', layout_id=layout.id) }}";
-const RENAME_URL  = "{{ url_for('patcher.patcher_rename', layout_id=layout.id) }}";
-const IMPORT_URL  = "{{ url_for('patcher.patcher_import', layout_id=layout.id) }}";
-const LAYOUT_ID   = {{ layout.id }};
+const SAVE_URL   = "{{ url_for('patcher.patcher_save',  layout_id=layout.id) }}";
+const RENAME_URL = "{{ url_for('patcher.patcher_rename', layout_id=layout.id) }}";
+const LAYOUT_ID  = {{ layout.id }};
 const NODE_COLORS = {{ node_colors | tojson }};
 const SIG_COLORS  = {{ signal_colors | tojson }};
 
-let nodes = {{ nodes | tojson }};
+let nodes       = {{ nodes | tojson }};
 let connections = {{ connections | tojson }};
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let selected    = null;   // {type:'node'|'conn', id}
-let dragging    = null;   // {nodeId, ox, oy, moved}
-let connecting  = false;
-let connFrom    = null;   // id du nœud source en mode connexion
-let currentSig  = "audio";
-let editTarget  = null;
+let selected      = null;
+let dragging      = null;
+let connecting    = false;
+let connFrom      = null;
+let currentSig    = "audio";
+let nodeEditId    = null;
+let connEditId    = null;
 let autoSaveTimer = null;
 
 function maxNodeId() {
   return nodes.length ? Math.max(...nodes.map(n => Number(n.id) || 0)) : 0;
 }
-let nodeIdCounter = maxNodeId() + 1;
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
-const svg     = document.getElementById("patcher-svg");
-const gNodes  = document.getElementById("g-nodes");
-const gConns  = document.getElementById("g-connections");
+const svg    = document.getElementById("patcher-svg");
+const gNodes = document.getElementById("g-nodes");
+const gConns = document.getElementById("g-connections");
 const preview = document.getElementById("conn-preview");
 
 function init() {
@@ -162,9 +226,8 @@ function renderNode(n) {
   g.setAttribute("transform",`translate(${n.x},${n.y})`);
   g.style.cursor = "grab";
 
-  const W = Math.max(100, n.label.length * 8 + 24);
+  const W = Math.max(110, (n.label||"").length * 8 + 28);
   const H = 38;
-
   const isSelected = selected && selected.type==="node" && selected.id===n.id;
   const isConnFrom = connFrom === n.id;
 
@@ -183,59 +246,56 @@ function renderNode(n) {
   txt.setAttribute("fill", n.color || "#aaa");
   txt.setAttribute("font-family","'IBM Plex Mono',monospace");
   txt.setAttribute("font-size","11");
-  txt.textContent = n.label;
+  txt.textContent = n.label || "";
 
-  const type_txt = document.createElementNS("http://www.w3.org/2000/svg","text");
-  type_txt.setAttribute("x", W/2); type_txt.setAttribute("y", H - 9);
-  type_txt.setAttribute("text-anchor","middle");
-  type_txt.setAttribute("dominant-baseline","middle");
-  type_txt.setAttribute("fill","#555");
-  type_txt.setAttribute("font-family","'IBM Plex Mono',monospace");
-  type_txt.setAttribute("font-size","9");
-  type_txt.textContent = n.node_type || "";
+  const ttxt = document.createElementNS("http://www.w3.org/2000/svg","text");
+  ttxt.setAttribute("x", W/2); ttxt.setAttribute("y", H - 9);
+  ttxt.setAttribute("text-anchor","middle");
+  ttxt.setAttribute("dominant-baseline","middle");
+  ttxt.setAttribute("fill","#555");
+  ttxt.setAttribute("font-family","'IBM Plex Mono',monospace");
+  ttxt.setAttribute("font-size","9");
+  ttxt.textContent = n.node_type || "";
 
-  g.appendChild(rect); g.appendChild(txt); g.appendChild(type_txt);
+  g.appendChild(rect); g.appendChild(txt); g.appendChild(ttxt);
   g.addEventListener("mousedown", e => nodeMouseDown(e, n.id));
-  g.addEventListener("dblclick",  e => { e.stopPropagation(); openLabelEditor(e, "node", n.id, n.label); });
+  g.addEventListener("dblclick",  e => { e.stopPropagation(); openNodeEditor(e, n.id); });
   gNodes.appendChild(g);
 }
 
 // ── RENDER CONN ───────────────────────────────────────────────────────────────
 function nodeCenter(n) {
-  const W = Math.max(100, n.label.length * 8 + 24);
+  const W = Math.max(110, (n.label||"").length * 8 + 28);
   return { x: n.x + W/2, y: n.y + 19 };
 }
 
 function renderConn(c) {
   const old = document.getElementById("conn-"+c.id);
   if (old) old.remove();
-
-  const fn = nodes.find(n=>n.id===c.from_id);
-  const tn = nodes.find(n=>n.id===c.to_id);
+  const fn = nodes.find(n=>String(n.id)===String(c.from_id));
+  const tn = nodes.find(n=>String(n.id)===String(c.to_id));
   if (!fn || !tn) return;
 
   const fc = nodeCenter(fn), tc = nodeCenter(tn);
   const col = SIG_COLORS[c.signal_type] || "#888";
-  const isSelected = selected && selected.type==="conn" && selected.id===c.id;
+  const isSelected = selected && selected.type==="conn" && String(selected.id)===String(c.id);
 
   const g = document.createElementNS("http://www.w3.org/2000/svg","g");
   g.setAttribute("id","conn-"+c.id);
 
-  // Courbe de Bézier
   const dx = (tc.x - fc.x) * 0.5;
-  const path = document.createElementNS("http://www.w3.org/2000/svg","path");
   const d = `M ${fc.x} ${fc.y} C ${fc.x+dx} ${fc.y}, ${tc.x-dx} ${tc.y}, ${tc.x} ${tc.y}`;
+
+  const path = document.createElementNS("http://www.w3.org/2000/svg","path");
   path.setAttribute("d", d);
   path.setAttribute("stroke", col);
   path.setAttribute("stroke-width", isSelected ? "3" : "1.5");
   path.setAttribute("fill","none");
   path.setAttribute("marker-end",`url(#arrow-${c.signal_type})`);
-  if (isSelected) path.setAttribute("stroke-dasharray","");
   g.appendChild(path);
 
-  // Label connexion
   if (c.label) {
-    const mx = (fc.x + tc.x) / 2, my = (fc.y + tc.y) / 2 - 10;
+    const mx = (fc.x + tc.x)/2, my = (fc.y + tc.y)/2 - 10;
     const lbg = document.createElementNS("http://www.w3.org/2000/svg","rect");
     lbg.setAttribute("x", mx - c.label.length*4); lbg.setAttribute("y", my-8);
     lbg.setAttribute("width", c.label.length*8+8); lbg.setAttribute("height",14);
@@ -249,7 +309,6 @@ function renderConn(c) {
     g.appendChild(lbg); g.appendChild(lt);
   }
 
-  // Zone de clic (invisible, épaisse)
   const hit = document.createElementNS("http://www.w3.org/2000/svg","path");
   hit.setAttribute("d", d);
   hit.setAttribute("stroke","transparent");
@@ -257,70 +316,54 @@ function renderConn(c) {
   hit.setAttribute("fill","none");
   hit.style.cursor = "pointer";
   hit.addEventListener("mousedown", e => { e.stopPropagation(); selectConn(c.id); });
-  hit.addEventListener("dblclick",  e => { e.stopPropagation(); openLabelEditor(e, "conn", c.id, c.label); });
+  hit.addEventListener("dblclick",  e => { e.stopPropagation(); openConnEditor(e, c.id); });
   g.appendChild(hit);
 
   gConns.appendChild(g);
 }
 
 // ── SELECTION ─────────────────────────────────────────────────────────────────
-function selectNode(id) {
-  selected = {type:"node", id};
-  rerender();
-}
-function selectConn(id) {
-  selected = {type:"conn", id};
-  rerender();
-}
-function clearSelection() {
-  selected = null;
-  rerender();
-}
+function selectNode(id) { selected={type:"node",id}; rerender(); }
+function selectConn(id) { selected={type:"conn",id}; rerender(); }
+function clearSelection() { selected=null; rerender(); }
 function rerender() {
   nodes.forEach(n => renderNode(n));
   connections.forEach(c => renderConn(c));
 }
 
-// ── DRAG NODE ─────────────────────────────────────────────────────────────────
+// ── DRAG ──────────────────────────────────────────────────────────────────────
 function nodeMouseDown(e, id) {
   e.stopPropagation();
   if (connecting) { handleConnectClick(id); return; }
   selectNode(id);
-  const n = nodes.find(x=>x.id===id);
+  const n = nodes.find(x=>String(x.id)===String(id));
   const pt = svgPoint(e);
   dragging = { id, ox: n.x - pt.x, oy: n.y - pt.y };
 }
 
 function svgMouseDown(e) {
-  // On est sur le fond si le clic n'est pas sur un nœud ou une connexion
   const onNode = e.target.closest('g[id^="node-"]');
   const onConn = e.target.closest('g[id^="conn-"]');
   if (!onNode && !onConn) {
-    if (connecting) {
-      // Annuler la sélection source en cours sans quitter le mode
-      connFrom = null;
-      preview.style.display = "none";
-      rerender();
-    } else {
-      clearSelection();
-    }
+    if (connecting) { connFrom=null; preview.style.display="none"; rerender(); }
+    else { clearSelection(); }
   }
 }
 
 function svgMouseMove(e) {
   if (dragging) {
     const pt = svgPoint(e);
-    const n = nodes.find(x=>x.id===dragging.id);
+    const n = nodes.find(x=>String(x.id)===String(dragging.id));
     n.x = pt.x + dragging.ox;
     n.y = pt.y + dragging.oy;
     renderNode(n);
-    connections.filter(c=>c.from_id===n.id||c.to_id===n.id).forEach(c=>renderConn(c));
+    connections.filter(c=>String(c.from_id)===String(n.id)||String(c.to_id)===String(n.id)).forEach(c=>renderConn(c));
     scheduleAutoSave();
     return;
   }
   if (connecting && connFrom !== null) {
     const pt = svgPoint(e);
-    const fn = nodes.find(n=>n.id===connFrom);
+    const fn = nodes.find(n=>String(n.id)===String(connFrom));
     if (fn) {
       const fc = nodeCenter(fn);
       preview.setAttribute("x1",fc.x); preview.setAttribute("y1",fc.y);
@@ -330,35 +373,34 @@ function svgMouseMove(e) {
   }
 }
 
-function svgMouseUp(e) {
-  dragging = null;
-}
+function svgMouseUp(e) { dragging = null; }
 
-// ── CONNECT MODE ─────────────────────────────────────────────────────────────
+// ── CONNECT MODE ──────────────────────────────────────────────────────────────
 function toggleConnectMode() {
   connecting = !connecting;
   connFrom = null;
   preview.style.display = "none";
-  document.getElementById("btn-connect").style.background = connecting ? "var(--accent)" : "";
-  document.getElementById("btn-connect").style.color = connecting ? "var(--bg)" : "";
+  const btn = document.getElementById("btn-connect");
+  btn.style.background = connecting ? "var(--accent)" : "";
+  btn.style.color = connecting ? "var(--bg)" : "";
   svg.style.cursor = connecting ? "crosshair" : "default";
+  if (!connecting) rerender();
 }
 
 function handleConnectClick(id) {
   if (connFrom === null) {
     connFrom = id;
-    rerender();  // feedback visuel : nœud source en pointillés
+    rerender();
   } else {
-    if (connFrom !== id) {
-      const c = {
-        id: "tmp_" + Date.now(),   // ID temporaire côté client
-        layout_id: {{ layout.id }},
+    if (String(connFrom) !== String(id)) {
+      connections.push({
+        id: "tmp_" + Date.now(),
+        layout_id: LAYOUT_ID,
         from_id: connFrom,
         to_id: id,
         label: "",
         signal_type: currentSig,
-      };
-      connections.push(c);
+      });
     }
     connFrom = null;
     preview.style.display = "none";
@@ -368,29 +410,28 @@ function handleConnectClick(id) {
 }
 
 // ── SIGNAL TYPE ───────────────────────────────────────────────────────────────
-function setSig(s, activateConnect = true) {
+function setSig(s, activateConnect=true) {
   currentSig = s;
   document.querySelectorAll(".sig-btn").forEach(b => {
     const active = b.dataset.sig === s;
     b.style.fontWeight = active ? "700" : "400";
-    b.style.background = active ? SIG_COLORS[s] + "44" : "transparent";
+    b.style.background = active ? SIG_COLORS[s]+"44" : "transparent";
     b.style.borderWidth = active ? "2px" : "1.5px";
   });
-  // Cliquer un signal active directement le mode connexion
   if (activateConnect && !connecting) toggleConnectMode();
 }
-setSig("audio", false);  // init sans activer connect
+setSig("audio", false);
 
 // ── ADD NODE ──────────────────────────────────────────────────────────────────
 function startAddNode() {
   const label = prompt("Nom du nœud :");
   if (!label || !label.trim()) return;
   const n = {
-    id: "tmp_" + Date.now(),   // ID temporaire — sera remplacé par un vrai ID après save
-    layout_id: {{ layout.id }},
+    id: "tmp_" + Date.now(),
+    layout_id: LAYOUT_ID,
     label: label.trim(),
-    x: 200 + Math.random()*300,
-    y: 100 + Math.random()*200,
+    x: 120 + Math.random()*400,
+    y: 80  + Math.random()*250,
     node_type: "free",
     color: NODE_COLORS["free"],
     catalogue_id: null,
@@ -400,77 +441,150 @@ function startAddNode() {
   scheduleAutoSave();
 }
 
-// ── DELETE SELECTED ───────────────────────────────────────────────────────────
+// ── ADD FROM CATALOGUE ────────────────────────────────────────────────────────
+function addFromCatalogue(name, nodeType, catalogueId) {
+  // Éviter les doublons
+  if (nodes.find(n => n.catalogue_id === catalogueId)) {
+    // Nœud déjà présent — le mettre en surbrillance brièvement
+    const existing = nodes.find(n => n.catalogue_id === catalogueId);
+    selected = {type:"node", id: existing.id};
+    rerender();
+    return;
+  }
+  // Disposer les nouveaux nœuds en cascade
+  const offset = nodes.length * 20 % 200;
+  const n = {
+    id: "tmp_" + Date.now(),
+    layout_id: LAYOUT_ID,
+    label: name,
+    x: 120 + offset,
+    y: 80  + offset,
+    node_type: nodeType,
+    color: NODE_COLORS[nodeType] || NODE_COLORS["free"],
+    catalogue_id: catalogueId,
+  };
+  nodes.push(n);
+  renderNode(n);
+  scheduleAutoSave();
+}
+
+// ── CATALOGUE PANEL ───────────────────────────────────────────────────────────
+function toggleCataloguePanel() {
+  const panel = document.getElementById("cat-panel");
+  const open = panel.style.display !== "flex";
+  panel.style.display = open ? "flex" : "none";
+  const btn = document.getElementById("btn-cat");
+  btn.style.background = open ? "var(--accent)" : "";
+  btn.style.color = open ? "var(--bg)" : "";
+  if (open) document.getElementById("cat-search").focus();
+}
+
+function filterCatalogue(query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll(".cat-item").forEach(el => {
+    const match = el.dataset.name.toLowerCase().includes(q);
+    el.style.display = match ? "" : "none";
+  });
+  // Cacher les groupes entièrement vides
+  document.querySelectorAll(".cat-group").forEach(grp => {
+    const visible = [...grp.querySelectorAll(".cat-item")].some(el => el.style.display !== "none");
+    grp.style.display = visible ? "" : "none";
+  });
+}
+
+// ── ÉDITEUR NŒUD ─────────────────────────────────────────────────────────────
+function openNodeEditor(e, id) {
+  const n = nodes.find(x=>String(x.id)===String(id));
+  if (!n) return;
+  nodeEditId = id;
+  document.getElementById("node-label-input").value = n.label || "";
+  document.getElementById("node-type-select").value  = n.node_type || "free";
+  const ed = document.getElementById("node-editor");
+  // Positionner near le curseur, sans sortir de l'écran
+  const ex = Math.min(e.clientX + 8, window.innerWidth  - 220);
+  const ey = Math.min(e.clientY - 10, window.innerHeight - 160);
+  ed.style.left = ex + "px";
+  ed.style.top  = ey + "px";
+  ed.style.display = "block";
+  document.getElementById("node-label-input").focus();
+  document.getElementById("node-label-input").select();
+}
+
+function previewNodeTypeColor() {
+  // Pas d'aperçu nécessaire — la couleur sera appliquée à la validation
+}
+
+function confirmNodeEdit() {
+  const n = nodes.find(x=>String(x.id)===String(nodeEditId));
+  if (n) {
+    n.label     = document.getElementById("node-label-input").value.trim() || n.label;
+    n.node_type = document.getElementById("node-type-select").value;
+    n.color     = NODE_COLORS[n.node_type] || NODE_COLORS["free"];
+    renderNode(n);
+    connections.filter(c=>String(c.from_id)===String(n.id)||String(c.to_id)===String(n.id)).forEach(c=>renderConn(c));
+    scheduleAutoSave();
+  }
+  cancelNodeEdit();
+}
+
+function cancelNodeEdit() {
+  nodeEditId = null;
+  document.getElementById("node-editor").style.display = "none";
+}
+
+document.getElementById("node-label-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") confirmNodeEdit();
+  if (e.key === "Escape") cancelNodeEdit();
+});
+
+// ── ÉDITEUR CONNEXION ─────────────────────────────────────────────────────────
+function openConnEditor(e, id) {
+  const c = connections.find(x=>String(x.id)===String(id));
+  if (!c) return;
+  connEditId = id;
+  document.getElementById("conn-label-input").value = c.label || "";
+  const ed = document.getElementById("conn-editor");
+  const ex = Math.min(e.clientX + 8, window.innerWidth  - 200);
+  const ey = Math.min(e.clientY - 10, window.innerHeight - 120);
+  ed.style.left = ex + "px";
+  ed.style.top  = ey + "px";
+  ed.style.display = "block";
+  document.getElementById("conn-label-input").focus();
+  document.getElementById("conn-label-input").select();
+}
+
+function confirmConnEdit() {
+  const c = connections.find(x=>String(x.id)===String(connEditId));
+  if (c) {
+    c.label = document.getElementById("conn-label-input").value.trim();
+    renderConn(c);
+    scheduleAutoSave();
+  }
+  cancelConnEdit();
+}
+
+function cancelConnEdit() {
+  connEditId = null;
+  document.getElementById("conn-editor").style.display = "none";
+}
+
+document.getElementById("conn-label-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") confirmConnEdit();
+  if (e.key === "Escape") cancelConnEdit();
+});
+
+// ── DELETE ────────────────────────────────────────────────────────────────────
 function deleteSelected() {
   if (!selected) return;
   if (selected.type === "node") {
-    nodes = nodes.filter(n=>n.id!==selected.id);
-    connections = connections.filter(c=>c.from_id!==selected.id && c.to_id!==selected.id);
+    nodes = nodes.filter(n=>String(n.id)!==String(selected.id));
+    connections = connections.filter(c=>String(c.from_id)!==String(selected.id) && String(c.to_id)!==String(selected.id));
   } else {
-    connections = connections.filter(c=>c.id!==selected.id);
+    connections = connections.filter(c=>String(c.id)!==String(selected.id));
   }
   selected = null;
   rerender();
   scheduleAutoSave();
-}
-
-document.addEventListener("keydown", e => {
-  if (document.activeElement.tagName === "INPUT") return;
-  if (e.key === "Delete" || e.key === "Backspace") deleteSelected();
-  if (e.key === "c" || e.key === "C") toggleConnectMode();
-  if (e.key === "Escape") {
-    if (connecting) { toggleConnectMode(); }
-    else { clearSelection(); }
-  }
-});
-
-// ── LABEL EDITOR ─────────────────────────────────────────────────────────────
-function openLabelEditor(e, type, id, current) {
-  editTarget = {type, id};
-  const ed = document.getElementById("label-editor");
-  const input = document.getElementById("label-input");
-  input.value = current || "";
-  ed.style.left = (e.clientX - svg.getBoundingClientRect().left + 8) + "px";
-  ed.style.top  = (e.clientY - svg.getBoundingClientRect().top  - 20) + "px";
-  ed.style.display = "block";
-  input.focus(); input.select();
-}
-
-document.getElementById("label-input").addEventListener("keydown", e => {
-  if (e.key === "Enter") confirmLabel();
-  if (e.key === "Escape") cancelLabel();
-});
-
-function confirmLabel() {
-  if (!editTarget) { cancelLabel(); return; }
-  const val = document.getElementById("label-input").value.trim();
-  if (editTarget.type === "node") {
-    const n = nodes.find(x=>x.id===editTarget.id);
-    if (n) { n.label = val; renderNode(n); connections.filter(c=>c.from_id===n.id||c.to_id===n.id).forEach(c=>renderConn(c)); }
-  } else {
-    const c = connections.find(x=>x.id===editTarget.id);
-    if (c) { c.label = val; renderConn(c); }
-  }
-  cancelLabel();
-  scheduleAutoSave();
-}
-
-function cancelLabel() {
-  editTarget = null;
-  document.getElementById("label-editor").style.display = "none";
-}
-
-// ── IMPORT CATALOGUE ─────────────────────────────────────────────────────────
-function importFromCatalogue() {
-  if (!confirm("Importer tout le catalogue actif comme nœuds ?")) return;
-  fetch(IMPORT_URL, {method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({mode:"catalogue"})})
-  .then(r=>r.json()).then(data => {
-    nodes = data.nodes;
-    connections = data.connections;
-    nodeIdCounter = maxNodeId() + 1;
-    init();
-  });
 }
 
 // ── RENAME ────────────────────────────────────────────────────────────────────
@@ -485,23 +599,33 @@ function startRename() {
   }
 }
 
-// ── SAVE ─────────────────────────────────────────────────────────────────────
+// ── KEYBOARD ──────────────────────────────────────────────────────────────────
+document.addEventListener("keydown", e => {
+  if (["INPUT","SELECT","TEXTAREA"].includes(document.activeElement.tagName)) return;
+  if (e.key === "Delete" || e.key === "Backspace") deleteSelected();
+  if (e.key === "c" || e.key === "C") toggleConnectMode();
+  if (e.key === "Escape") {
+    cancelNodeEdit(); cancelConnEdit();
+    if (connecting) toggleConnectMode();
+    else clearSelection();
+  }
+});
+
+// ── SAVE ──────────────────────────────────────────────────────────────────────
 function saveLayout() {
   const btn = document.getElementById("btn-save");
   btn.textContent = "…";
   fetch(SAVE_URL, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
     body: JSON.stringify({nodes, connections}),
   })
-  .then(r => r.json())
+  .then(r=>r.json())
   .then(data => {
     btn.textContent = "💾 Save";
-    // Resynchroniser avec les vrais IDs DB (les IDs tmp_… sont remplacés)
     if (data.nodes) {
       nodes = data.nodes;
       connections = data.connections;
-      nodeIdCounter = maxNodeId() + 1;
       init();
     }
     showToast();
@@ -520,7 +644,7 @@ function showToast() {
   t._timer = setTimeout(()=>{ t.style.display="none"; }, 2000);
 }
 
-// ── SVG COORDS ───────────────────────────────────────────────────────────────
+// ── SVG COORDS ────────────────────────────────────────────────────────────────
 function svgPoint(e) {
   const rect = svg.getBoundingClientRect();
   return { x: e.clientX - rect.left, y: e.clientY - rect.top };

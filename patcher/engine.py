@@ -247,6 +247,24 @@ class PatcherEngine:
         conn.commit()
         conn.close()
 
+    # ── CATALOGUE (pour le panneau picker) ──────────────────────────────────
+
+    def get_catalogue_items(self):
+        """Retourne tous les items actifs du catalogue, groupés par type."""
+        conn = self._db()
+        # manufacturer est optionnel (ajouté en v2.2.0 via ALTER TABLE)
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(catalogue)").fetchall()}
+        select = "id, name, type" + (", manufacturer" if "manufacturer" in cols else ", '' as manufacturer")
+        order  = ("type, manufacturer, name" if "manufacturer" in cols else "type, name")
+        rows = conn.execute(
+            f"SELECT {select} FROM catalogue WHERE active=1 ORDER BY {order}"
+        ).fetchall()
+        conn.close()
+        groups = {}
+        for r in rows:
+            groups.setdefault(r["type"], []).append(dict(r))
+        return groups
+
     # ── SESSIONS (pour le formulaire) ────────────────────────────────────────
 
     def get_sessions(self):

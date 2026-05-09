@@ -53,6 +53,7 @@ def patcher_view(layout_id):
                            connections=connections,
                            node_colors=NODE_COLORS,
                            signal_colors=SIGNAL_COLORS,
+                           catalogue_groups=engine.get_catalogue_items(),
                            version=_version(),
                            oblique=engine.rand_oblique())
 
