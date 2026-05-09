@@ -72,6 +72,7 @@
       </div>
     </div>
 
+    <button type="button" onclick="centerContent()" class="btn btn-ghost btn-sm" title="Centrer le contenu">⊙</button>
     <button type="button" id="btn-save" onclick="saveLayout()" class="btn btn-primary btn-sm">💾 Save</button>
     <a href="{{ url_for('patcher.patcher_list') }}" class="btn btn-ghost btn-sm">← Liste</a>
   </div>
@@ -102,10 +103,7 @@
 
       <div style="flex:1;overflow:hidden;position:relative;background:var(--bg);">
         <svg id="patcher-svg" width="100%" height="100%"
-             style="display:block;cursor:default;"
-             onmousedown="svgMouseDown(event)"
-             onmousemove="svgMouseMove(event)"
-             onmouseup="svgMouseUp(event)">
+             style="display:block;cursor:default;touch-action:none;user-select:none;">
           <defs>
             {% for sig, col in signal_colors.items() %}
             <marker id="arrow-{{ sig }}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
@@ -116,11 +114,13 @@
               <path d="M0,0 L0,6 L8,3 z" fill="#888" />
             </marker>
           </defs>
-          <g id="g-connections"></g>
-          <line id="conn-preview" x1="0" y1="0" x2="0" y2="0"
-                stroke="#888" stroke-width="1.5" stroke-dasharray="6,3"
-                marker-end="url(#arrow-preview)" style="display:none;" />
-          <g id="g-nodes"></g>
+          <g id="g-root">
+            <g id="g-connections"></g>
+            <line id="conn-preview" x1="0" y1="0" x2="0" y2="0"
+                  stroke="#888" stroke-width="1.5" stroke-dasharray="6,3"
+                  marker-end="url(#arrow-preview)" style="display:none;" />
+            <g id="g-nodes"></g>
+          </g>
         </svg>
 
         <div id="save-toast" style="display:none;position:absolute;bottom:16px;right:16px;
@@ -282,18 +282,47 @@ let connections = {{ connections | tojson }};
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let selected      = null;   // {type:'node'|'conn', id}
 let dragging      = null;
+let panning       = null;   // pan souris sur fond
 let connecting    = false;
 let connFrom      = null;
 let currentSig    = "audio";
 let autoSaveTimer = null;
 let propsDirty    = false;
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
+// ── VIEWPORT TRANSFORM ────────────────────────────────────────────────────────
+let vt = {x: 0, y: 0, scale: 1};
+const VT_MIN = 0.15, VT_MAX = 4;
+
 const svg    = document.getElementById("patcher-svg");
+const gRoot  = document.getElementById("g-root");
 const gNodes = document.getElementById("g-nodes");
 const gConns = document.getElementById("g-connections");
 const preview = document.getElementById("conn-preview");
 
+function applyTransform() {
+  gRoot.setAttribute("transform", `translate(${vt.x},${vt.y}) scale(${vt.scale})`);
+}
+
+function centerContent() {
+  if (!nodes.length) { vt={x:0,y:0,scale:1}; applyTransform(); return; }
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+  nodes.forEach(n => {
+    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x + nodeW(n)); maxY = Math.max(maxY, n.y + nodeH(n));
+  });
+  const pad   = 60;
+  const cw    = maxX - minX + pad*2;
+  const ch    = maxY - minY + pad*2;
+  const svgW  = svg.clientWidth  || 800;
+  const svgH  = svg.clientHeight || 500;
+  const scale = Math.min(svgW / cw, svgH / ch, 1.5);
+  vt.scale = scale;
+  vt.x = (svgW - cw * scale) / 2 - (minX - pad) * scale;
+  vt.y = (svgH - ch * scale) / 2 - (minY - pad) * scale;
+  applyTransform();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
 function init() {
   gNodes.innerHTML = "";
   gConns.innerHTML = "";
@@ -301,6 +330,8 @@ function init() {
   nodes.forEach(n => renderNode(n));
 }
 init();
+// Centre le contenu au chargement (après le premier rendu)
+requestAnimationFrame(centerContent);
 
 // Injecter les types dynamiques dans la légende et le select type
 (function buildDynamicTypes() {
@@ -581,7 +612,7 @@ propsSig.addEventListener("change", () => {
   if (c) { c.signal_type = propsSig.value; renderConn(c); scheduleAutoSave(); }
 });
 
-// ── DRAG ──────────────────────────────────────────────────────────────────────
+// ── DRAG NŒUDS ────────────────────────────────────────────────────────────────
 function nodeMouseDown(e, id) {
   e.stopPropagation();
   if (connecting) { handleConnectClick(id); return; }
@@ -591,26 +622,32 @@ function nodeMouseDown(e, id) {
   dragging = { id, ox: n.x - pt.x, oy: n.y - pt.y, moved: false };
 }
 
-function svgMouseDown(e) {
+// ── PAN + EVENTS SOURIS ───────────────────────────────────────────────────────
+svg.addEventListener("mousedown", e => {
   const onNode = e.target.closest('g[id^="node-"]');
   const onConn = e.target.closest('g[id^="conn-"]');
   if (!onNode && !onConn) {
-    if (connecting) { connFrom = null; preview.style.display = "none"; rerender(); }
-    else clearSelection();
+    if (connecting) { connFrom = null; preview.style.display = "none"; rerender(); return; }
+    clearSelection();
+    panning = { sx: e.clientX - vt.x, sy: e.clientY - vt.y };
+    svg.style.cursor = "grabbing";
   }
-}
+});
 
-function svgMouseMove(e) {
+svg.addEventListener("mousemove", e => {
+  if (panning) {
+    vt.x = e.clientX - panning.sx;
+    vt.y = e.clientY - panning.sy;
+    applyTransform(); return;
+  }
   if (dragging) {
     const pt = svgPoint(e);
     const n = nodes.find(x=>String(x.id)===String(dragging.id));
-    n.x = pt.x + dragging.ox;
-    n.y = pt.y + dragging.oy;
+    n.x = pt.x + dragging.ox; n.y = pt.y + dragging.oy;
     dragging.moved = true;
     renderNode(n);
     connections.filter(c=>String(c.from_id)===String(n.id)||String(c.to_id)===String(n.id)).forEach(c=>renderConn(c));
-    scheduleAutoSave();
-    return;
+    scheduleAutoSave(); return;
   }
   if (connecting && connFrom !== null) {
     const pt = svgPoint(e);
@@ -622,9 +659,105 @@ function svgMouseMove(e) {
       preview.style.display = "";
     }
   }
-}
+});
 
-function svgMouseUp(e) { dragging = null; }
+svg.addEventListener("mouseup", () => {
+  panning = null; dragging = null;
+  svg.style.cursor = connecting ? "crosshair" : "default";
+});
+
+svg.addEventListener("mouseleave", () => { panning = null; dragging = null; });
+
+// ── WHEEL ZOOM ────────────────────────────────────────────────────────────────
+svg.addEventListener("wheel", e => {
+  e.preventDefault();
+  const r   = svg.getBoundingClientRect();
+  const mx  = e.clientX - r.left;
+  const my  = e.clientY - r.top;
+  const f   = e.deltaY < 0 ? 1.12 : 1/1.12;
+  const ns  = Math.max(VT_MIN, Math.min(VT_MAX, vt.scale * f));
+  const cx  = (mx - vt.x) / vt.scale;
+  const cy  = (my - vt.y) / vt.scale;
+  vt.x = mx - cx * ns; vt.y = my - cy * ns; vt.scale = ns;
+  applyTransform();
+}, {passive: false});
+
+// ── TOUCH : PAN + PINCH + DRAG NŒUDS ─────────────────────────────────────────
+let touchState = null;
+
+svg.addEventListener("touchstart", e => {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    const t = e.touches[0];
+    const target = document.elementFromPoint(t.clientX, t.clientY);
+    const nodeG  = target?.closest?.('g[id^="node-"]');
+    if (nodeG) {
+      const id = nodeG.id.replace("node-", "");
+      if (connecting) { handleConnectClick(id); return; }
+      selectNode(id);
+      const n  = nodes.find(x=>String(x.id)===String(id));
+      const pt = svgPoint(t);
+      touchState = {type:"node", id, ox: n.x - pt.x, oy: n.y - pt.y};
+    } else {
+      touchState = {type:"pan", sx: t.clientX - vt.x, sy: t.clientY - vt.y};
+    }
+  } else if (e.touches.length === 2) {
+    const r   = svg.getBoundingClientRect();
+    const dx  = e.touches[0].clientX - e.touches[1].clientX;
+    const dy  = e.touches[0].clientY - e.touches[1].clientY;
+    const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left;
+    const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top;
+    touchState = {
+      type:"pinch",
+      startDist:  Math.hypot(dx, dy),
+      startScale: vt.scale,
+      startVtX:   vt.x, startVtY: vt.y,
+      // position canvas sous le milieu des doigts
+      cx: (midX - vt.x) / vt.scale,
+      cy: (midY - vt.y) / vt.scale,
+      midX, midY,
+    };
+  }
+}, {passive: false});
+
+svg.addEventListener("touchmove", e => {
+  e.preventDefault();
+  if (!touchState) return;
+  if (touchState.type === "node" && e.touches.length === 1) {
+    const t  = e.touches[0];
+    const pt = svgPoint(t);
+    const n  = nodes.find(x=>String(x.id)===String(touchState.id));
+    if (!n) return;
+    n.x = pt.x + touchState.ox; n.y = pt.y + touchState.oy;
+    renderNode(n);
+    connections.filter(c=>String(c.from_id)===String(n.id)||String(c.to_id)===String(n.id)).forEach(c=>renderConn(c));
+    scheduleAutoSave();
+  } else if (touchState.type === "pan" && e.touches.length === 1) {
+    const t = e.touches[0];
+    vt.x = t.clientX - touchState.sx;
+    vt.y = t.clientY - touchState.sy;
+    applyTransform();
+  } else if (touchState.type === "pinch" && e.touches.length === 2) {
+    const r    = svg.getBoundingClientRect();
+    const dx   = e.touches[0].clientX - e.touches[1].clientX;
+    const dy   = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.hypot(dx, dy);
+    const ns   = Math.max(VT_MIN, Math.min(VT_MAX, touchState.startScale * dist / touchState.startDist));
+    // Midpoint courant
+    const midX = (e.touches[0].clientX + e.touches[1].clientX)/2 - r.left;
+    const midY = (e.touches[0].clientY + e.touches[1].clientY)/2 - r.top;
+    vt.x = midX - touchState.cx * ns;
+    vt.y = midY - touchState.cy * ns;
+    vt.scale = ns;
+    applyTransform();
+  }
+}, {passive: false});
+
+svg.addEventListener("touchend", e => {
+  e.preventDefault();
+  if (e.touches.length < 2 && touchState?.type === "pinch") touchState = null;
+  if (e.touches.length === 0) { touchState = null; dragging = null; }
+}, {passive: false});
 
 // ── CONNECT MODE ──────────────────────────────────────────────────────────────
 function toggleConnectMode() {
@@ -829,10 +962,15 @@ function exportJSON() {
   URL.revokeObjectURL(a.href);
 }
 
-// ── SVG COORDS ────────────────────────────────────────────────────────────────
+// ── SVG COORDS (tient compte du viewport transform) ───────────────────────────
 function svgPoint(e) {
-  const r = svg.getBoundingClientRect();
-  return { x: e.clientX - r.left, y: e.clientY - r.top };
+  const r  = svg.getBoundingClientRect();
+  const cx = (e.clientX !== undefined ? e.clientX : e.touches[0].clientX);
+  const cy = (e.clientY !== undefined ? e.clientY : e.touches[0].clientY);
+  return {
+    x: (cx - r.left - vt.x) / vt.scale,
+    y: (cy - r.top  - vt.y) / vt.scale,
+  };
 }
 
 // ── EXPORT ────────────────────────────────────────────────────────────────────
