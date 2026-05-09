@@ -3,7 +3,7 @@
 > Application de documentation et de performance musicale pour le projet **AZA** —
 > univers de fiction dystopique dont les sessions de création constituent la bande originale.
 
-**Version : v3.1.0** · [Changelog](CHANGELOG.md) · [Live →](https://robotariis-sessions.fly.dev/)
+**Version : v3.2.0** · [Changelog](CHANGELOG.md) · [Live →](https://robotariis-sessions.fly.dev/)
 
 ---
 
@@ -79,6 +79,22 @@ fly deploy   # depuis le dossier du projet
 | Export SVG | Standalone, CSS vars résolus, polices embarquées |
 | Export PDF | Via `window.print()` paysage |
 | Export / Import JSON | Format portable `from_index/to_index` — échange entre instances |
+
+### ⎍ SysEx Loader & Bank Editor — v3.2
+| Fonction | Description |
+|---|---|
+| Loader | Charger un `.syx` DX7/Volca FM par glisser-déposer ou file picker |
+| Détection MIDI | `navigator.requestMIDIAccess({sysex:true})` — liste toutes les sorties |
+| Test connexion | Phrase C3→C5 (arpège majeur 3 octaves) pour confirmation sonore |
+| Preview patches | Noms des 32 patches parsés depuis le bulk dump DX7 (packed 128 bytes) |
+| Canal MIDI | Réglable 1-16, byte `0n` réécrit dans le header SysEx avant envoi |
+| Envoi | `output.send(bytes)` + toast confirmation |
+| Librairie | Sauvegarder / charger / télécharger / supprimer des banks (BLOB SQLite) |
+| **Bank Editor** | Assembler une bank custom depuis plusieurs sources |
+| Source → Custom | `[+]` par patch ou `[+ Tous]` — swapper la source sans perdre la bank |
+| Réordonnancement | ↑ ↓ ✕ par slot — 32 slots, vides comblés par init voice |
+| Export .syx | Build bulk dump DX7 client-side + checksum 2's complement |
+| Envoi direct | Web MIDI depuis l'éditeur sans passer par le loader |
 
 ### ⬡ Prompteur Dawless
 | Fonction | Description |
@@ -182,18 +198,18 @@ La base SQLite vit dans un volume persistant monté sur `/data`.
 
 ## Roadmap
 
-### v3.2.x — Patcher : polish & puissance
+### v3.3.x — Patcher : polish & puissance
 - Connexions multi-type simultanées (audio + MIDI sur le même câble)
 - Snap-to-grid optionnel
 - Dupliquer un layout
 - Minimap / vue d'ensemble sur les grands patches
 
-### v3.3.x — Sessions : enrichissement
+### v3.4.x — Sessions : enrichissement
 - Import métadonnées depuis un fichier audio (date, durée automatiques)
 - Lecteur audio intégré (Web Audio API, waveform)
 - BPM / tonalité dans les filtres de recherche
 
-### v3.4.x — Vue Projet & Timeline
+### v3.5.x — Vue Projet & Timeline
 - Timeline visuelle des sessions par projet (Chart.js ou SVG)
 - Page projet dédiée — durée totale, statut WIP / released
 - Lien patch ↔ plusieurs sessions (relation 1-n)

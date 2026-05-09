@@ -5,6 +5,31 @@
 
 ---
 
+## v3.2.0 — 2026-05-09 — Module SysEx Loader & Bank Editor
+
+### ✨ Nouveautés
+- **Module ⎍ SysEx** `/sysex` — loader DX7 / Volca FM via Web MIDI API (Chrome)
+  - Détection automatique des interfaces MIDI (`requestMIDIAccess({sysex:true})`)
+  - Chargement `.syx` par glisser-déposer ou file picker
+  - Preview des 32 noms de patches parsés depuis le bulk dump DX7 packed (128 bytes/voix)
+  - Canal MIDI 1-16 réglable — byte `0n` réécrit dans le header avant envoi
+  - Test connexion : phrase C3→E3→G3→C4→E4→G4→C5→G4→C4 (arpège majeur, 3 octaves)
+  - Librairie de banks : save / load / download / delete (BLOB SQLite, table `sysex_banks`)
+- **⎍ Bank Editor** `/sysex/editor` — patch librarian custom bank
+  - Deux colonnes : Source (bank chargée) | Custom Bank (32 slots)
+  - `[+]` par patch ou `[+ Tous]` pour alimenter la custom bank
+  - Swapper la source sans perdre la custom bank en cours
+  - Réordonnancement ↑ ↓ ✕ par slot
+  - Slots vides comblés par une init voice (OP1 actif, silence)
+  - Export `.syx` client-side (assemblage bulk DX7 + checksum 2's complement en JS)
+  - Envoi direct via Web MIDI depuis l'éditeur
+  - Sauvegarde dans la librairie existante
+
+### ♻️ DB
+- Migration `CREATE TABLE IF NOT EXISTS sysex_banks` (name, format, size, data BLOB)
+
+---
+
 ## v3.1.0 — 2026-05-09 — Release Patcher complète
 
 Clôture du cycle v3.0.x-alpha. Stabilisation et complétion du module Patcher.
