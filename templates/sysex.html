@@ -249,11 +249,27 @@ function testConnection() {
     const output = getSelectedOutput();
     if (!output) return;
     const ch = (parseInt(document.getElementById("midi-channel").value) - 1) & 0x0F;
-    // Note on + note off C4
-    output.send([0x90 | ch, 60, 100]);
-    setTimeout(() => output.send([0x80 | ch, 60, 0]), 300);
-    setMidiStatus("♪ Note envoyée sur ch." + (ch + 1) + " — écoute le Volca", "var(--accent)");
-    log("Test : note C4 → " + output.name);
+    // Petite phrase montante sur 3 octaves — notes + vélocités
+    const phrase = [
+        [48, 90],  // C3
+        [52, 80],  // E3
+        [55, 85],  // G3
+        [60, 95],  // C4
+        [64, 80],  // E4
+        [67, 85],  // G4
+        [72, 100], // C5
+        [67, 70],  // G4
+        [60, 90],  // C4 (retour)
+    ];
+    const dur   = 110; // ms par note
+    const gap   = 20;  // silence entre notes
+    phrase.forEach(([note, vel], i) => {
+        const t = i * (dur + gap);
+        setTimeout(() => output.send([0x90 | ch, note, vel]), t);
+        setTimeout(() => output.send([0x80 | ch, note, 0]),   t + dur);
+    });
+    setMidiStatus("♪ Test sur ch." + (ch + 1) + " — écoute le Volca", "var(--accent)");
+    log("Test connexion : phrase C3→C5 → " + output.name);
 }
 
 function setMidiStatus(msg, color) {
