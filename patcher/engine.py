@@ -202,9 +202,10 @@ class PatcherEngine:
 
             if nid_int and nid_int in existing_ids:
                 conn.execute(
-                    "UPDATE patch_nodes SET label=?,x=?,y=?,color=?,node_type=? WHERE id=?",
+                    "UPDATE patch_nodes SET label=?,x=?,y=?,color=?,node_type=?,note=? WHERE id=?",
                     (n["label"], int(n["x"]), int(n["y"]),
-                     n.get("color", "#3A3A3A"), n.get("node_type", "free"), nid_int)
+                     n.get("color", "#3A3A3A"), n.get("node_type", "free"),
+                     n.get("note", ""), nid_int)
                 )
                 seen_ids.add(nid_int)
                 id_map[raw_id] = nid_int
@@ -212,11 +213,11 @@ class PatcherEngine:
                 # Nouveau nœud (ID temp ou ID entier inconnu)
                 cur = conn.execute(
                     "INSERT INTO patch_nodes "
-                    "(layout_id,label,x,y,node_type,color,catalogue_id) "
-                    "VALUES (?,?,?,?,?,?,?)",
+                    "(layout_id,label,x,y,node_type,color,catalogue_id,note) "
+                    "VALUES (?,?,?,?,?,?,?,?)",
                     (layout_id, n["label"], int(n["x"]), int(n["y"]),
                      n.get("node_type", "free"), n.get("color", "#3A3A3A"),
-                     n.get("catalogue_id"))
+                     n.get("catalogue_id"), n.get("note", ""))
                 )
                 real_id = cur.lastrowid
                 seen_ids.add(real_id)
@@ -238,10 +239,11 @@ class PatcherEngine:
                 continue  # connexion invalide, on ignore
             conn.execute(
                 "INSERT INTO patch_connections "
-                "(layout_id,from_id,to_id,label,signal_type) "
-                "VALUES (?,?,?,?,?)",
+                "(layout_id,from_id,to_id,label,signal_type,note) "
+                "VALUES (?,?,?,?,?,?)",
                 (layout_id, from_id, to_id,
-                 c.get("label", ""), c.get("signal_type", "audio"))
+                 c.get("label", ""), c.get("signal_type", "audio"),
+                 c.get("note", ""))
             )
 
         conn.commit()

@@ -275,6 +275,7 @@ def init_db(db_path):
             node_type TEXT DEFAULT 'free',
             color TEXT DEFAULT '#3A3A3A',
             catalogue_id INTEGER,
+            note TEXT DEFAULT '',
             FOREIGN KEY (layout_id) REFERENCES patch_layouts(id)
         )
     """)
@@ -287,6 +288,7 @@ def init_db(db_path):
             to_id INTEGER NOT NULL,
             label TEXT DEFAULT '',
             signal_type TEXT DEFAULT 'audio',
+            note TEXT DEFAULT '',
             FOREIGN KEY (layout_id) REFERENCES patch_layouts(id)
         )
     """)
@@ -295,6 +297,8 @@ def init_db(db_path):
         "ALTER TABLE sessions ADD COLUMN recap_claude TEXT",
         "ALTER TABLE sessions ADD COLUMN project_id INTEGER",
         "ALTER TABLE sessions ADD COLUMN title TEXT DEFAULT ''",
+        "ALTER TABLE patch_nodes ADD COLUMN note TEXT DEFAULT ''",
+        "ALTER TABLE patch_connections ADD COLUMN note TEXT DEFAULT ''",
     ]:
         try:
             conn.execute(migration)
