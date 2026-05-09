@@ -3,20 +3,22 @@
 > Application de documentation et de performance musicale pour le projet **AZA** —
 > univers de fiction dystopique dont les sessions de création constituent la bande originale.
 
-**Version : v2.5.0** · [Changelog](CHANGELOG.md)
+**Version : v3.0.1-alpha** · [Changelog](CHANGELOG.md) · [Live →](https://robotariis-sessions.fly.dev/)
 
 ---
 
 ## Ce que c'est
 
-**Journal de Sessions AZA** est un outil personnel en deux parties :
+**Journal de Sessions AZA** est un outil personnel en trois parties :
 
 1. **Carnet de bord musical** — documente chaque session de création (machines, patches, tempo,
    influences, notes, rating) et les organise en projets.
 
-2. **Prompteur Dawless** — scripts de set avec minutage, noms de patch et instructions.
-   Vue performance plein écran avec transport DAW (Play/Stop/Rewind), horloge décompte,
-   barre de progression segmentée style LED, avance automatique entre cues.
+2. **⬡ Patcher** — mind map SVG interactif pour visualiser et documenter le routing signal
+   entre machines hardware, effets, DAW, iOS et plugins.
+
+3. **Prompteur Dawless** — scripts de set avec minutage, noms de patch et instructions.
+   Vue performance plein écran avec transport DAW, horloge décompte, barre LED, avance auto.
 
 L'application tourne **localement** (`python app.py`) ou en **cloud** sur Fly.io.
 
@@ -27,14 +29,14 @@ L'application tourne **localement** (`python app.py`) ou en **cloud** sur Fly.io
 ```bash
 pip install -r requirements.txt
 python app.py
-# → http://localhost:5001
+# → http://localhost:5000
 ```
 
 Pour le déploiement cloud :
 
 ```bash
 fly deploy   # depuis le dossier du projet
-# → https://aza-sessions.fly.dev/
+# → https://robotariis-sessions.fly.dev/
 ```
 
 ---
@@ -48,7 +50,8 @@ fly deploy   # depuis le dossier du projet
 | Copier setup | Nouvelle session pré-remplie depuis une existante |
 | Liaison sessions | Chaîne de travail sur un même morceau |
 | Export Markdown | Compatible Obsidian — individuel ou global |
-| Export PDF | Formulaire vierge A4 imprimable (mode dégradé papier) |
+| Export PDF | Formulaire vierge A4 imprimable |
+| Export → vault Obsidian | Push direct via chemin configuré |
 
 ### Organisation
 | Fonction | Description |
@@ -58,29 +61,47 @@ fly deploy   # depuis le dossier du projet
 | Filtres temps réel | Texte, mode, note |
 | Statistiques | Dashboard Chart.js — machines, influences, timeline mensuelle |
 
+### ⬡ Patcher — v3.0
+| Fonction | Description |
+|---|---|
+| Canvas SVG interactif | Nœuds drag & drop, connexions Bézier avec flèches typées |
+| Types de nœuds | machine · effet · daw · synth_ios · plugin · free + **types custom** |
+| Types de signal | audio (orange) · midi (bleu) · cv (vert) · usb (violet) · autre |
+| Icônes + note courte | Affichées dans chaque nœud sur le canvas |
+| Barre de propriétés | Label, type, signal, note — éditables en bas, sélection simple clic |
+| Panneau catalogue | Picker latéral — ajouter depuis le catalogue en un clic |
+| Import depuis session | Crée automatiquement les nœuds depuis une session liée |
+| Types custom | synth_android, fx_android, etc. — couleur auto par hash, icône ◈ |
+| Autosave | AJAX 1,5 s |
+| Export Mermaid | `.md` avec `graph LR`, flèches typées, tables nœuds/connexions |
+| Export SVG | Standalone, CSS vars résolus, polices embarquées |
+| Export PDF | Via `window.print()` paysage |
+| Export / Import JSON | Format portable `from_index/to_index` — échange entre instances |
+
 ### ⬡ Prompteur Dawless
 | Fonction | Description |
 |---|---|
 | Scripts de set | Titre, description, cues (temps · patch · action · couleur) |
 | Vue performance | Trois zones prev/current/next, plein écran |
 | Transport DAW | ⏮ Rewind · ⏹ Stop · ▶ Play/Pause |
-| Horloge | 48px — décompte cue en auto, chrono en manuel |
-| Barre LED | Segments 22px, clignotement (<10s / <5s), hauteur réglable |
-| Mode auto | Avance automatique — durée depuis minutage ou valeur par défaut |
-| Mode manuel | Barre scrub, clic / Espace / swipe mobile |
+| Horloge | 48px — décompte cue (auto) ou chrono global (manuel) |
+| Barre LED | Segments 22px, clignotement <10s/<5s, hauteur réglable |
+| Mode auto / manuel | Avance automatique ou scrub barre / Espace / swipe |
 | Zoom police | A+ / A− (40–250 %) |
-| Import / Export | JSON structuré + Markdown compatible Obsidian |
+| Import / Export | JSON structuré + Markdown Obsidian |
 
 ### Catalogue & Références
-- Machines hardware, effets, DAW, synthés iOS, plugins VST/AU — **classés par fabricant**
-- **Ajout inline depuis le formulaire** — modal AJAX, sans quitter la session en cours
+- Machines hardware, effets, DAW, synthés iOS, plugins — **classés par fabricant**
+- **Types libres** (`synth_android`, `fx_android`…) — le patcher suit automatiquement
+- **Ajout inline** depuis le formulaire session — modal AJAX sans perdre le contexte
 - Influences (artistes, labels)
 - **Stratégies Obliques AZA** — contraintes créatives aléatoires, style Brian Eno
 
 ### Ergonomie
-- **Autosave brouillon** — le formulaire nouvelle session se sauvegarde en continu, restauré si on revient sans avoir soumis
+- **Autosave brouillon** — formulaire nouvelle session restauré si on revient
 - Zoom global A+ / A− — persisté en localStorage
-- Menu hamburger sur iPad et mobile
+- Menu hamburger sur mobile/iPad
+- 6 thèmes : Béton · Machine · Nord · Solarized · Gruvbox · Dracula
 
 ---
 
@@ -94,6 +115,7 @@ fly deploy   # depuis le dossier du projet
 | Templates | Jinja2 |
 | CSS | Vanilla — zéro framework externe |
 | Graphiques | Chart.js |
+| Patcher | SVG — Bézier, markers, drag & drop vanilla JS |
 | Typographie | IBM Plex Mono / IBM Plex Sans |
 | Thèmes | Béton · Machine · Nord · Solarized · Gruvbox · Dracula |
 
@@ -102,34 +124,26 @@ fly deploy   # depuis le dossier du projet
 ## Structure du projet
 
 ```
-app.py                      # Launcher — init_db, blueprints, modules non encore extraits
+app.py                      # Launcher — init_db, blueprints
 wsgi.py                     # Point d'entrée Gunicorn (Fly.io)
-Dockerfile                  # Build Docker Python 3.11-slim
-fly.toml                    # Config Fly.io (région CDG, 256 MB)
+Dockerfile / fly.toml       # Build + config Fly.io (région CDG, 256 MB)
 core/
   db.py                     # get_db() partagé
-  oblique.py                # rand_oblique() partagé
-  constants.py              # listes de référence (MODES, INTENTIONS, etc.)
-sessions/                   # Blueprint sessions — CRUD, exports, search, settings
+  init_db.py                # init_db(db_path) + migrations ALTER TABLE
+  oblique.py / constants.py
+sessions/                   # Blueprint sessions — CRUD, exports, search
 catalogue/                  # Blueprint catalogue matériel
-obliques/                   # Blueprint stratégies obliques
-influences/                 # Blueprint influences
-spark/                      # Blueprint moteur de suggestions
-dim/                        # Blueprint D.I.M Lite — prompteur Dawless
+patcher/                    # Blueprint ⬡ Patcher
+  engine.py                 # PatcherEngine — save, import session/catalogue, export
+  api.py                    # Routes : view, save, import JSON, export Mermaid
+obliques/ influences/ spark/ dim/
 templates/
-  base.html                 # Layout commun — nav, CSS, Pomodoro, dark mode
-  index.html                # Liste des sessions
-  new.html / edit.html      # Formulaires session
-  view.html                 # Détail session
-  stats.html                # Dashboard statistiques
-  prompter_list.html        # Liste des scripts prompteur
-  prompter_edit.html        # Éditeur de cues
+  patcher_list.html         # Liste layouts + form import JSON
+  patcher_view.html         # Canvas SVG interactif complet
   prompter_play.html        # Vue performance plein écran
-  form_blank.html           # Formulaire PDF vierge
-  catalogue.html / projects.html / settings.html / about.html
-requirements.txt            # flask>=3.0.0
-CHANGELOG.md                # Historique complet des versions
-sessions.db                 # Base SQLite — NON VERSIONNÉ
+  ...
+CHANGELOG.md
+sessions.db                 # NON VERSIONNÉ
 ```
 
 ---
@@ -141,46 +155,35 @@ sessions.db                 # Base SQLite — NON VERSIONNÉ
 | `sessions` | Sessions musicales — table principale (30+ champs) |
 | `projects` | Projets — regroupement de sessions |
 | `prompter_scripts` | Scripts prompteur — JSON cues |
-| `catalogue` | Matériel : machine, effet, daw, synth_ios, plugin |
+| `patch_layouts` | Layouts patcher — nom, session liée |
+| `patch_nodes` | Nœuds — label, position, type, couleur, note |
+| `patch_connections` | Connexions — from/to, signal_type, label, note |
+| `catalogue` | Matériel + types libres |
 | `influences` | Artistes et labels |
 | `obliques` | Stratégies créatives |
 
-Les migrations sont automatiques au démarrage via `ALTER TABLE … ADD COLUMN` dans `init_db()`.
+Les migrations sont automatiques via `ALTER TABLE … ADD COLUMN` dans `init_db()`.
 
 ---
 
 ## Déploiement Fly.io
 
 ```bash
-# Première fois
-fly launch          # crée l'app et le volume
-
-# Mises à jour
-fly deploy          # rebuild Docker + rolling deploy
-
-# Logs
-fly logs --app aza-sessions
+fly launch                          # première fois — crée l'app + volume
+fly deploy                          # mise à jour
+fly logs --app robotariis-sessions  # logs
 ```
 
-La base SQLite est stockée dans un volume persistant monté sur `/data`.
-`wsgi.py` appelle `init_db()` dans `app.app_context()` avant que Gunicorn ne démarre.
+La base SQLite vit dans un volume persistant monté sur `/data`.
 
 ---
 
-## Roadmap v2.x — Complété ✓
+## Roadmap v3.x
 
-| Fonctionnalité | Version |
-|---|---|
-| Pagination liste sessions | v2.5.0 |
-| Lien fichier audio → Finder | v2.5.0 |
-| Export direct → vault Obsidian | v2.5.0 |
-
-## Roadmap v3
-
-- Import automatique depuis métadonnées fichier audio
+- Import depuis métadonnées fichier audio
 - Lecteur audio intégré (Web Audio API)
 - Timeline visuelle des sessions par projet
-- Synchronisation multi-machines (réseau local)
+- Connexions multi-type dans le patcher (audio + MIDI simultanés)
 
 ---
 

@@ -18,7 +18,7 @@
                 v{{ version }}
             </div>
             <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-top:4px;letter-spacing:.06em;">
-                RELEASE FINALE v2.x — MAI 2026
+                MODULE PATCHER — MAI 2026
             </div>
         </div>
         <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:10px;">
@@ -26,10 +26,11 @@
         </div>
     </div>
     <div style="font-family:var(--mono);font-size:12px;line-height:1.8;margin-top:16px;color:var(--text-muted);">
-        La v2.x clôt le cycle avec la pagination, le lien fichier audio vers Finder
-        et l'<strong style="color:var(--text);">export direct vers le vault Obsidian</strong>.
-        La v2.0 avait introduit le <strong style="color:var(--text);">Prompteur Dawless</strong>
-        et le déploiement sur <strong style="color:var(--text);">Fly.io</strong>.
+        La v3.x introduit le <strong style="color:var(--text);">⬡ Patcher</strong> —
+        mind map SVG interactif pour documenter le routing signal entre machines, effets, DAW et plugins.
+        Nœuds drag & drop, connexions Bézier typées, barre de propriétés inline,
+        export <strong style="color:var(--text);">Mermaid / SVG / PDF / JSON</strong> et import de patches.
+        Types custom (<strong style="color:var(--text);">synth_android, fx_android…</strong>) supportés dynamiquement.
     </div>
 </div>
 
@@ -74,6 +75,32 @@
             inspirées des <em>Oblique Strategies</em> de Brian Eno — elles apparaissent
             aléatoirement pour déstabiliser, guider ou forcer une rupture dans le processus.
         </p>
+    </div>
+</div>
+
+<!-- PATCHER -->
+<div class="card">
+    <div class="card-title">⬡ Patcher — v3.0</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:14px;">
+        {% for feat in [
+            ('Canvas SVG',          'Nœuds drag & drop · connexions Bézier avec flèches typées'),
+            ('Types de nœuds',      'machine · effet · daw · synth_ios · plugin · free + custom'),
+            ('Types custom',        'synth_android, fx_android… couleur auto + icône ◈'),
+            ('Signal',              'audio · midi · cv · usb · autre (couleurs distinctes)'),
+            ('Icônes + note',       '⚙ ≈ ▣ ⊞ ◉ ◇ · note courte affichée dans le nœud'),
+            ('Barre de propriétés', 'Label, type, signal, note — éditables en bas de canvas'),
+            ('Panneau catalogue',   'Picker latéral — ajout depuis le catalogue en un clic'),
+            ('Autosave',            'AJAX 1,5 s — aucune perte en cas de fermeture'),
+            ('Export Mermaid',      '.md avec graph LR · flèches typées · tables nœuds/connexions'),
+            ('Export SVG',          'Standalone · CSS vars résolus · polices embarquées'),
+            ('Export PDF',          'window.print() paysage'),
+            ('Import / Export JSON','Format portable from_index/to_index — échange entre instances'),
+        ] %}
+        <div style="padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);">
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:700;margin-bottom:4px;">{{ feat[0] }}</div>
+            <div style="font-size:11px;color:var(--text);line-height:1.5;">{{ feat[1] }}</div>
+        </div>
+        {% endfor %}
     </div>
 </div>
 
@@ -178,6 +205,8 @@
     <div class="card-title">∙ Historique des versions</div>
     <div style="margin-top:12px;">
         {% for v, date, desc in [
+            ('v3.0.1-alpha',  '2026-05-09', 'Patcher : import/export JSON portable, export Mermaid/SVG/PDF, types custom dynamiques, icônes + note dans les nœuds, barre de propriétés inline'),
+            ('v3.0.0-alpha',  '2026-05-09', 'Module ⬡ Patcher — mind map SVG interactif, nœuds drag & drop, connexions Bézier typées, import session/catalogue, autosave AJAX'),
             ('v2.5.0',       '2026-05-05', 'Release finale v2.x — pagination, révéler audio dans Finder, export vault Obsidian, correctifs Pomodoro / zoom / theme picker'),
             ('v2.2.0',       '2026-05-04', 'Fabricants catalogue, ajout inline depuis formulaire session, autosave brouillon'),
             ('v2.1.0',       '2026-05-03', 'Architecture modulaire — Blueprints Flask (sessions, catalogue, obliques, influences, spark, dim)'),
