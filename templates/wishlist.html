@@ -14,7 +14,7 @@
 <!-- AJOUTER -->
 <div class="card">
     <div class="card-title">∙ Ajouter un équipement</div>
-    <form method="POST" action="{{ url_for('manage_wishlist') }}"
+    <form method="POST" action="{{ url_for('wishlist.manage_wishlist') }}"
           style="display:grid;grid-template-columns:1fr 2fr 1fr 80px 1fr auto;gap:10px;margin-top:12px;align-items:end;">
         <input type="hidden" name="action" value="add">
         <div class="form-group" style="margin:0">
@@ -69,12 +69,12 @@
             {% if item.url %}<a href="{{ item.url }}" target="_blank" style="font-family:var(--mono);font-size:10px;color:var(--accent2);">→ {{ item.url[:60] }}{% if item.url|length > 60 %}…{% endif %}</a>{% endif %}
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;">
-            <form method="POST" action="{{ url_for('manage_wishlist') }}">
+            <form method="POST" action="{{ url_for('wishlist.manage_wishlist') }}">
                 <input type="hidden" name="action" value="acquired">
                 <input type="hidden" name="id" value="{{ item.id }}">
                 <button type="submit" class="btn btn-ghost btn-sm" title="Marquer comme acquis">✓ Acquis</button>
             </form>
-            <form method="POST" action="{{ url_for('manage_wishlist') }}" onsubmit="return confirm('Supprimer ?')">
+            <form method="POST" action="{{ url_for('wishlist.manage_wishlist') }}" onsubmit="return confirm('Supprimer ?')">
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="id" value="{{ item.id }}">
                 <button type="submit" class="btn btn-secondary btn-sm" style="color:var(--accent)">✕</button>
@@ -92,7 +92,7 @@
     <div style="display:flex;align-items:center;gap:12px;">
         <span style="font-family:var(--mono);font-size:13px;text-decoration:line-through;flex:1;">{{ item.name }}{% if item.manufacturer %} — {{ item.manufacturer }}{% endif %}</span>
         {% if item.price %}<span style="font-family:var(--mono);font-size:11px;color:var(--text-muted);">{{ "%.0f"|format(item.price) }} €</span>{% endif %}
-        <form method="POST" action="{{ url_for('manage_wishlist') }}" onsubmit="return confirm('Supprimer ?')">
+        <form method="POST" action="{{ url_for('wishlist.manage_wishlist') }}" onsubmit="return confirm('Supprimer ?')">
             <input type="hidden" name="action" value="delete">
             <input type="hidden" name="id" value="{{ item.id }}">
             <button type="submit" class="btn btn-secondary btn-sm" style="color:var(--accent)">✕</button>

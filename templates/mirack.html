@@ -17,7 +17,7 @@
 <!-- AJOUTER -->
 <div class="card">
     <div class="card-title">∙ Ajouter un module</div>
-    <form method="POST" action="{{ url_for('manage_mirack') }}"
+    <form method="POST" action="{{ url_for('mirack.manage_mirack') }}"
           style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;margin-top:12px;align-items:end;">
         <input type="hidden" name="action" value="add">
         <div class="form-group" style="margin:0">
@@ -80,7 +80,7 @@
                     style="background:none;border:none;cursor:pointer;font-family:var(--mono);font-size:10px;color:var(--text-muted);opacity:0;transition:opacity .15s;padding:0 4px;"
                     class="notes-edit-btn">✎</button>
             </div>
-            <form id="notes-form-{{ m.id }}" method="POST" action="{{ url_for('manage_mirack') }}"
+            <form id="notes-form-{{ m.id }}" method="POST" action="{{ url_for('mirack.manage_mirack') }}"
                   style="display:none;margin-top:4px;padding-left:{% if m.favorite %}20px{% else %}0{% endif %};">
                 <input type="hidden" name="action" value="edit">
                 <input type="hidden" name="id" value="{{ m.id }}">
@@ -98,19 +98,19 @@
         </div>
         <!-- ACTIONS -->
         <div style="display:flex;gap:6px;flex-shrink:0;">
-            <form method="POST" action="{{ url_for('manage_mirack') }}">
+            <form method="POST" action="{{ url_for('mirack.manage_mirack') }}">
                 <input type="hidden" name="action" value="toggle_mastered">
                 <input type="hidden" name="id" value="{{ m.id }}">
                 <button type="submit" class="btn btn-secondary btn-sm" title="{{ 'Marquer non maîtrisé' if m.mastered else 'Marquer maîtrisé' }}"
                         style="{% if m.mastered %}color:var(--success){% endif %}">{{ '✓' if m.mastered else '○' }}</button>
             </form>
-            <form method="POST" action="{{ url_for('manage_mirack') }}">
+            <form method="POST" action="{{ url_for('mirack.manage_mirack') }}">
                 <input type="hidden" name="action" value="toggle_favorite">
                 <input type="hidden" name="id" value="{{ m.id }}">
                 <button type="submit" class="btn btn-secondary btn-sm" title="{{ 'Retirer favori' if m.favorite else 'Ajouter aux favoris' }}"
                         style="{% if m.favorite %}color:var(--warning){% endif %}">★</button>
             </form>
-            <form method="POST" action="{{ url_for('manage_mirack') }}" onsubmit="return confirm('Supprimer ?')">
+            <form method="POST" action="{{ url_for('mirack.manage_mirack') }}" onsubmit="return confirm('Supprimer ?')">
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="id" value="{{ m.id }}">
                 <button type="submit" class="btn btn-secondary btn-sm" style="color:var(--accent)">✕</button>

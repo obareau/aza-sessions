@@ -23,6 +23,26 @@ Version de stabilisation et de complétude du cycle v2. Clôture le roadmap avan
 
 ---
 
+## v2.4.0 — 2026-05-09 — Refactorisation complète en Blueprints
+
+### ♻️ Extraction des modules restants
+- **`projects/`** — Blueprint 5 routes : liste, new, view, edit, delete (+ détachement sessions)
+- **`settings_app/`** — Blueprint 4 routes : settings, backup, import DB, reset sessions
+- **`samples/`** — Blueprint CRUD sample banks
+- **`tracks/`** — Blueprint CRUD morceaux inspirants
+- **`wishlist/`** — Blueprint CRUD wishlist matériel (+ toggle acquired)
+- **`inspirations/`** — Blueprint CRUD inspirations
+- **`mirack/`** — Blueprint CRUD modules MiRack (+ toggle mastered/favorite)
+- **`about/`** — Blueprint route `/about`
+- **`stats/`** + **`live/`** — extraits en v2.1.x
+- `app.py` réduit à ~260 lignes (launcher + init_db + context processor + banner)
+- Tous les `url_for` dans les templates namespaced (`projects.list_projects`, `settings_app.settings`, etc.)
+- `core/constants.py` enrichi : SAMPLE_TYPES, MIRACK_CATS, WISHLIST_TYPES, WISHLIST_PRIOS, INSPI_TYPES
+
+### ✨ Comportement inchangé — zéro régression UI (16/16 routes OK)
+
+---
+
 ## v2.2.0 — 2026-05-04 — Fabricants + ajout inline catalogue
 
 ### ✨ Nouveautés

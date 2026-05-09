@@ -13,7 +13,7 @@
 <!-- AJOUTER -->
 <div class="card">
     <div class="card-title">∙ Ajouter une banque</div>
-    <form method="POST" action="{{ url_for('manage_samples') }}"
+    <form method="POST" action="{{ url_for('samples.manage_samples') }}"
           style="display:grid;grid-template-columns:2fr 1fr 60px 2fr auto;gap:10px;margin-top:12px;align-items:end;">
         <input type="hidden" name="action" value="add">
         <div class="form-group" style="margin:0">
@@ -57,7 +57,7 @@
     </div>
     {% for item in items %}
     <div class="cat-row">
-        <form method="POST" action="{{ url_for('manage_samples') }}"
+        <form method="POST" action="{{ url_for('samples.manage_samples') }}"
               style="flex:1;display:flex;gap:8px;align-items:center;min-width:0;">
             <input type="hidden" name="action" value="edit">
             <input type="hidden" name="id" value="{{ item.id }}">
@@ -73,7 +73,7 @@
                    style="font-family:var(--mono);font-size:11px;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;width:140px;flex-shrink:0;opacity:0;transition:opacity .15s;" class="inf-notes">
             <button type="submit" class="btn btn-secondary btn-sm">✓</button>
         </form>
-        <form method="POST" action="{{ url_for('manage_samples') }}" onsubmit="return confirm('Supprimer ?')">
+        <form method="POST" action="{{ url_for('samples.manage_samples') }}" onsubmit="return confirm('Supprimer ?')">
             <input type="hidden" name="action" value="delete">
             <input type="hidden" name="id" value="{{ item.id }}">
             <button type="submit" class="btn btn-secondary btn-sm" style="color:var(--accent)">✕</button>

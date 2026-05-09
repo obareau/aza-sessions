@@ -13,7 +13,7 @@
 <!-- AJOUTER -->
 <div class="card">
     <div class="card-title">∙ Ajouter un morceau</div>
-    <form method="POST" action="{{ url_for('manage_tracks') }}"
+    <form method="POST" action="{{ url_for('tracks.manage_tracks') }}"
           style="display:grid;grid-template-columns:2fr 2fr 1fr 60px;gap:10px;margin-top:12px;">
         <input type="hidden" name="action" value="add">
         <div class="form-group" style="margin:0">
@@ -73,7 +73,7 @@
             </div>
             {% endif %}
         </div>
-        <form method="POST" action="{{ url_for('manage_tracks') }}" onsubmit="return confirm('Supprimer ?')" style="flex-shrink:0;">
+        <form method="POST" action="{{ url_for('tracks.manage_tracks') }}" onsubmit="return confirm('Supprimer ?')" style="flex-shrink:0;">
             <input type="hidden" name="action" value="delete">
             <input type="hidden" name="id" value="{{ t.id }}">
             <button type="submit" class="btn btn-secondary btn-sm" style="color:var(--accent)">✕</button>

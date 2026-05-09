@@ -678,7 +678,7 @@
         <nav class="header-nav" id="header-nav">
 
             {% if has_live %}
-            <a href="{{ url_for('live') }}" class="nav-live">● EN COURS</a>
+            <a href="{{ url_for('live.live') }}" class="nav-live">● EN COURS</a>
             <div class="nav-sep"></div>
             {% endif %}
 
@@ -687,7 +687,7 @@
                 <div class="nav-drop">
                     <span class="nav-drop-label">Sessions</span>
                     <a href="{{ url_for('sessions.index') }}">Liste</a>
-                    <a href="{{ url_for('live') }}">▶ Live</a>
+                    <a href="{{ url_for('live.live') }}">▶ Live</a>
                     <a href="{{ url_for('sessions.new_session') }}">+ Nouvelle</a>
                 </div>
             </div>
@@ -698,8 +698,8 @@
                 <button type="button" class="nav-btn" onclick="toggleDrop(this)">Outils <span class="nav-caret">▾</span></button>
                 <div class="nav-drop">
                     <span class="nav-drop-label">Outils</span>
-                    <a href="{{ url_for('stats') }}">Stats</a>
-                    <a href="{{ url_for('list_projects') }}">◈ Projets</a>
+                    <a href="{{ url_for('stats.stats') }}">Stats</a>
+                    <a href="{{ url_for('projects.list_projects') }}">◈ Projets</a>
                     <a href="{{ url_for('spark.spark') }}">⚡ Spark</a>
                     <a href="{{ url_for('dim.prompter_list') }}">⬡ Prompteur</a>
                 </div>
@@ -723,11 +723,11 @@
                 <button type="button" class="nav-btn" onclick="toggleDrop(this)">Ressources <span class="nav-caret">▾</span></button>
                 <div class="nav-drop">
                     <span class="nav-drop-label">Ressources</span>
-                    <a href="{{ url_for('manage_samples') }}">Samples</a>
-                    <a href="{{ url_for('manage_tracks') }}">Morceaux</a>
-                    <a href="{{ url_for('manage_inspirations') }}">Inspi</a>
-                    <a href="{{ url_for('manage_wishlist') }}">Wishlist</a>
-                    <a href="{{ url_for('manage_mirack') }}">⬡ MiRack</a>
+                    <a href="{{ url_for('samples.manage_samples') }}">Samples</a>
+                    <a href="{{ url_for('tracks.manage_tracks') }}">Morceaux</a>
+                    <a href="{{ url_for('inspirations.manage_inspirations') }}">Inspi</a>
+                    <a href="{{ url_for('wishlist.manage_wishlist') }}">Wishlist</a>
+                    <a href="{{ url_for('mirack.manage_mirack') }}">⬡ MiRack</a>
                 </div>
             </div>
 
@@ -739,7 +739,7 @@
                     <span class="nav-drop-label">Config</span>
                     <a href="{{ url_for('sessions.form_blank') }}">⎙ Form</a>
                     <a href="{{ url_for('sessions.settings') }}">Paramètres</a>
-                    <a href="{{ url_for('about') }}">About</a>
+                    <a href="{{ url_for('about.about') }}">About</a>
                 </div>
             </div>
 
