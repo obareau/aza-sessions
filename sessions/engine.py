@@ -282,6 +282,7 @@ class SessionsEngine:
             "plugins": ls["plugins"] or "", "mode": ls["mode"] or "",
             "intention": ls["intention"] or "", "oblique": ls["oblique"] or "",
             "project_id": ls["project_id"], "character": "", "influences": "",
+            "notes_live": ls["notes_live"] or "",
         }
 
     def export_md_one(self, sid, version=""):

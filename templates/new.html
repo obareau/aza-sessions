@@ -320,7 +320,7 @@
         </div>
         <div class="form-group full">
             <label>Récap session Claude (optionnel)</label>
-            <textarea name="recap_claude" rows="6" placeholder="Colle ici le récap généré par Claude en fin de session chat..."></textarea>
+            <textarea name="recap_claude" rows="6" placeholder="Colle ici le récap généré par Claude en fin de session chat...">{{ prefill.recap_claude if prefill and prefill.recap_claude else '' }}</textarea>
         </div>
     </div>
 </div>
