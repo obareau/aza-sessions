@@ -75,6 +75,8 @@
     <a href="{{ url_for('patcher.patcher_to_session', layout_id=layout.id) }}"
        class="btn btn-ghost btn-sm" title="Importer ce patch dans une nouvelle session">→ Session</a>
 
+    <button type="button" id="btn-minimap" onclick="toggleMinimap()"
+            class="btn btn-ghost btn-sm" title="Minimap (M)">⊟ Map</button>
     <button type="button" id="btn-snap" onclick="toggleSnap()"
             class="btn btn-ghost btn-sm" title="Snap to grid (G)">⊞ Grid</button>
     <button type="button" id="btn-editmode" onclick="toggleEditMode()" class="btn btn-ghost btn-sm" title="Basculer mode édition / navigation">✎ Éditer</button>
@@ -158,6 +160,19 @@
              background:var(--surface);border:1px solid var(--accent);padding:6px 14px;
              font-family:var(--mono);font-size:12px;color:var(--accent);">
           Sauvegardé ✓
+        </div>
+
+        {# ── MINIMAP ── #}
+        <div id="minimap"
+             style="position:absolute;bottom:16px;left:16px;z-index:25;
+                    width:180px;height:110px;
+                    background:rgba(0,0,0,.55);border:1px solid var(--border);
+                    cursor:crosshair;backdrop-filter:blur(2px);">
+          <svg id="minimap-svg" width="180" height="110"
+               style="display:block;overflow:hidden;"></svg>
+          <div style="position:absolute;top:3px;left:5px;font-family:var(--mono);
+                      font-size:8px;color:var(--text-muted);letter-spacing:.08em;
+                      pointer-events:none;">MAP</div>
         </div>
       </div>
 
@@ -357,6 +372,109 @@ function toggleSnap() {
   applySnapUI();
 }
 
+// ── MINIMAP ───────────────────────────────────────────────────────────────────
+const MINI_W = 180, MINI_H = 110, NODE_W = 110, NODE_H = 36;
+let minimapVisible = localStorage.getItem("patcher_minimap") !== "0";
+let minimapState   = null;  // {minX, minY, scale} — mis à jour par renderMinimap
+
+function toggleMinimap() {
+  minimapVisible = !minimapVisible;
+  localStorage.setItem("patcher_minimap", minimapVisible ? "1" : "0");
+  applyMinimapUI();
+  if (minimapVisible) renderMinimap();
+}
+
+function applyMinimapUI() {
+  const btn = document.getElementById("btn-minimap");
+  const mm  = document.getElementById("minimap");
+  if (minimapVisible) {
+    btn.style.borderColor = "var(--accent)";
+    btn.style.color       = "var(--accent)";
+    mm.style.display      = "";
+  } else {
+    btn.style.borderColor = "";
+    btn.style.color       = "";
+    mm.style.display      = "none";
+  }
+}
+
+function renderMinimap() {
+  if (!minimapVisible) return;
+  const ms = document.getElementById("minimap-svg");
+  ms.innerHTML = "";
+
+  if (!nodes.length) return;
+
+  // Bounding box des nœuds
+  let mnX = Infinity, mnY = Infinity, mxX = -Infinity, mxY = -Infinity;
+  for (const n of nodes) {
+    mnX = Math.min(mnX, n.x);         mnY = Math.min(mnY, n.y);
+    mxX = Math.max(mxX, n.x + NODE_W); mxY = Math.max(mxY, n.y + NODE_H);
+  }
+  const PAD = 30;
+  mnX -= PAD; mnY -= PAD; mxX += PAD; mxY += PAD;
+  const cW = mxX - mnX, cH = mxY - mnY;
+  const sc = Math.min(MINI_W / cW, MINI_H / cH, 1);
+  minimapState = { minX: mnX, minY: mnY, scale: sc };
+
+  const mx = v => (v - mnX) * sc;
+  const my = v => (v - mnY) * sc;
+
+  // Connexions
+  for (const c of connections) {
+    const fn = nodes.find(n => String(n.id) === String(c.from_id));
+    const tn = nodes.find(n => String(n.id) === String(c.to_id));
+    if (!fn || !tn) continue;
+    const l = document.createElementNS("http://www.w3.org/2000/svg","line");
+    l.setAttribute("x1", mx(fn.x + NODE_W/2)); l.setAttribute("y1", my(fn.y + NODE_H/2));
+    l.setAttribute("x2", mx(tn.x + NODE_W/2)); l.setAttribute("y2", my(tn.y + NODE_H/2));
+    l.setAttribute("stroke", SIG_COLORS[c.signal_type] || "#666");
+    l.setAttribute("stroke-width","0.8"); l.setAttribute("opacity","0.5");
+    ms.appendChild(l);
+  }
+
+  // Nœuds
+  for (const n of nodes) {
+    const r = document.createElementNS("http://www.w3.org/2000/svg","rect");
+    r.setAttribute("x",  mx(n.x));       r.setAttribute("y",  my(n.y));
+    r.setAttribute("width",  Math.max(3, NODE_W * sc));
+    r.setAttribute("height", Math.max(2, NODE_H * sc));
+    r.setAttribute("fill", n.color || "#3A3A3A");
+    r.setAttribute("opacity", String(selected && selected.type==="node" && String(selected.id)===String(n.id) ? 1 : 0.75));
+    r.setAttribute("rx","1");
+    ms.appendChild(r);
+  }
+
+  // Viewport rect
+  const svgEl = document.getElementById("patcher-svg");
+  const vpX = -vt.x / vt.scale, vpY = -vt.y / vt.scale;
+  const vpW =  svgEl.clientWidth  / vt.scale;
+  const vpH =  svgEl.clientHeight / vt.scale;
+  const vr  = document.createElementNS("http://www.w3.org/2000/svg","rect");
+  vr.setAttribute("x", mx(vpX));     vr.setAttribute("y", my(vpY));
+  vr.setAttribute("width",  Math.max(4, vpW * sc));
+  vr.setAttribute("height", Math.max(4, vpH * sc));
+  vr.setAttribute("fill","rgba(255,255,255,0.04)");
+  vr.setAttribute("stroke","var(--accent)"); vr.setAttribute("stroke-width","1");
+  ms.appendChild(vr);
+}
+
+// Clic sur minimap → centre la vue principale sur ce point
+document.getElementById("minimap").addEventListener("click", e => {
+  if (!minimapState) return;
+  const r  = document.getElementById("minimap").getBoundingClientRect();
+  const px = e.clientX - r.left;
+  const py = e.clientY - r.top;
+  const svgX = px / minimapState.scale + minimapState.minX;
+  const svgY = py / minimapState.scale + minimapState.minY;
+  const svgEl = document.getElementById("patcher-svg");
+  vt.x = -(svgX * vt.scale - svgEl.clientWidth  / 2);
+  vt.y = -(svgY * vt.scale - svgEl.clientHeight / 2);
+  applyTransform();
+});
+
+applyMinimapUI();
+
 function applySnapUI() {
   const btn = document.getElementById("btn-snap");
   const bg  = document.getElementById("grid-bg");
@@ -383,6 +501,7 @@ const preview = document.getElementById("conn-preview");
 
 function applyTransform() {
   gRoot.setAttribute("transform", `translate(${vt.x},${vt.y}) scale(${vt.scale})`);
+  renderMinimap();
 }
 
 function centerContent() {
@@ -614,6 +733,7 @@ function clearSelection() {
 function rerender() {
   nodes.forEach(n => renderNode(n));
   connections.forEach(c => renderConn(c));
+  renderMinimap();
 }
 
 // ── BARRE DE PROPRIÉTÉS ───────────────────────────────────────────────────────
@@ -982,6 +1102,7 @@ document.addEventListener("keydown", e => {
   if (e.key==="Delete"||e.key==="Backspace") deleteSelected();
   if (e.key==="c"||e.key==="C") toggleConnectMode();
   if (e.key==="g"||e.key==="G") toggleSnap();
+  if (e.key==="m"||e.key==="M") toggleMinimap();
   if (e.key==="Escape") {
     if (connecting) toggleConnectMode();
     else clearSelection();
