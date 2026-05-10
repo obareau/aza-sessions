@@ -5,6 +5,28 @@
 
 ---
 
+## v3.4.0 — 2026-05-10 — Dictée vocale live via Whisper local
+
+### ✨ Nouveautés
+- **Bouton 🎙 Dicter** dans la page session live — enregistre via `MediaRecorder`, transcrit via Whisper GPU local et insère le texte dans les notes live
+- Route `/live/transcribe` (POST multipart) → `core/whisper_client.py` → Whisper `small` (GPU, RTX 3060, port 9000)
+- Modèle upgradé `base` → `small` pour une meilleure précision sur le français
+- Silencieux si Whisper indisponible (fallback erreur inline)
+
+---
+
+## v3.3.0 — 2026-05-10 — Recap session auto via Ollama (LLM local)
+
+### ✨ Nouveautés
+- **Génération automatique de `recap_claude`** à la fin d'une session live
+  - À l'ouverture de `/new?from_live=1`, le champ *Récap session* est pré-rempli par `qwen3.5:latest` (Ollama, `192.168.1.100`)
+  - Le récap est narratif, à la première personne, dans le style AZA (Dark Ambient / Industriel, Scaër)
+  - Le client `core/ollama_client.py` est réutilisable pour les futures intégrations LLM local
+  - Silencieux en cas d'indisponibilité du serveur (fallback champ vide)
+  - `notes_live` désormais incluses dans le prefill pour enrichir le contexte du prompt
+
+---
+
 ## v3.2.0 — 2026-05-09 — Module SysEx Loader & Bank Editor
 
 ### ✨ Nouveautés

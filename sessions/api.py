@@ -4,6 +4,7 @@ import subprocess
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, Response, jsonify, current_app, flash
 from core.oblique import rand_oblique as _rand_oblique
+from core.ollama_client import generate_recap
 from core.constants import CHARACTERS, MODES, INTENTIONS, ITEM_TYPES
 from .engine import SessionsEngine, catalogue_blocks, influence_blocks
 
@@ -107,6 +108,8 @@ def new_session():
     prefill = None
     if request.args.get("from_live"):
         prefill = engine.prefill_from_live()
+        if prefill:
+            prefill["recap_claude"] = generate_recap(prefill) or ""
 
     from_id = request.args.get("from")
     if from_id and not prefill:
