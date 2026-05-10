@@ -2,8 +2,9 @@ import json
 import urllib.request
 import urllib.error
 
-OLLAMA_URL = "http://192.168.1.100:11434/api/generate"
+OLLAMA_URL   = "http://192.168.1.100:11434/api/generate"
 OLLAMA_MODEL = "qwen3.5:latest"
+CODER_MODEL  = "qwen2.5-coder:7b"
 
 _PROMPT_TEMPLATE = """Tu es un archiviste de l'univers AZA — une dystopie sonore Dark Ambient / Industriel, Scaër, Bretagne.
 Rédige un récit de session en français, entre 80 et 150 mots, à la première personne, dans un style sombre, concis et atmosphérique.
@@ -59,3 +60,39 @@ def generate_recap(session_data: dict, timeout: int = 30):
             return body.get("response", "").strip() or None
     except Exception:
         return None
+
+
+_REVIEW_TEMPLATE = """You are a senior Python/Flask developer reviewing a git diff for a small Flask+SQLite app.
+Be concise. Point out only real issues: bugs, security problems, broken logic, missing edge cases.
+If the diff looks fine, say so in one line. Skip style nits.
+
+```diff
+{diff}
+```
+
+Review:"""
+
+
+def review_diff(diff: str, timeout: int = 60):
+    if not diff.strip():
+        return "Empty diff — nothing to review."
+    prompt = _REVIEW_TEMPLATE.format(diff=diff[:6000])
+    payload = json.dumps({
+        "model": CODER_MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "options": {"temperature": 0.2},
+    }).encode()
+
+    try:
+        req = urllib.request.Request(
+            OLLAMA_URL,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            body = json.loads(resp.read())
+            return body.get("response", "").strip() or None
+    except Exception as e:
+        return f"Ollama unreachable: {e}"
