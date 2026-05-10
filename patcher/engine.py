@@ -77,6 +77,53 @@ class PatcherEngine:
         conn.close()
         return layout_id
 
+    def duplicate_layout(self, layout_id):
+        """Duplique un layout avec ses nœuds et connexions."""
+        conn = self._db()
+        layout = conn.execute(
+            "SELECT * FROM patch_layouts WHERE id=?", (layout_id,)
+        ).fetchone()
+        if not layout:
+            conn.close()
+            return None
+        layout = dict(layout)
+
+        cur = conn.execute(
+            "INSERT INTO patch_layouts (name, session_id) VALUES (?,?)",
+            (layout["name"] + " (copie)", layout["session_id"])
+        )
+        new_id = cur.lastrowid
+
+        old_nodes = conn.execute(
+            "SELECT * FROM patch_nodes WHERE layout_id=?", (layout_id,)
+        ).fetchall()
+        node_id_map = {}
+        for n in [dict(r) for r in old_nodes]:
+            cur = conn.execute(
+                "INSERT INTO patch_nodes (layout_id, label, x, y, node_type, color, catalogue_id, note) "
+                "VALUES (?,?,?,?,?,?,?,?)",
+                (new_id, n["label"], n["x"], n["y"], n["node_type"],
+                 n["color"], n["catalogue_id"], n.get("note", ""))
+            )
+            node_id_map[n["id"]] = cur.lastrowid
+
+        old_conns = conn.execute(
+            "SELECT * FROM patch_connections WHERE layout_id=?", (layout_id,)
+        ).fetchall()
+        for c in [dict(r) for r in old_conns]:
+            nf = node_id_map.get(c["from_id"])
+            nt = node_id_map.get(c["to_id"])
+            if nf and nt:
+                conn.execute(
+                    "INSERT INTO patch_connections (layout_id, from_id, to_id, label, signal_type, note) "
+                    "VALUES (?,?,?,?,?,?)",
+                    (new_id, nf, nt, c["label"], c["signal_type"], c.get("note", ""))
+                )
+
+        conn.commit()
+        conn.close()
+        return new_id
+
     def delete_layout(self, layout_id):
         conn = self._db()
         conn.execute("DELETE FROM patch_connections WHERE layout_id=?", (layout_id,))

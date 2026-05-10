@@ -226,6 +226,14 @@ def patcher_import_json():
     return redirect(url_for("patcher.patcher_view", layout_id=layout_id))
 
 
+@bp.route("/patcher/<int:layout_id>/duplicate", methods=["POST"])
+def patcher_duplicate(layout_id):
+    new_id = _engine().duplicate_layout(layout_id)
+    if new_id:
+        return redirect(url_for("patcher.patcher_view", layout_id=new_id))
+    return redirect(url_for("patcher.patcher_list"))
+
+
 @bp.route("/patcher/<int:layout_id>/delete", methods=["POST"])
 def patcher_delete(layout_id):
     _engine().delete_layout(layout_id)

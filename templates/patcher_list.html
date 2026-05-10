@@ -70,6 +70,9 @@
       </div>
       <div style="display:flex;gap:8px;flex-shrink:0;">
         <a href="{{ url_for('patcher.patcher_view', layout_id=l.id) }}" class="btn btn-ghost btn-sm">→ Ouvrir</a>
+        <form method="POST" action="{{ url_for('patcher.patcher_duplicate', layout_id=l.id) }}">
+          <button type="submit" class="btn btn-ghost btn-sm" title="Dupliquer ce layout">⎘ Dupliquer</button>
+        </form>
         <form method="POST" action="{{ url_for('patcher.patcher_delete', layout_id=l.id) }}"
               onsubmit="return confirm('Supprimer ce layout ?')">
           <button type="submit" class="btn btn-danger btn-sm">✕</button>
