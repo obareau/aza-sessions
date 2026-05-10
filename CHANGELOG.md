@@ -5,6 +5,16 @@
 
 ---
 
+## v3.4.0 — 2026-05-10 — Dictée vocale live via Whisper local
+
+### ✨ Nouveautés
+- **Bouton 🎙 Dicter** dans la page session live — enregistre via `MediaRecorder`, transcrit via Whisper GPU local et insère le texte dans les notes live
+- Route `/live/transcribe` (POST multipart) → `core/whisper_client.py` → Whisper `small` (GPU, RTX 3060, port 9000)
+- Modèle upgradé `base` → `small` pour une meilleure précision sur le français
+- Silencieux si Whisper indisponible (fallback erreur inline)
+
+---
+
 ## v3.3.0 — 2026-05-10 — Recap session auto via Ollama (LLM local)
 
 ### ✨ Nouveautés

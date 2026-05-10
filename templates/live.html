@@ -92,12 +92,21 @@
 
     <!-- NOTES LIBRES -->
     <div class="card" style="margin-bottom:16px;">
-        <div class="card-title" style="margin-bottom:14px;">∙ Notes libres</div>
+        <div class="card-title" style="margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+            <span>∙ Notes libres</span>
+            <button type="button" id="btn-mic"
+                title="Dicter une note vocale (Whisper)"
+                style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 10px;font-family:var(--mono);font-size:11px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:6px;">
+                <span id="mic-icon">🎙</span>
+                <span id="mic-label">Dicter</span>
+            </button>
+            <span id="mic-status" style="font-family:var(--mono);font-size:10px;color:var(--accent);display:none;"></span>
+        </div>
         <textarea id="notes-live" name="notes_live" rows="12"
             placeholder="Patches découverts, idées, timestamps, signaux intéressants… Tout ce qui arrive pendant la session."
             style="font-size:13px;line-height:1.8;min-height:280px;">{{ ls.notes_live or '' }}</textarea>
         <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:8px;opacity:.6;">
-            Sauvegardé automatiquement toutes les 15 s
+            Sauvegardé automatiquement toutes les 15 s — 🎙 dictée via Whisper local
         </div>
     </div>
 
@@ -200,6 +209,71 @@ window.addEventListener('beforeunload', () => {
     // Utiliser sendBeacon pour garantir l'envoi même si la page se ferme
     navigator.sendBeacon('/live/save', new Blob([JSON.stringify(data)], {type:'application/json'}));
 });
+
+// ── Dictée vocale Whisper ──────────────────────────────────────────────────
+(function () {
+    const btn    = document.getElementById('btn-mic');
+    const icon   = document.getElementById('mic-icon');
+    const label  = document.getElementById('mic-label');
+    const status = document.getElementById('mic-status');
+    const notes  = document.getElementById('notes-live');
+    if (!btn || !navigator.mediaDevices) return;
+
+    let recorder = null;
+    let chunks   = [];
+
+    btn.addEventListener('click', async () => {
+        if (recorder && recorder.state === 'recording') {
+            recorder.stop();
+            return;
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            chunks = [];
+            recorder = new MediaRecorder(stream);
+            recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.onstop = async () => {
+                stream.getTracks().forEach(t => t.stop());
+                icon.textContent  = '⏳';
+                label.textContent = 'Transcription…';
+                status.textContent = 'Whisper en cours…';
+                status.style.display = 'inline';
+
+                const blob = new Blob(chunks, { type: 'audio/webm' });
+                const fd   = new FormData();
+                fd.append('audio', blob, 'note.webm');
+
+                try {
+                    const res  = await fetch('/live/transcribe', { method: 'POST', body: fd });
+                    const data = await res.json();
+                    if (data.text) {
+                        const sep = notes.value.trim() ? '\n' : '';
+                        notes.value += sep + data.text;
+                        status.textContent = '✓ Transcrit';
+                        setTimeout(() => { status.style.display = 'none'; }, 2000);
+                    } else {
+                        status.textContent = '✗ ' + (data.error || 'erreur');
+                        setTimeout(() => { status.style.display = 'none'; }, 3000);
+                    }
+                } catch {
+                    status.textContent = '✗ Whisper indisponible';
+                    setTimeout(() => { status.style.display = 'none'; }, 3000);
+                }
+                icon.textContent  = '🎙';
+                label.textContent = 'Dicter';
+            };
+            recorder.start();
+            icon.textContent  = '⏹';
+            label.textContent = 'Stop';
+            status.textContent = '● Enregistrement…';
+            status.style.display = 'inline';
+        } catch {
+            status.textContent = '✗ Micro inaccessible';
+            status.style.display = 'inline';
+            setTimeout(() => { status.style.display = 'none'; }, 3000);
+        }
+    });
+})();
 </script>
 
 {% endif %}
