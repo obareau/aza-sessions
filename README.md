@@ -205,7 +205,6 @@ La base SQLite vit dans un volume persistant monté sur `/data`.
 - Minimap / vue d'ensemble sur les grands patches
 
 ### v3.4.x — Sessions : enrichissement
-- Import métadonnées depuis un fichier audio (date, durée automatiques)
 - Lecteur audio intégré (Web Audio API, waveform)
 - BPM / tonalité dans les filtres de recherche
 
