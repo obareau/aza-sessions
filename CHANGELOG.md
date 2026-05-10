@@ -5,6 +5,16 @@
 
 ---
 
+## v3.5.0 — 2026-05-10 — Patcher v2 : polish & puissance
+
+### ✨ Nouveautés
+- **Dupliquer un layout** — bouton `⎘ Dupliquer` dans la liste ; copie complète nœuds + connexions (mapping IDs), ouvre directement la copie nommée `[nom] (copie)`
+- **Snap-to-grid** — toggle `⊞ Grid` (toolbar + touche `G`) ; grille de points 20px visible quand actif ; snapping mouse + touch ; état persisté en localStorage
+- **Connexions multi-type simultanées** — plusieurs câbles entre la même paire de nœuds (ex: audio + MIDI) s'écartent perpendiculairement (±16px par index) ; chaque câble conserve sa couleur et sa flèche
+- **Minimap** — overlay bas-gauche 180×110px ; nœuds colorés par type, connexions filaires par signal, rectangle viewport accent ; clic → centre la vue principale ; toggle `⊟ Map` (toolbar + touche `M`) ; état persisté en localStorage
+
+---
+
 ## v3.4.0 — 2026-05-10 — Dictée vocale live via Whisper local
 
 ### ✨ Nouveautés

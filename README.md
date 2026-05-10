@@ -3,7 +3,7 @@
 > Application de documentation et de performance musicale pour le projet **AZA** —
 > univers de fiction dystopique dont les sessions de création constituent la bande originale.
 
-**Version : v3.2.0** · [Changelog](CHANGELOG.md) · [Live →](https://robotariis-sessions.fly.dev/)
+**Version : v3.5.0** · [Changelog](CHANGELOG.md) · [Live →](https://robotariis-sessions.fly.dev/)
 
 ---
 
@@ -61,7 +61,7 @@ fly deploy   # depuis le dossier du projet
 | Filtres temps réel | Texte, mode, note |
 | Statistiques | Dashboard Chart.js — machines, influences, timeline mensuelle |
 
-### ⬡ Patcher — v3.1
+### ⬡ Patcher — v3.5
 | Fonction | Description |
 |---|---|
 | Canvas SVG interactif | Nœuds drag & drop, connexions Bézier avec flèches typées |
@@ -79,8 +79,13 @@ fly deploy   # depuis le dossier du projet
 | Export SVG | Standalone, CSS vars résolus, polices embarquées |
 | Export PDF | Via `window.print()` paysage |
 | Export / Import JSON | Format portable `from_index/to_index` — échange entre instances |
+| **Dupliquer un layout** | Copie nœuds + connexions en un clic depuis la liste |
+| **Snap-to-grid** | Grille 20 px optionnelle — touche `G`, persistée en localStorage |
+| **Connexions multi-type** | Plusieurs câbles entre les mêmes nœuds — offset perpendiculaire automatique |
+| **Minimap** | Vue d'ensemble 180×110 px — touche `M`, clic pour naviguer |
 
 ### ⎍ SysEx Loader & Bank Editor — v3.2
+
 | Fonction | Description |
 |---|---|
 | Loader | Charger un `.syx` DX7/Volca FM par glisser-déposer ou file picker |

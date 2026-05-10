@@ -12,7 +12,7 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.jinja_env.filters['fromjson'] = json.loads
 app.secret_key = os.environ.get("SECRET_KEY", "aza-sessions-local-dev")
 
-VERSION     = "3.4.0"
+VERSION     = "3.5.0"
 DB_PATH     = os.environ.get("DB_PATH",     os.path.join(os.path.dirname(__file__), "sessions.db"))
 CONFIG_PATH = os.environ.get("CONFIG_PATH", os.path.join(os.path.dirname(__file__), "config.json"))
 app.config.update(DB_PATH=DB_PATH, VERSION=VERSION, CONFIG_PATH=CONFIG_PATH)
