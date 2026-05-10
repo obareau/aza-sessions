@@ -537,11 +537,25 @@ function renderConn(c) {
   const col = SIG_COLORS[c.signal_type] || "#888";
   const isSel = selected && selected.type==="conn" && String(selected.id)===String(c.id);
 
+  // ── Décalage perpendiculaire pour connexions parallèles ──────────────────
+  const OFFSET_STEP = 16;
+  const parallels = connections.filter(x =>
+    String(x.from_id)===String(c.from_id) && String(x.to_id)===String(c.to_id)
+  );
+  const idx    = parallels.findIndex(x => String(x.id)===String(c.id));
+  const offset = (idx - (parallels.length - 1) / 2) * OFFSET_STEP;
+
+  // Vecteur perpendiculaire normalisé
+  const vdx = tc.x - fc.x, vdy = tc.y - fc.y;
+  const vlen = Math.hypot(vdx, vdy) || 1;
+  const px = -vdy / vlen * offset;
+  const py =  vdx / vlen * offset;
+
+  const cdx = (tc.x - fc.x) * 0.5;
+  const d = `M ${fc.x} ${fc.y} C ${fc.x+cdx+px} ${fc.y+py}, ${tc.x-cdx+px} ${tc.y+py}, ${tc.x} ${tc.y}`;
+
   const g = document.createElementNS("http://www.w3.org/2000/svg","g");
   g.setAttribute("id","conn-"+c.id);
-
-  const dx = (tc.x - fc.x) * 0.5;
-  const d  = `M ${fc.x} ${fc.y} C ${fc.x+dx} ${fc.y}, ${tc.x-dx} ${tc.y}, ${tc.x} ${tc.y}`;
 
   const path = document.createElementNS("http://www.w3.org/2000/svg","path");
   path.setAttribute("d",d); path.setAttribute("stroke",col);
@@ -550,10 +564,10 @@ function renderConn(c) {
   path.setAttribute("marker-end",`url(#arrow-${c.signal_type})`);
   g.appendChild(path);
 
-  // Label sur l'arc
+  // Label — positionné au milieu de la courbe (t=0.5 approx avec offset)
   const displayLabel = c.label || (c.note ? "📝" : "");
   if (displayLabel) {
-    const mx = (fc.x+tc.x)/2, my = (fc.y+tc.y)/2 - 10;
+    const mx = (fc.x+tc.x)/2 + px * 0.5, my = (fc.y+tc.y)/2 + py * 0.5 - 10;
     const bg = document.createElementNS("http://www.w3.org/2000/svg","rect");
     bg.setAttribute("x", mx - displayLabel.length*4); bg.setAttribute("y",my-8);
     bg.setAttribute("width", displayLabel.length*8+8); bg.setAttribute("height",14);
