@@ -23,6 +23,12 @@ Linter : **ruff** (config dans `ruff.toml`).
 .venv/bin/ruff check --fix .  # corriger automatiquement
 ```
 
+Tests : **pytest** (smoke tests routes + DB).
+
+```bash
+.venv/bin/pytest tests/ -v    # lancer la suite de tests
+```
+
 ---
 
 ## Architecture
