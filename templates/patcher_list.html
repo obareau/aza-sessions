@@ -11,7 +11,18 @@
   {# ── NOUVEAU LAYOUT ── #}
   <form method="POST" action="{{ url_for('patcher.patcher_new') }}"
         style="background:var(--surface);border:1px solid var(--border);padding:20px;margin-bottom:32px;">
-    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;">
+    <div class="patcher-new-grid" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;">
+<style>
+@media (max-width: 900px) { .patcher-new-grid { grid-template-columns: 1fr 1fr; } .patcher-new-grid > *:last-child { grid-column: 1 / -1; } }
+@media (max-width: 600px) { .patcher-new-grid { grid-template-columns: 1fr; } }
+.patcher-layout-item { flex-wrap: wrap; gap: 8px !important; }
+@media (max-width: 600px) {
+    .patcher-layout-item > div:first-child { flex-basis: 100%; }
+    .patcher-layout-item > div:last-child { flex-wrap: wrap; width: 100%; }
+    .patcher-layout-item > div:last-child a,
+    .patcher-layout-item > div:last-child button { flex: 1; }
+}
+</style>
       <div>
         <label style="font-family:var(--mono);font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">NOM DU PATCH</label>
         <input name="name" placeholder="Setup live, Studio A, etc." required

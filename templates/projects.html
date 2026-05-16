@@ -13,7 +13,11 @@
 <!-- NOUVEAU PROJET -->
 <div class="card">
     <div class="card-title">∙ Nouveau projet</div>
-    <form method="POST" action="{{ url_for('projects.new_project') }}" style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;margin-top:12px;align-items:end;">
+    <form method="POST" action="{{ url_for('projects.new_project') }}" class="proj-add-form" style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;margin-top:12px;align-items:end;">
+<style>
+@media (max-width: 900px) { .proj-add-form { grid-template-columns: 1fr 1fr; } .proj-add-form > button { grid-column: 1 / -1; } }
+@media (max-width: 600px) { .proj-add-form { grid-template-columns: 1fr; } }
+</style>
         <div class="form-group" style="margin:0">
             <label>Titre</label>
             <input type="text" name="title" placeholder="ex: EP Secteur 7, Colonne Vertebrale..." required>

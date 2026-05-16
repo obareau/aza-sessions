@@ -14,7 +14,12 @@
 <div class="card">
     <div class="card-title">∙ Ajouter une banque</div>
     <form method="POST" action="{{ url_for('samples.manage_samples') }}"
+          class="samples-add-form"
           style="display:grid;grid-template-columns:2fr 1fr 60px 2fr auto;gap:10px;margin-top:12px;align-items:end;">
+<style>
+@media (max-width: 900px) { .samples-add-form { grid-template-columns: 1fr 1fr; } .samples-add-form > button { grid-column: 1 / -1; } }
+@media (max-width: 600px) { .samples-add-form { grid-template-columns: 1fr; } }
+</style>
         <input type="hidden" name="action" value="add">
         <div class="form-group" style="margin:0">
             <label>Nom</label>

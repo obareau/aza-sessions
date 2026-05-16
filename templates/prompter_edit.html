@@ -32,8 +32,25 @@
         <button type="button" class="btn btn-secondary btn-sm" onclick="addCue()">+ Ajouter cue</button>
     </div>
 
+<style>
+.cue-header { display: grid; grid-template-columns: 80px 140px 1fr 90px 32px; gap: 8px; padding: 0 4px 8px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+.cue-row    { display: grid; grid-template-columns: 80px 140px 1fr 90px 32px; gap: 8px; margin-bottom: 8px; align-items: center; }
+@media (max-width: 900px) {
+    .cue-header { display: none; }
+    .cue-row { grid-template-columns: 70px 1fr 90px 32px; }
+    .cue-row input[name="cue_patch[]"] { grid-column: 1 / -1; order: -1; }
+}
+@media (max-width: 600px) {
+    .cue-row { grid-template-columns: 1fr 1fr; }
+    .cue-row input[name="cue_time[]"] { grid-column: 1; }
+    .cue-row input[name="cue_patch[]"] { grid-column: 1 / -1; }
+    .cue-row input[name="cue_action[]"] { grid-column: 1 / -1; }
+    .cue-row select { grid-column: 1; }
+    .cue-row button { grid-column: 2; justify-self: end; }
+}
+</style>
     <!-- En-têtes colonnes -->
-    <div style="display:grid;grid-template-columns:80px 140px 1fr 90px 32px;gap:8px;padding:0 4px 8px;border-bottom:1px solid var(--border);margin-bottom:8px;">
+    <div class="cue-header">
         <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);">Temps</div>
         <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);">Patch / Preset</div>
         <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);">Instruction / Action</div>
@@ -43,7 +60,7 @@
 
     <div id="cues-list">
     {% for cue in cues %}
-    <div class="cue-row" style="display:grid;grid-template-columns:80px 140px 1fr 90px 32px;gap:8px;margin-bottom:8px;align-items:center;">
+    <div class="cue-row">
         <input type="text" name="cue_time[]" value="{{ cue.time_fmt }}" placeholder="01:30" class="cue-time"
                style="font-family:var(--mono);font-size:12px;text-align:center;">
         <input type="text" name="cue_patch[]" value="{{ cue.patch }}" placeholder="Patch 12 — Init"
@@ -78,7 +95,7 @@ function cueRow(time, patch, action, color) {
     const opts = colors.map((c, i) =>
         `<option value="${c}" ${c === (color||'default') ? 'selected' : ''}>${labels[i]}</option>`
     ).join('');
-    return `<div class="cue-row" style="display:grid;grid-template-columns:80px 140px 1fr 90px 32px;gap:8px;margin-bottom:8px;align-items:center;">
+    return `<div class="cue-row">
         <input type="text" name="cue_time[]" value="${time||''}" placeholder="01:30" class="cue-time"
                style="font-family:var(--mono);font-size:12px;text-align:center;">
         <input type="text" name="cue_patch[]" value="${patch||''}" placeholder="Patch 12 — Init"

@@ -18,7 +18,12 @@
 <div class="card">
     <div class="card-title">∙ Ajouter un module</div>
     <form method="POST" action="{{ url_for('mirack.manage_mirack') }}"
+          class="mirack-add-form"
           style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;margin-top:12px;align-items:end;">
+<style>
+@media (max-width: 900px) { .mirack-add-form { grid-template-columns: 1fr 1fr; } .mirack-add-form > button { grid-column: 1 / -1; } }
+@media (max-width: 600px) { .mirack-add-form { grid-template-columns: 1fr; } }
+</style>
         <input type="hidden" name="action" value="add">
         <div class="form-group" style="margin:0">
             <label>Nom du module *</label>

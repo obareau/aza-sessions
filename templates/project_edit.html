@@ -34,7 +34,10 @@
                 </div>
             </div>
         </div>
-        <div style="display:flex;gap:12px;justify-content:space-between;margin-top:24px;padding-top:16px;border-top:1px solid var(--border);">
+        <div class="proj-edit-btns" style="display:flex;gap:12px;justify-content:space-between;margin-top:24px;padding-top:16px;border-top:1px solid var(--border);">
+<style>
+@media (max-width: 600px) { .proj-edit-btns { flex-direction: column; } .proj-edit-btns form, .proj-edit-btns div { width: 100%; } .proj-edit-btns div { display: flex; flex-direction: column; gap: 8px; } .proj-edit-btns a, .proj-edit-btns button { width: 100%; } }
+</style>
             <form method="POST" action="{{ url_for('projects.delete_project', pid=project.id) }}"
                   onsubmit="return confirm('Supprimer « {{ project.title }} » ? Les sessions liées seront détachées.')">
                 <button type="submit" class="btn btn-danger">✕ Supprimer le projet</button>

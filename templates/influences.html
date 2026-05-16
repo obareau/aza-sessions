@@ -13,7 +13,16 @@
 <!-- AJOUTER -->
 <div class="card">
     <div class="card-title">+ Ajouter une influence</div>
-    <form method="POST" action="{{ url_for('influences.manage_influences') }}" style="display:grid;grid-template-columns:1fr 140px 2fr auto;gap:10px;align-items:end;">
+    <form method="POST" action="{{ url_for('influences.manage_influences') }}" class="inf-add-form" style="display:grid;grid-template-columns:1fr 140px 2fr auto;gap:10px;align-items:end;">
+<style>
+@media (max-width: 900px) { .inf-add-form { grid-template-columns: 1fr 1fr; } .inf-add-form > *:last-child { grid-column: 1 / -1; } }
+@media (max-width: 600px) { .inf-add-form { grid-template-columns: 1fr; } }
+.inf-row-form { flex-wrap: wrap; }
+@media (max-width: 600px) {
+    .inf-row-form input[style*="width:160px"] { width: 100% !important; }
+    .inf-row-form select[style*="width:90px"] { width: 100% !important; }
+}
+</style>
         <input type="hidden" name="action" value="add">
         <div>
             <label style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px;">Nom</label>

@@ -77,7 +77,13 @@
     <div id="save-status" style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:6px;opacity:.4;transition:opacity .3s;"></div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;">
+<style>
+.live-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .live-grid { grid-template-columns: 1fr; } .live-sticky-col { position: static !important; } }
+#live-timer { font-size: 64px; }
+@media (max-width: 600px) { #live-timer { font-size: 40px !important; } }
+</style>
+<div class="live-grid">
 
 <!-- COLONNE GAUCHE : notes libres -->
 <div>
@@ -117,7 +123,7 @@
 </div>
 
 <!-- COLONNE DROITE : sélecteurs rapides -->
-<div style="position:sticky;top:72px;">
+<div class="live-sticky-col" style="position:sticky;top:72px;">
 
     {% for type_key, type_label in item_types.items() %}
     {% if catalogue[type_key] %}
@@ -142,7 +148,14 @@
 </div>
 
 <!-- BOUTONS FIN DE SESSION -->
-<div style="display:flex;justify-content:space-between;align-items:center;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);">
+<div class="live-end-btns" style="display:flex;justify-content:space-between;align-items:center;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);">
+<style>
+@media (max-width: 600px) {
+    .live-end-btns { flex-direction: column; gap: 12px; align-items: stretch !important; }
+    .live-end-btns form, .live-end-btns button { width: 100%; }
+    .live-end-btns button[type="submit"] { width: 100%; }
+}
+</style>
     <form method="POST" action="{{ url_for('live.live_abandon') }}" onsubmit="return confirm('Abandonner et supprimer cette session ?')">
         <button type="submit" class="btn btn-danger">✕ Abandonner</button>
     </form>

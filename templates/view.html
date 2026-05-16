@@ -7,7 +7,15 @@
         <div class="page-title">{% if session.title %}{{ session.title }}{% else %}Session #{{ session.id }}{% endif %}</div>
         <div class="page-subtitle">#{{ session.id }} · {{ session.date[:16] }}{% if session.duration_min %} — {{ session.duration_min }} min{% endif %}</div>
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+<style>
+.view-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 600px) {
+    .view-actions { flex-direction: column; }
+    .view-actions .btn, .view-actions form { width: 100%; }
+    .view-actions form button { width: 100%; }
+}
+</style>
+    <div class="view-actions">
         <a href="{{ url_for('sessions.print_session', sid=session.id) }}" class="btn btn-ghost" target="_blank">↓ PDF</a>
         <a href="{{ url_for('sessions.export_one', sid=session.id) }}" class="btn btn-ghost">↓ MD</a>
         <button type="button" class="btn btn-ghost" onclick="pushToVault()" id="vault-btn" title="Exporter vers le vault Obsidian configuré">⬡ Vault</button>
@@ -21,6 +29,7 @@
         <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
     </div>
 </div>
+
 
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
     {% if session.rating %}<span class="rating-stars" style="font-size:16px">{{ '★' * session.rating }}</span>{% endif %}

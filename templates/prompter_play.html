@@ -307,16 +307,33 @@ html, body {
 .color-purple  { color: var(--c-purple)  !important; }
 
 /* ═══════════════════════════════════════
+   RESPONSIVE TABLETTE
+═══════════════════════════════════════ */
+@media (max-width: 900px) {
+    #topbar { flex-wrap: wrap; gap: 6px; padding: 6px 10px; }
+    #barh-row { display: none !important; }   /* masquer contrôle barre sur tablette */
+    .tb-title { min-width: 0; font-size: 12px; order: -1; flex-basis: 100%; }
+    .tb-title small { font-size: 10px; }
+}
+
+/* ═══════════════════════════════════════
    RESPONSIVE MOBILE
 ═══════════════════════════════════════ */
 @media (max-width: 600px) {
-    .tb-title small, #hint { display: none; }
-    #clock-val { font-size: calc(36px * var(--fs)); }
-    #clock-wrap { top: 10px; right: 12px; }
-    #zone-prev { min-height: 54px; padding: 8px 16px; }
-    #zone-next { min-height: 58px; padding: 8px 16px; }
-    #zone-cur  { padding: 14px 18px; gap: 10px; }
-    .tr-btn    { width: 36px; height: 36px; font-size: 14px; }
+    #topbar { padding: 4px 8px; gap: 4px; }
+    .tb-title, #hint { display: none; }
+    #clock-val { font-size: calc(32px * var(--fs)); }
+    #clock-wrap { top: 8px; right: 10px; }
+    #zone-prev { min-height: 48px; padding: 6px 12px; }
+    #zone-next { min-height: 52px; padding: 6px 12px; }
+    #zone-cur  { padding: 10px 14px; gap: 8px; }
+    .tr-btn    { width: 44px; height: 44px; font-size: 18px; }
+    .tb-btn    { padding: 4px 7px; font-size: 10px; min-height: 36px; }
+    .tb-quit   { padding: 4px 8px; font-size: 10px; }
+    #zoom-pct  { min-width: 28px; font-size: 10px; }
+    .end-title { font-size: 48px; }
+    .end-actions { flex-direction: column; gap: 8px; }
+    .end-btn, .end-btn-ghost { padding: 12px 20px; }
 }
 </style>
 </head>

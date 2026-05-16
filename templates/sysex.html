@@ -2,12 +2,24 @@
 {% block title %}SysEx Loader — AZA{% endblock %}
 {% block content %}
 
+<style>
+@media (max-width: 600px) {
+    .sysex-save-form { flex-direction: column !important; align-items: stretch !important; }
+    .sysex-save-form input[style*="max-width:240px"] { max-width: 100% !important; }
+    #midi-output-select { min-width: 0 !important; width: 100%; }
+    .sysex-midi-row { flex-direction: column; align-items: stretch !important; }
+    .sysex-midi-row select, .sysex-midi-row button { width: 100%; }
+}
+@media (max-width: 900px) {
+    #patch-list { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important; }
+}
+</style>
 <div class="page-header">
     <div>
         <div class="page-title">⎍ SysEx Loader</div>
         <div class="page-subtitle">Volca FM · DX7 compatible · Web MIDI API</div>
     </div>
-    <div style="display:flex;gap:8px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <a href="{{ url_for('sysex.sysex_editor') }}" class="btn btn-primary">⎍ Bank Editor</a>
         <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
     </div>

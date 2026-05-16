@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Statistiques — AZA{% endblock %}
 {% block content %}
+<style>
+/* Stats grids — déjà responsive via auto-fill, mais on renforce */
+@media (max-width: 600px) {
+    /* Forcer 1 colonne sur mobile pour KPI cards */
+    .stat-card { padding: 14px; }
+    .stat-num  { font-size: 24px; }
+}
+/* Heatmap : scroll horizontal */
+.heatmap-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+</style>
 
 <div class="page-header">
     <div>
@@ -319,7 +329,7 @@ window.addEventListener('DOMContentLoaded', () => {
 <!-- HEATMAP -->
 <div class="card" style="margin-bottom:24px;overflow:hidden;">
     <div class="card-title" style="margin-bottom:16px;">∙ Activité — 52 semaines</div>
-    <div style="overflow-x:auto;max-width:100%;">
+    <div class="heatmap-scroll" style="overflow-x:auto;max-width:100%;">
         <div style="display:flex;gap:4px;align-items:flex-start;min-width:fit-content;">
             <!-- Labels jours -->
             <div style="display:flex;flex-direction:column;gap:3px;padding-top:18px;margin-right:2px;">

@@ -395,6 +395,11 @@
 
         @media(max-width:600px) { .form-grid,.detail-grid { grid-template-columns: 1fr; } .session-row { grid-template-columns: 1fr auto; } }
 
+        /* ── MAIN CONTAINER ── */
+        main { padding: 32px 24px; }
+        @media (max-width: 900px) { main { padding: 24px 16px; } }
+        @media (max-width: 600px) { main { padding: 16px 10px; } }
+
         /* ── PAGINATION ── */
         .pagination {
             display: flex; align-items: center; justify-content: center;
@@ -477,7 +482,7 @@
             .form-group.full { grid-column: 1; }
             .check-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
             .chk { font-size: 12px; }
-            .card { margin: 0 -8px; }
+            .card { margin: 0; }
             .card-title { font-size: 14px; }
             .card-header { flex-direction: column; align-items: flex-start; gap: 8px; }
             #kbd-panel { min-width: 320px; max-width: 90vw; padding: 20px 24px; }
@@ -532,6 +537,15 @@
             #theme-picker { margin: 10px 20px 0; align-self: flex-start; }
         }
 
+        /* ── TOUCH TARGETS (mobiles et tablettes) ── */
+        @media (max-width: 1024px) {
+            .btn { min-height: 44px; display: inline-flex; align-items: center; }
+            .btn-sm { min-height: 36px; }
+            .chk { min-height: 44px; }
+            input[type="text"], input[type="number"], input[type="datetime-local"],
+            select, textarea { min-height: 44px; }
+        }
+
         /* ── MOBILES (≤ 600px) — ajustements de taille uniquement ── */
         @media (max-width: 600px) {
             header { padding: 0 12px; height: 52px; }
@@ -561,7 +575,7 @@
             .check-grid { grid-template-columns: 1fr; }
             .chk { font-size: 11px; }
 
-            .card { margin: 0 -4px; }
+            .card { margin: 0; }
             .card-title { font-size: 13px; }
             .section-title { font-size: 9px; margin-bottom: 12px; }
 

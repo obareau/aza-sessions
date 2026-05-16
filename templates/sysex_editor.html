@@ -33,8 +33,12 @@
     </div>
 </div>
 
+<style>
+.sysex-editor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .sysex-editor-grid { grid-template-columns: 1fr; } }
+</style>
 {# ── LAYOUT PRINCIPAL ── #}
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+<div class="sysex-editor-grid">
 
     {# ── COL GAUCHE : SOURCE ── #}
     <div class="card" style="min-height:500px;">
