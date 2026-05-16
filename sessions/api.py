@@ -93,7 +93,8 @@ def index():
                            is_search=False,
                            page=page,
                            total_pages=total_pages,
-                           total=total)
+                           total=total,
+                           heatmap=engine.heatmap_data())
 
 
 @bp.route("/new", methods=["GET", "POST"])
@@ -278,6 +279,7 @@ def search():
     tag = request.args.get("tag", "").strip()
     rating = request.args.get("rating", "").strip()
     project_id = request.args.get("project_id", "").strip()
+    date = request.args.get("date", "").strip()
 
     sessions = engine.list_all()
     if q:
@@ -293,6 +295,8 @@ def search():
                     q_low in (s.get("influences") or "").lower() or
                     q_low in (s.get("lore_link") or "").lower() or
                     q_low in (s.get("signal_routing") or "").lower()]
+    if date:
+        sessions = [s for s in sessions if (s.get("date") or "").startswith(date)]
     if machine:
         sessions = [s for s in sessions if machine.lower() in (s.get("machines") or "").lower()]
     if mode:
@@ -319,12 +323,14 @@ def search():
                            version=_version(),
                            is_search=True,
                            search_q=q,
+                           search_date=date,
                            modes=MODES,
                            intentions=INTENTIONS,
                            projects=engine.get_projects(),
                            page=page,
                            total_pages=total_pages,
-                           total=total)
+                           total=total,
+                           heatmap=engine.heatmap_data())
 
 
 @bp.route("/settings")

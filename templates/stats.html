@@ -195,9 +195,13 @@ function buildHeatmap(data) {
                     tip.style.top  = (e.clientY  - 34) + 'px';
                 });
                 cell.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
-                if (count > 0) cell.style.opacity = '.9';
-                if (count > 0) cell.addEventListener('mouseenter', () => cell.style.opacity = '1');
-                if (count > 0) cell.addEventListener('mouseleave', () => { cell.style.opacity = '.9'; tip.style.display = 'none'; });
+                if (count > 0) {
+                    cell.style.opacity = '.9';
+                    cell.style.cursor = 'pointer';
+                    cell.addEventListener('mouseenter', () => cell.style.opacity = '1');
+                    cell.addEventListener('mouseleave', () => { cell.style.opacity = '.9'; tip.style.display = 'none'; });
+                    cell.addEventListener('click', () => { window.location.href = '/search?date=' + iso; });
+                }
             }
             col.appendChild(cell);
         }

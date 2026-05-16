@@ -266,6 +266,12 @@ class SessionsEngine:
         conn.close()
         return [dict(r) for r in rows]
 
+    def heatmap_data(self):
+        conn = self._get_db()
+        rows = conn.execute("SELECT substr(date,1,10) as day, COUNT(*) as cnt FROM sessions WHERE date IS NOT NULL GROUP BY day").fetchall()
+        conn.close()
+        return {r["day"]: r["cnt"] for r in rows}
+
     def prefill_from_live(self):
         conn = self._get_db()
         ls = conn.execute("SELECT * FROM live_session LIMIT 1").fetchone()
