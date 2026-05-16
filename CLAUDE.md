@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 App Flask + SQLite de documentation de sessions musicales pour l'univers de fiction **AZA** (dystopie personnelle d'Olivier — Dark Ambient / Industriel, Scaër, Bretagne). Déployée sur Fly.io à `https://robotariis-sessions.fly.dev/`.
 
-Version actuelle : voir `VERSION` dans `app.py` (actuellement **v3.2.0**).
+Version actuelle : voir `VERSION` dans `app.py` (actuellement **v3.5.0**).
 
 ---
 
@@ -14,7 +14,6 @@ Version actuelle : voir `VERSION` dans `app.py` (actuellement **v3.2.0**).
 
 ```bash
 python app.py          # Lancement local — port auto-détecté à partir de 5001
-fly deploy             # Déploiement Fly.io
 ```
 
 Pas de tests automatisés ni de linter configuré à ce jour.
@@ -51,7 +50,7 @@ Les 18 blueprints enregistrés :
 |---|---|
 | `sessions` | CRUD sessions + export MD/CSV/Obsidian — **module principal** |
 | `live` | Mode session en cours (timer live, notes temps réel) |
-| `patcher` | Éditeur de patch SVG drag&drop (nœuds, connexions audio/MIDI/CV) |
+| `patcher` | Éditeur de patch SVG drag&drop (nœuds, connexions audio/MIDI/CV) — minimap, snap-to-grid, connexions multi-type, duplication layout |
 | `sysex` | Loader SysEx DX7/Volca FM via Web MIDI API, bank editor |
 | `spark` | Générateur de contraintes créatives |
 | `catalogue` | Catalogue matériel (machine, effet, daw, synth_ios, plugin) |
@@ -74,13 +73,15 @@ Les 18 blueprints enregistrés :
 - `core/init_db.py` — `init_db(db_path)` : crée toutes les tables si inexistantes, peuple les données par défaut (obliques, catalogue, influences), applique les migrations via `ALTER TABLE ... ADD COLUMN` dans un `try/except`
 - `core/constants.py` — enums partagés : `CHARACTERS`, `MODES`, `INTENTIONS`, `ITEM_TYPES`, `SAMPLE_TYPES`, etc.
 - `core/oblique.py` — `rand_oblique(db_path)` : stratégie aléatoire depuis la table `obliques`
+- `core/ollama_client.py` — génération du `recap_claude` via `qwen3.5:latest` sur Ollama local (`192.168.1.100`) ; appelé depuis `/new?from_live=1` ; silencieux si indisponible
+- `core/whisper_client.py` — transcription audio via Whisper GPU local (port 9000, modèle `small`) ; appelé depuis `/live/transcribe` (POST multipart) ; silencieux si indisponible
 
 ### Base de données
 
 15 tables SQLite, toutes créées dans `init_db()`. Tables principales :
 
-- `sessions` — 31 champs dont `recap_claude` (résumé IA), `project_id` (FK), `title`
-- `live_session` — session en cours (0 ou 1 ligne)
+- `sessions` — 31 champs dont `recap_claude` (résumé IA généré par Ollama), `project_id` (FK), `title`
+- `live_session` — session en cours (0 ou 1 ligne) — supporte dictée vocale Whisper via `/live/transcribe`
 - `patch_layouts` / `patch_nodes` / `patch_connections` — module Patcher
 - `sysex_banks` — banks SysEx (BLOB SQLite)
 - `catalogue`, `influences`, `obliques`, `projects`, `sample_banks`, `inspiring_tracks`, `gear_wishlist`, `inspirations`, `mirack_modules`, `prompter_scripts`
@@ -97,12 +98,22 @@ Tous héritent de `base.html`. Système de thèmes via attribut `data-theme` sur
 
 Multi-sélection dans les formulaires : `form.getlist("machines")` → jointure `, ` avant stockage.
 
-### Déploiement Fly.io
+### Déploiement — Roblab (serveur bare metal)
 
-- App : `robotariis-sessions`, région `cdg`
-- DB et backups dans `/data` (volume persistant `sessions_data`)
-- Détecté via `FLY_APP_NAME` dans `wsgi.py` → `DB_PATH=/data/sessions.db`
-- 1 CPU partagé, 256 MB RAM, auto-stop/start
+- **URL publique** : `https://sessions.robotariis.com` via Cloudflare Tunnel
+- **URL locale** : `http://sessions.lan`
+- **Service** : `systemd` — `aza-sessions.service`
+- **Process** : Gunicorn, port `5001`, 1 worker
+- **DB** : `/home/olivier/DEV/aza-sessions/sessions.db`
+- **venv** : `/home/olivier/DEV/aza-sessions/.venv`
+
+```bash
+# Déployer une mise à jour
+cd /home/olivier/DEV/aza-sessions && git pull && sudo systemctl restart aza-sessions
+
+# Logs
+journalctl -u aza-sessions -f
+```
 
 ---
 
@@ -111,6 +122,7 @@ Multi-sélection dans les formulaires : `form.getlist("machines")` → jointure 
 1. Bumper `VERSION` dans `app.py`
 2. Mettre à jour `CHANGELOG.md`
 3. Vérifier que `sessions.db` n'est pas dans le commit (`.gitignore`)
+4. Après `git push` : `ssh roblab 'cd /home/olivier/DEV/aza-sessions && git pull && sudo systemctl restart aza-sessions'`
 
 ---
 
