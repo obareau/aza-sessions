@@ -5,6 +5,13 @@
 
 ---
 
+## v3.6.1 — 2026-05-16 — Réécriture recap Ollama
+
+### ✨ Nouveautés
+- **Bouton ✦ Réécrire** sur la vue session — envoie le `recap_claude` à Ollama (`qwen3.5`, t=0.3) pour correction orthographique et reformulation ; conserve le style, la longueur et l'atmosphère AZA ; silencieux si Ollama indisponible
+
+---
+
 ## v3.6.0 — 2026-05-16 — Responsive + FTS5 + Infra Roblab
 
 ### ✨ Nouveautés
