@@ -62,6 +62,43 @@ def generate_recap(session_data: dict, timeout: int = 30):
         return None
 
 
+_REWRITE_TEMPLATE = """Tu es un correcteur littéraire pour l'univers AZA — dystopie sonore Dark Ambient / Industriel.
+Réécris le texte suivant en corrigeant l'orthographe, la grammaire et la fluidité.
+Conserve exactement le sens, la longueur approximative, le style à la première personne et l'atmosphère sombre.
+Ne rajoute pas de contenu. Ne résume pas. Retourne uniquement le texte corrigé, sans commentaire.
+
+Texte original :
+{text}
+
+Texte corrigé :"""
+
+
+def rewrite_recap(text: str, timeout: int = 30):
+    if not text or not text.strip():
+        return None
+    prompt = _REWRITE_TEMPLATE.format(text=text.strip())
+    payload = json.dumps({
+        "model": OLLAMA_MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "options": {"temperature": 0.3},
+        "think": False,
+    }).encode()
+
+    try:
+        req = urllib.request.Request(
+            OLLAMA_URL,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            body = json.loads(resp.read())
+            return body.get("response", "").strip() or None
+    except Exception:
+        return None
+
+
 _REVIEW_TEMPLATE = """You are a senior Python/Flask developer reviewing a git diff for a small Flask+SQLite app.
 Be concise. Point out only real issues: bugs, security problems, broken logic, missing edge cases.
 If the diff looks fine, say so in one line. Skip style nits.

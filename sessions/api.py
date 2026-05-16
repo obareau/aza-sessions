@@ -267,6 +267,24 @@ def settings_obsidian():
     return redirect(url_for("sessions.settings", msg="Chemin Obsidian sauvegardé"))
 
 
+@bp.route("/<int:session_id>/rewrite-recap", methods=["POST"])
+def rewrite_recap(session_id):
+    from core.ollama_client import rewrite_recap as _rewrite
+    engine = _engine()
+    session, _ = engine.get(session_id)
+    if not session:
+        return jsonify({"error": "session introuvable"}), 404
+    text = session.get("recap_claude") or ""
+    if not text.strip():
+        return jsonify({"error": "recap vide"}), 400
+    result = _rewrite(text)
+    if not result:
+        return jsonify({"error": "Ollama indisponible"}), 503
+    session["recap_claude"] = result
+    engine.update(session_id, session)
+    return jsonify({"recap_claude": result})
+
+
 @bp.route("/search")
 def search():
     engine = _engine()
