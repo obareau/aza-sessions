@@ -1233,6 +1233,9 @@ function exportSVG() {
   const vh = (nodes.length ? maxY-minY+pad*2 : 600);
 
   const clone = svg.cloneNode(true);
+  // Réinitialiser le transform pan/zoom de g-root — le viewBox est en coordonnées locales des nœuds
+  const cloneGRoot = clone.getElementById("g-root");
+  if (cloneGRoot) cloneGRoot.setAttribute("transform", "translate(0,0) scale(1)");
   clone.setAttribute("viewBox", `${vx} ${vy} ${vw} ${vh}`);
   clone.setAttribute("width",  vw);
   clone.setAttribute("height", vh);
@@ -1276,6 +1279,8 @@ function exportPDF() {
   const vw = nodes.length ? maxX-minX+pad*2 : 800, vh = nodes.length ? maxY-minY+pad*2 : 600;
 
   const clone = svg.cloneNode(true);
+  const cloneGRoot2 = clone.getElementById("g-root");
+  if (cloneGRoot2) cloneGRoot2.setAttribute("transform", "translate(0,0) scale(1)");
   clone.setAttribute("viewBox", `${vx} ${vy} ${vw} ${vh}`);
   clone.setAttribute("width","100%"); clone.setAttribute("height","100%");
   clone.removeAttribute("style");

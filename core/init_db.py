@@ -310,6 +310,7 @@ def init_db(db_path):
         "ALTER TABLE sessions ADD COLUMN title TEXT DEFAULT ''",
         "ALTER TABLE patch_nodes ADD COLUMN note TEXT DEFAULT ''",
         "ALTER TABLE patch_connections ADD COLUMN note TEXT DEFAULT ''",
+        "ALTER TABLE catalogue ADD COLUMN manufacturer TEXT DEFAULT ''",
     ]:
         try:
             conn.execute(migration)
