@@ -16,7 +16,12 @@ Version actuelle : voir `VERSION` dans `app.py` (actuellement **v3.5.0**).
 python app.py          # Lancement local — port auto-détecté à partir de 5001
 ```
 
-Pas de tests automatisés ni de linter configuré à ce jour.
+Linter : **ruff** (config dans `ruff.toml`).
+
+```bash
+.venv/bin/ruff check .        # vérifier
+.venv/bin/ruff check --fix .  # corriger automatiquement
+```
 
 ---
 

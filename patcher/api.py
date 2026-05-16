@@ -149,12 +149,12 @@ def patcher_export_mermaid(layout_id):
     lines.append("```")
     if nodes:
         lines += ["", "## Nœuds", ""]
-        lines += [f"| ID | Nom | Type | Note |", "|----|-----|------|------|"]
+        lines += ["| ID | Nom | Type | Note |", "|----|-----|------|------|"]
         for n in nodes:
             lines.append(f"| n{n['id']} | {n['label']} | {n['node_type']} | {n.get('note','') or ''} |")
     if connections:
         lines += ["", "## Connexions", ""]
-        lines += [f"| De | Vers | Signal | Label |", "|----|------|--------|-------|"]
+        lines += ["| De | Vers | Signal | Label |", "|----|------|--------|-------|"]
         for c in connections:
             fn = next((n["label"] for n in nodes if n["id"]==c["from_id"]), str(c["from_id"]))
             tn = next((n["label"] for n in nodes if n["id"]==c["to_id"]),   str(c["to_id"]))

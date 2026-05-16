@@ -1,0 +1,7 @@
+[lint]
+ignore = [
+    "E401",  # multi-imports intentionnels (app.py)
+    "E402",  # blueprints importés après création de app — pattern Flask obligatoire
+    "E702",  # import + register_blueprint sur une ligne — style volontaire
+    "F401",  # re-exports dans __init__.py
+]

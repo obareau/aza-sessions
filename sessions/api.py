@@ -325,7 +325,6 @@ def search():
 
 @bp.route("/settings")
 def settings():
-    engine = _engine()
     from core.db import get_db
     conn = get_db(current_app.config["DB_PATH"])
     nb_sessions = conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
