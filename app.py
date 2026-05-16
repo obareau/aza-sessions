@@ -50,6 +50,15 @@ def _get_config():
     return {}
 
 
+@app.after_request
+def set_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(self), camera=()"
+    return response
+
+
 @app.context_processor
 def inject_globals():
     try:
