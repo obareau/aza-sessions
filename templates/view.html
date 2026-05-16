@@ -178,16 +178,8 @@
 
 {% if session.recap_claude %}
 <div class="card" style="border-color:var(--accent2);background:var(--accent2-soft);">
-    <div class="card-title" style="color:var(--accent2);display:flex;align-items:center;justify-content:space-between;">
-        <span>∙ Récap session</span>
-        <button onclick="rewriteRecap()" id="btn-rewrite"
-                style="font-family:var(--mono);font-size:11px;padding:3px 10px;
-                       border:1px solid var(--accent2);border-radius:var(--radius);
-                       background:transparent;color:var(--accent2);cursor:pointer;">
-            ✦ Réécrire
-        </button>
-    </div>
-    <div id="recap-text" class="detail-value" style="font-size:12px;line-height:1.7;">{{ session.recap_claude }}</div>
+    <div class="card-title" style="color:var(--accent2);">∙ Récap session</div>
+    <div class="detail-value" style="font-size:12px;line-height:1.7;">{{ session.recap_claude }}</div>
 </div>
 {% endif %}
 
@@ -196,27 +188,6 @@
      box-shadow:0 4px 16px rgba(0,0,0,0.25);transition:opacity .3s;"></div>
 
 <script>
-function rewriteRecap() {
-    const btn = document.getElementById("btn-rewrite");
-    const txt = document.getElementById("recap-text");
-    if (!btn || !txt) return;
-    btn.textContent = "…";
-    btn.disabled = true;
-    fetch("{{ url_for('sessions.rewrite_recap', session_id=session.id) }}", {method:"POST"})
-        .then(r => r.json())
-        .then(data => {
-            if (data.recap_claude) {
-                txt.textContent = data.recap_claude;
-                btn.textContent = "✓ Réécrit";
-            } else {
-                btn.textContent = "✦ Réécrire";
-                alert(data.error || "Erreur Ollama");
-            }
-        })
-        .catch(() => { btn.textContent = "✦ Réécrire"; alert("Erreur réseau"); })
-        .finally(() => { btn.disabled = false; });
-}
-
 function pushToVault() {
     const btn = document.getElementById('vault-btn');
     btn.disabled = true;
