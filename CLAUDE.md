@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 App Flask + SQLite de documentation de sessions musicales pour l'univers de fiction **AZA** (dystopie personnelle d'Olivier — Dark Ambient / Industriel, Scaër, Bretagne). Déployée sur Fly.io à `https://robotariis-sessions.fly.dev/`.
 
-Version actuelle : voir `VERSION` dans `app.py` (actuellement **v3.5.0**).
+Version actuelle : voir `VERSION` dans `app.py` (actuellement **v3.6.0**).
 
 ---
 
