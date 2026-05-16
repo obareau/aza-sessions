@@ -5,6 +5,24 @@
 
 ---
 
+## v3.6.0 — 2026-05-16 — Responsive + FTS5 + Infra Roblab
+
+### ✨ Nouveautés
+- **Recherche full-text SQLite FTS5** — 15 champs indexés (title, machines, effects, daws, synths_ios, plugins, patches, tags, comments, influences, recap_claude, lore_link, signal_routing, oblique, intention) ; triggers INSERT/UPDATE/DELETE pour sync automatique ; fallback Python si indisponible ; tri par pertinence
+- **Responsive complet** — 19 templates adaptés mobile/tablette/PC ; grids fixes → responsive ; touch targets 44px ; prompteur et vue live utilisables au pouce
+
+### 🛠 Infra & Qualité
+- **Migration Fly.io → Roblab** — service `aza-sessions.service` (Gunicorn port 5001) ; `sessions.lan` + `sessions.robotariis.com` via Cloudflare Tunnel
+- **Linter ruff** — `ruff.toml`, zéro erreur
+- **Suite pytest** — 15 tests (smoke routes + DB init/schema)
+
+### 🐛 Corrections
+- **Export SVG/PDF patcher** — reset du transform `g-root` avant export → viewBox correctement centré sur le contenu
+- **Migration `manufacturer`** — colonne manquante dans `init_db()` causant un crash sur DB fraîche
+- **Apostrophe Jinja2** — `about.html` template syntax error sur `d'ensemble`
+
+---
+
 ## v3.5.0 — 2026-05-10 — Patcher v2 : polish & puissance
 
 ### ✨ Nouveautés
