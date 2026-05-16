@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}Presets — AZA{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">◈ Carnet de Presets</div>
+        <div class="page-subtitle">{{ notes|length }} note{% if notes|length != 1 %}s{% endif %}{% if filter_cat_id %} · filtrées{% endif %}</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="{{ url_for('presets.presets_stats') }}" class="btn btn-ghost">↗ Stats</a>
+        <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
+    </div>
+</div>
+
+<!-- FILTRES -->
+<div class="card" style="padding:14px 18px;margin-bottom:16px;">
+    <form method="GET" action="{{ url_for('presets.presets_list') }}"
+          style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="form-group" style="margin:0;flex:1;min-width:160px;">
+            <label>Recherche</label>
+            <input type="text" name="q" value="{{ search_q }}" placeholder="preset, évocation, idée...">
+        </div>
+        <div class="form-group" style="margin:0;min-width:180px;">
+            <label>Instrument / Plugin</label>
+            <select name="catalogue_id">
+                <option value="">Tous</option>
+                {% set types_seen = [] %}
+                {% for item in catalogue %}
+                    {% if item.type not in types_seen %}
+                        {% if not loop.first %}</optgroup>{% endif %}
+                        <optgroup label="{{ item.type }}">
+                        {% set _ = types_seen.append(item.type) %}
+                    {% endif %}
+                    <option value="{{ item.id }}" {% if filter_cat_id == item.id %}selected{% endif %}>
+                        {% if item.manufacturer %}{{ item.manufacturer }} — {% endif %}{{ item.name }}
+                    </option>
+                {% endfor %}
+                {% if types_seen %}</optgroup>{% endif %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-secondary">Filtrer</button>
+        {% if search_q or filter_cat_id %}
+        <a href="{{ url_for('presets.presets_list') }}" class="btn btn-ghost">✕ Reset</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- AJOUTER UN PRESET -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-title">∙ Noter un preset</div>
+    <form method="POST" action="{{ url_for('presets.preset_create') }}" class="preset-add-form">
+        <input type="hidden" name="date" value="{{ now }}">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px;">
+            <div class="form-group" style="margin:0;">
+                <label>Instrument / Plugin *</label>
+                <select name="catalogue_id">
+                    <option value="">— choisir —</option>
+                    {% set types_seen2 = [] %}
+                    {% for item in catalogue %}
+                        {% if item.type not in types_seen2 %}
+                            {% if not loop.first %}</optgroup>{% endif %}
+                            <optgroup label="{{ item.type }}">
+                            {% set _ = types_seen2.append(item.type) %}
+                        {% endif %}
+                        <option value="{{ item.id }}" {% if filter_cat_id == item.id %}selected{% endif %}>
+                            {% if item.manufacturer %}{{ item.manufacturer }} — {% endif %}{{ item.name }}
+                        </option>
+                    {% endfor %}
+                    {% if types_seen2 %}</optgroup>{% endif %}
+                </select>
+            </div>
+            <div class="form-group" style="margin:0;">
+                <label>Nom du preset *</label>
+                <input type="text" name="preset_name" placeholder="ex: Dark Glass, Acid Rain..." required>
+            </div>
+            <div class="form-group" style="margin:0;">
+                <label>Note / étoiles</label>
+                <select name="rating">
+                    <option value="">—</option>
+                    {% for i in range(1,6) %}<option value="{{ i }}">{{ '★' * i }}</option>{% endfor %}
+                </select>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+            <div class="form-group" style="margin:0;">
+                <label>Évocation — ce que ça évoque</label>
+                <input type="text" name="evocation" placeholder="ambiance, texture, émotion...">
+            </div>
+            <div class="form-group" style="margin:0;">
+                <label>Idée de morceau</label>
+                <input type="text" name="song_idea" placeholder="titre ou concept de track...">
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px;">
+            <div class="form-group" style="margin:0;">
+                <label>Rappelle</label>
+                <select name="influence_id">
+                    <option value="">— influence —</option>
+                    {% for inf in influences %}
+                    <option value="{{ inf.id }}">{{ inf.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="margin:0;">
+                <label>Tags</label>
+                <input type="text" name="tags" placeholder="drone, noise, rythmique...">
+            </div>
+            <div class="form-group" style="margin:0;">
+                <label>Session liée</label>
+                <select name="session_id">
+                    <option value="">—</option>
+                    {% for s in sessions %}
+                    <option value="{{ s.id }}">#{{ s.id }} — {{ s.date[:10] }}{% if s.title %} · {{ s.title }}{% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div style="margin-top:10px;">
+            <div class="form-group" style="margin:0;">
+                <label>Notes libres</label>
+                <textarea name="notes" rows="2" placeholder="détails du son, contexte, idées de modulation..."></textarea>
+            </div>
+        </div>
+        <div style="margin-top:12px;text-align:right;">
+            <button type="submit" class="btn btn-primary">+ Ajouter</button>
+        </div>
+    </form>
+</div>
+<style>
+@media (max-width: 900px) {
+    .preset-add-form > div[style*="grid-template-columns:1fr 1fr 1fr"] { grid-template-columns: 1fr 1fr !important; }
+    .preset-add-form > div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 600px) {
+    .preset-add-form > div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+}
+</style>
+
+<!-- LISTE -->
+{% if notes %}
+{% for cat_name, items in grouped.items() %}
+<div style="margin-bottom:24px;">
+    <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent2);
+                text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;
+                padding-bottom:6px;border-bottom:1px solid var(--border);">
+        ◈ {{ cat_name }} <span style="font-weight:400;color:var(--text-muted);">({{ items|length }})</span>
+    </div>
+    {% for note in items %}
+    <div class="card preset-card" style="margin-bottom:8px;padding:14px 18px;display:flex;gap:14px;align-items:flex-start;">
+        <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+                <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);">{{ note.preset_name }}</span>
+                {% if note.rating %}
+                <span class="rating-stars" style="font-size:12px;">{{ '★' * note.rating }}</span>
+                {% endif %}
+                <span style="font-size:10px;color:var(--text-muted);margin-left:auto;">{{ note.date[:10] }}</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:12px;line-height:1.5;">
+                {% if note.evocation %}
+                <div>
+                    <span style="font-size:10px;color:var(--text-muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;">Évoque</span>
+                    <div style="color:var(--text);">{{ note.evocation }}</div>
+                </div>
+                {% endif %}
+                {% if note.song_idea %}
+                <div>
+                    <span style="font-size:10px;color:var(--text-muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;">Idée track</span>
+                    <div style="color:var(--accent);">{{ note.song_idea }}</div>
+                </div>
+                {% endif %}
+                {% if note.influence_name %}
+                <div>
+                    <span style="font-size:10px;color:var(--text-muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;">Rappelle</span>
+                    <div style="color:var(--accent2);">{{ note.influence_name }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% if note.notes %}
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic;">{{ note.notes }}</div>
+            {% endif %}
+            {% if note.tags %}
+            <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;">
+                {% for tag in note.tags.split(',') %}
+                <span style="font-family:var(--mono);font-size:10px;padding:2px 6px;
+                             background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius);
+                             color:var(--text-muted);">{{ tag.strip() }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+            <a href="{{ url_for('presets.preset_edit', nid=note.id) }}" class="btn btn-ghost btn-sm" title="Éditer">✎</a>
+            <form method="POST" action="{{ url_for('presets.preset_delete', nid=note.id) }}"
+                  onsubmit="return confirm('Supprimer ce preset ?')">
+                <button type="submit" class="btn btn-danger btn-sm" title="Supprimer">✕</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endfor %}
+{% else %}
+<div style="text-align:center;padding:60px 20px;color:var(--text-muted);font-family:var(--mono);font-size:13px;">
+    {% if search_q or filter_cat_id %}Aucun preset ne correspond aux filtres.{% else %}Aucun preset noté pour l'instant.{% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

@@ -5,6 +5,15 @@
 
 ---
 
+## v3.7.0 — 2026-05-16 — Carnet de Presets
+
+### ✨ Nouveautés
+- **Module Presets** — carnet de notes par preset/patch : instrument lié (catalogue), nom du preset, ce qu'il évoque, idée de morceau, influence rappelée, note ★, tags, session liée, notes libres
+- **Stats presets** — par instrument/plugin : nombre de presets notés, moyenne ★, top presets mieux notés
+- **Filtres presets** — par instrument et recherche textuelle (nom, évocation, idée, tags, influence)
+
+---
+
 ## v3.6.1 — 2026-05-16 — Réécriture recap Ollama
 
 ### ✨ Nouveautés

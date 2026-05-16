@@ -294,6 +294,23 @@ def init_db(db_path):
     """)
 
     conn.execute("""
+        CREATE TABLE IF NOT EXISTS preset_notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            catalogue_id INTEGER,
+            preset_name TEXT NOT NULL,
+            evocation TEXT,
+            song_idea TEXT,
+            influence_id INTEGER,
+            rating INTEGER,
+            tags TEXT,
+            session_id INTEGER,
+            notes TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS sysex_banks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL DEFAULT 'bank',
