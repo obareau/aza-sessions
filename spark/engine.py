@@ -124,16 +124,17 @@ class SparkEngine:
         random.shuffle(result)
         return {"suggestions": result, "total": total}
 
-    def focus(self):
+    def focus(self, exclude=None):
         conn = self._get_db()
         sessions = conn.execute("SELECT * FROM sessions ORDER BY date DESC").fetchall()
         total = len(sessions)
+        exclude = exclude or []
 
         pool = []
 
         for _ in range(3):
             pool.append({"icon": "∴", "type": "Stratégie AZA",
-                         "text": self.rand_oblique(), "sub": ""})
+                         "text": _rand_oblique(self.db_path, exclude=exclude), "sub": ""})
 
         if total >= 3:
             def count_field(f):
@@ -182,7 +183,12 @@ class SparkEngine:
                          "sub": inspi["source"] or ""})
 
         conn.close()
-        return random.choice(pool) if pool else {
-            "icon": "∴", "type": "Stratégie",
-            "text": "La machine ne ment pas. Elle déforme.", "sub": ""
-        }
+        # Filtrer les items déjà vus — clé = type+text
+        def _key(item):
+            return item["type"] + "|" + item["text"]
+        filtered = [p for p in pool if _key(p) not in exclude]
+        if not filtered:
+            filtered = pool  # pool épuisé → on repart de zéro
+        chosen = random.choice(filtered)
+        chosen["_key"] = _key(chosen)
+        return chosen
