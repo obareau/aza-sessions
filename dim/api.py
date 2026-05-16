@@ -1,4 +1,5 @@
 import json
+import os
 import uuid
 import urllib.request
 import urllib.error
@@ -8,7 +9,7 @@ from .engine import DimEngine
 bp = Blueprint("dim", __name__)
 
 DIM_HOST = "localhost"
-DIM_PORT = 5001
+DIM_PORT = int(os.environ.get("DIM_PORT", 5002))
 
 # AZA cue color names → hex pour D.I.M
 _COLOR_MAP = {
