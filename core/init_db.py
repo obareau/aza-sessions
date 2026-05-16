@@ -318,5 +318,74 @@ def init_db(db_path):
         except Exception:
             pass
 
+    # ── FTS5 — recherche plein texte ──────────────────────────────────────────
+    conn.execute("""
+        CREATE VIRTUAL TABLE IF NOT EXISTS sessions_fts USING fts5(
+            title, machines, effects, daws, synths_ios, plugins, patches,
+            tags, comments, influences, recap_claude, lore_link,
+            signal_routing, oblique, intention,
+            content=sessions, content_rowid=id
+        )
+    """)
+
+    conn.execute("""
+        CREATE TRIGGER IF NOT EXISTS sessions_fts_insert
+        AFTER INSERT ON sessions BEGIN
+            INSERT INTO sessions_fts(rowid, title, machines, effects, daws,
+                synths_ios, plugins, patches, tags, comments, influences,
+                recap_claude, lore_link, signal_routing, oblique, intention)
+            VALUES (new.id, new.title, new.machines, new.effects, new.daws,
+                new.synths_ios, new.plugins, new.patches, new.tags, new.comments,
+                new.influences, new.recap_claude, new.lore_link,
+                new.signal_routing, new.oblique, new.intention);
+        END
+    """)
+
+    conn.execute("""
+        CREATE TRIGGER IF NOT EXISTS sessions_fts_update
+        AFTER UPDATE ON sessions BEGIN
+            INSERT INTO sessions_fts(sessions_fts, rowid, title, machines, effects,
+                daws, synths_ios, plugins, patches, tags, comments, influences,
+                recap_claude, lore_link, signal_routing, oblique, intention)
+            VALUES ('delete', old.id, old.title, old.machines, old.effects, old.daws,
+                old.synths_ios, old.plugins, old.patches, old.tags, old.comments,
+                old.influences, old.recap_claude, old.lore_link,
+                old.signal_routing, old.oblique, old.intention);
+            INSERT INTO sessions_fts(rowid, title, machines, effects, daws,
+                synths_ios, plugins, patches, tags, comments, influences,
+                recap_claude, lore_link, signal_routing, oblique, intention)
+            VALUES (new.id, new.title, new.machines, new.effects, new.daws,
+                new.synths_ios, new.plugins, new.patches, new.tags, new.comments,
+                new.influences, new.recap_claude, new.lore_link,
+                new.signal_routing, new.oblique, new.intention);
+        END
+    """)
+
+    conn.execute("""
+        CREATE TRIGGER IF NOT EXISTS sessions_fts_delete
+        AFTER DELETE ON sessions BEGIN
+            INSERT INTO sessions_fts(sessions_fts, rowid, title, machines, effects,
+                daws, synths_ios, plugins, patches, tags, comments, influences,
+                recap_claude, lore_link, signal_routing, oblique, intention)
+            VALUES ('delete', old.id, old.title, old.machines, old.effects, old.daws,
+                old.synths_ios, old.plugins, old.patches, old.tags, old.comments,
+                old.influences, old.recap_claude, old.lore_link,
+                old.signal_routing, old.oblique, old.intention);
+        END
+    """)
+
+    # Peupler le FTS si vide (première activation ou rebuild)
+    fts_count = conn.execute("SELECT COUNT(*) FROM sessions_fts").fetchone()[0]
+    if fts_count == 0:
+        conn.execute("""
+            INSERT INTO sessions_fts(rowid, title, machines, effects, daws,
+                synths_ios, plugins, patches, tags, comments, influences,
+                recap_claude, lore_link, signal_routing, oblique, intention)
+            SELECT id, title, machines, effects, daws, synths_ios, plugins,
+                patches, tags, comments, influences, recap_claude, lore_link,
+                signal_routing, oblique, intention
+            FROM sessions
+        """)
+
     conn.commit()
     conn.close()

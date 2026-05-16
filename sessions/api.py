@@ -278,17 +278,36 @@ def search():
     rating = request.args.get("rating", "").strip()
     project_id = request.args.get("project_id", "").strip()
 
-    sessions = engine.list_all()
-
     if q:
-        q_low = q.lower()
-        sessions = [s for s in sessions if
-                    q_low in (s.get("machines") or "").lower() or
-                    q_low in (s.get("tags") or "").lower() or
-                    q_low in (s.get("comments") or "").lower() or
-                    q_low in (s.get("intention") or "").lower() or
-                    q_low in (s.get("influences") or "").lower() or
-                    q_low in (s.get("title") or "").lower()]
+        from core.db import get_db
+        try:
+            conn = get_db(current_app.config["DB_PATH"])
+            # FTS5 : échappe les guillemets, cherche sur tous les champs indexés
+            fts_q = q.replace('"', '""')
+            rowids = [r[0] for r in conn.execute(
+                'SELECT rowid FROM sessions_fts WHERE sessions_fts MATCH ? ORDER BY rank',
+                (fts_q,)
+            ).fetchall()]
+            conn.close()
+            all_sessions = engine.list_all()
+            rowid_set = set(rowids)
+            sessions = [s for s in all_sessions if s["id"] in rowid_set]
+            # Respecter l'ordre de pertinence FTS
+            order = {rid: i for i, rid in enumerate(rowids)}
+            sessions.sort(key=lambda s: order.get(s["id"], 9999))
+        except Exception:
+            # Fallback Python si FTS indisponible
+            q_low = q.lower()
+            sessions = [s for s in engine.list_all() if
+                        q_low in (s.get("machines") or "").lower() or
+                        q_low in (s.get("tags") or "").lower() or
+                        q_low in (s.get("comments") or "").lower() or
+                        q_low in (s.get("recap_claude") or "").lower() or
+                        q_low in (s.get("patches") or "").lower() or
+                        q_low in (s.get("influences") or "").lower() or
+                        q_low in (s.get("title") or "").lower()]
+    else:
+        sessions = engine.list_all()
     if machine:
         sessions = [s for s in sessions if machine.lower() in (s.get("machines") or "").lower()]
     if mode:
