@@ -10,6 +10,19 @@ ROUTES = [
     "/patcher",
     "/sysex",
     "/about",
+    "/presets",
+    "/presets/stats",
+    "/search",
+    "/live",
+    "/projects",
+    "/samples",
+    "/tracks",
+    "/wishlist",
+    "/inspirations",
+    "/mirack",
+    "/obliques",
+    "/influences",
+    "/settings",
 ]
 
 
