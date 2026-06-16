@@ -5,6 +5,29 @@
 
 ---
 
+## v3.7.2 — 2026-06-03 — Spark : contrainte unique + fix DIM
+
+### ✨ Nouveautés
+- **Spark contrainte unique** — historique en session Flask pour éviter les répétitions ; limite `SEEN_MAX = 8`, réutilisation après épuisement du pool
+- **Port DIM configurable** via variable d'environnement `DIM_PORT` (défaut 5002, ajusté au port réel du service DIM)
+
+### 🐛 Corrections
+- **backup DB au démarrage Gunicorn** — le code sous `__main__` ne tourne pas en WSGI ; migration dans `wsgi.py`
+- **retire sessions.db du tracking git** — fichier ignoré mais encore suivi ; suppression de l'index git
+
+---
+
+## v3.7.1 — 2026-05-23 — Vue compacte + tests
+
+### ✨ Nouveautés
+- **Vue compacte sessions** — grille alternée `compact.html` : ligne date+temps à gauche, titre/commentaire à droite, icônes machines, tags, lien Lore cliquable
+- **Heatmap cliquable** sur l'index — cartographie des intensités sonores par session (rouge/vert/bleu selon le niveau de bruit signalé), survol affiche la date, clic va directement à la session
+
+### 🛠 Qualité
+- **Smoke tests** — couvre toutes les 18 routes blueprints (Flask client factory)
+
+---
+
 ## v3.7.0 — 2026-05-16 — Carnet de Presets
 
 ### ✨ Nouveautés
