@@ -5,6 +5,17 @@
 
 ---
 
+## v3.10.0 — 2026-06-27 — Idées en vrac & SPARK
+
+### ✨ Nouveautés
+- **Idées en vrac** — la page `/inspirations` est recadrée en « 💡 Idées en vrac » (titre, nav « Idées en vrac ») ; nouveau type `Idée` (placé en tête de `INSPI_TYPES`) pour distinguer les idées brutes des autres sources
+- **SPARK pioche dans les idées** — `SparkEngine.focus()` et `suggestions()` font remonter en priorité les entrées de type `Idée` (pondérées ×2 dans le pool focus), badge « 💡 Idée en vrac » ; la dédup `type|text` et l'historique session `SEEN_MAX=8` restent inchangés
+
+### 🛠 Qualité
+- **Tests** — `tests/test_spark_ideas.py` (type Idée, focus la propose, dédup exclut une idée vue, suggestions la fait remonter, page recadrée)
+
+---
+
 ## v3.9.0 — 2026-06-27 — Sessions typées : musique / lore / veille & code
 
 ### ✨ Nouveautés

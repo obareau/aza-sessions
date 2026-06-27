@@ -97,7 +97,19 @@ class SparkEngine:
                 "sub": m["category"] or "Module non classifié"
             })
 
-        inspi = conn.execute("SELECT * FROM inspirations ORDER BY RANDOM() LIMIT 1").fetchone()
+        # Idées en vrac — pool personnel dans lequel Spark pioche en priorité
+        for idea in conn.execute(
+            "SELECT * FROM inspirations WHERE type='Idée' ORDER BY RANDOM() LIMIT 2"
+        ).fetchall():
+            result.append({
+                "icon": "💡", "type": "Idée en vrac",
+                "text": f"<strong>{idea['content']}</strong>",
+                "sub": idea["source"] or "Pioche dans tes idées"
+            })
+
+        inspi = conn.execute(
+            "SELECT * FROM inspirations WHERE type != 'Idée' ORDER BY RANDOM() LIMIT 1"
+        ).fetchone()
         if inspi:
             result.append({
                 "icon": "∴", "type": f"Inspiration — {inspi['type']}",
@@ -176,7 +188,17 @@ class SparkEngine:
                          "text": unmastered["name"],
                          "sub": unmastered["category"] or ""})
 
-        inspi = conn.execute("SELECT * FROM inspirations ORDER BY RANDOM() LIMIT 1").fetchone()
+        # Idées en vrac — pondérées (ajoutées 2× au pool) pour piocher en priorité
+        for idea in conn.execute(
+            "SELECT * FROM inspirations WHERE type='Idée' ORDER BY RANDOM() LIMIT 2"
+        ).fetchall():
+            pool.append({"icon": "💡", "type": "Idée en vrac",
+                         "text": f"« {idea['content']} »",
+                         "sub": idea["source"] or "Pioche dans tes idées"})
+
+        inspi = conn.execute(
+            "SELECT * FROM inspirations WHERE type != 'Idée' ORDER BY RANDOM() LIMIT 1"
+        ).fetchone()
         if inspi:
             pool.append({"icon": "∴", "type": f"Inspiration — {inspi['type']}",
                          "text": f"« {inspi['content']} »",

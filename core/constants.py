@@ -7,4 +7,4 @@ SAMPLE_TYPES  = ["Drums","Percussions","Basses","Synthés","Textures","Field rec
 MIRACK_CATS   = ["Oscillateur","Filtre","LFO","Enveloppe","Séquenceur","Effet","Utilitaire","Mixer","Aléatoire","Autre"]
 WISHLIST_TYPES= ["Synthétiseur","Effet hardware","DAW/Logiciel","Contrôleur","Interface audio","Câbles/Accessoires","Autre"]
 WISHLIST_PRIOS= ["Urgent","Bientôt","Un jour","Rêve"]
-INSPI_TYPES   = ["Phrase","Extrait film","Livre","Image/Photo","Architecture","Concept","Autre"]
+INSPI_TYPES   = ["Idée","Phrase","Extrait film","Livre","Image/Photo","Architecture","Concept","Autre"]

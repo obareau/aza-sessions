@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Sources d'Inspiration — AZA{% endblock %}
+{% block title %}Idées en vrac — AZA{% endblock %}
 {% block content %}
 
 <div class="page-header">
     <div>
-        <div class="page-title">∴ Sources d'Inspiration</div>
-        <div class="page-subtitle">{{ inspirations|length }} source{% if inspirations|length != 1 %}s{% endif %} · hors musique</div>
+        <div class="page-title">💡 Idées en vrac</div>
+        <div class="page-subtitle">{{ inspirations|length }} entrée{% if inspirations|length != 1 %}s{% endif %} · idées & sources d'inspiration — Spark y pioche</div>
     </div>
     <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
 </div>
