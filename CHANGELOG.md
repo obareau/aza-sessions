@@ -5,6 +5,23 @@
 
 ---
 
+## v3.9.0 — 2026-06-27 — Sessions typées : musique / lore / veille & code
+
+### ✨ Nouveautés
+- **Type de session** — colonne `session_type` (`music` par défaut / `lore` / `veille`) ; sélecteur en onglets en tête du formulaire `/new` et `/edit`
+- **Formulaire conditionnel** — les sections s'affichent selon le type (JS, sans rechargement) : le matériel/technique/capture n'apparaît qu'en mode musique ; lore et veille réutilisent titre, lien (libellé contextuel « Lien lore » / « Lien / Référence »), notes libres, caractère, tags, évaluation — aucune colonne texte superflue
+- **Sections matériel iPad & Zynthian** — nouvelles colonnes `sessions.ipad` et `sessions.zynthian`, sections check-grid dédiées (groupées par fabricant), affichées dans la vue et l'export si renseignées
+- **Anti-surcharge du formulaire** — barre de filtre matériel : recherche instantanée par nom + bascule « ★ favoris seulement » ; favoris remontés en tête (tri `favorite DESC`) et marqués d'une étoile
+- **Filtre & badge par type** — select « Type » dans la recherche `/search` ; badge ✎ Lore / ⚙ Veille sur l'index et la vue session
+- **Recap Ollama par type** — prompts dédiés lore (récit) et veille (résumé factuel) en plus du prompt musical
+
+### 🛠 Infra & Qualité
+- **`ITEM_TYPES` unifié** — source unique dans `core/constants.py` (suppression du doublon dans `catalogue/engine.py`)
+- Migrations `sessions.session_type` / `ipad` / `zynthian` (CREATE + ALTER)
+- **Tests** — `tests/test_session_types.py` (colonnes, défaut music, round-trip iPad/Zynthian, filtre recherche, export CSV)
+
+---
+
 ## v3.8.0 — 2026-06-27 — Catalogue : saisie rapide, favoris & types dédiés
 
 ### ✨ Nouveautés

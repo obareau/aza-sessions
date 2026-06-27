@@ -2,13 +2,15 @@ import csv
 import io
 from datetime import datetime
 from core.db import get_db
-from core.constants import ITEM_TYPES
+from core.constants import ITEM_TYPES, SESSION_TYPES
 
 
 def session_to_md(s, version=""):
     project_line = f"\n**Projet:** {s['project_title']}" if s['project_title'] else ""
+    type_label = SESSION_TYPES.get(s.get("session_type") or "music", "Musique")
     return f"""# Session {s['date']}
 
+**Type:** {type_label}
 **Mode:** {s['mode'] or '—'}
 **Intention:** {s['intention'] or '—'}
 **Durée:** {s['duration_min'] or '—'} min
@@ -26,6 +28,12 @@ def session_to_md(s, version=""):
 
 ## Synthés iOS
 {s['synths_ios'] or '—'}
+
+## Apps iPad
+{s.get('ipad') or '—'}
+
+## Zynthian / Raspberry Pi
+{s.get('zynthian') or '—'}
 
 ## Plugins
 {s['plugins'] or '—'}
@@ -156,14 +164,15 @@ class SessionsEngine:
         conn = self._get_db()
         conn.execute("""
             INSERT INTO sessions (
-                title, date, duration_min, mode, intention, energy_level,
-                machines, effects, daws, synths_ios, plugins,
+                session_type, title, date, duration_min, mode, intention, energy_level,
+                machines, effects, daws, synths_ios, ipad, zynthian, plugins,
                 patches, audio_file, timestamps, rating, tags,
                 character, lore_link, to_rework, release_potential,
                 tempo, tonality, signal_routing, microfreak_algo,
                 linked_session, influences, oblique, comments, recap_claude, project_id
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, (
+            data.get("session_type") or "music",
             data.get("title", "").strip(),
             data.get("date", datetime.now().strftime("%Y-%m-%d %H:%M")),
             data.get("duration_min") or None,
@@ -171,6 +180,7 @@ class SessionsEngine:
             data.get("energy_level") or None,
             data.get("machines", ""), data.get("effects", ""),
             data.get("daws", ""), data.get("synths_ios", ""),
+            data.get("ipad", ""), data.get("zynthian", ""),
             data.get("plugins", ""), data.get("patches"),
             data.get("audio_file"), data.get("timestamps"),
             data.get("rating") or None, data.get("tags"),
@@ -193,8 +203,8 @@ class SessionsEngine:
         conn = self._get_db()
         conn.execute("""
             UPDATE sessions SET
-                title=?, date=?, duration_min=?, mode=?, intention=?, energy_level=?,
-                machines=?, effects=?, daws=?, synths_ios=?, plugins=?,
+                session_type=?, title=?, date=?, duration_min=?, mode=?, intention=?, energy_level=?,
+                machines=?, effects=?, daws=?, synths_ios=?, ipad=?, zynthian=?, plugins=?,
                 patches=?, audio_file=?, timestamps=?, rating=?, tags=?,
                 character=?, lore_link=?, to_rework=?, release_potential=?,
                 tempo=?, tonality=?, signal_routing=?, microfreak_algo=?,
@@ -202,12 +212,14 @@ class SessionsEngine:
                 project_id=?
             WHERE id=?
         """, (
+            data.get("session_type") or "music",
             data.get("title", "").strip(), data.get("date"),
             data.get("duration_min") or None,
             data.get("mode"), data.get("intention"),
             data.get("energy_level") or None,
             data.get("machines", ""), data.get("effects", ""),
             data.get("daws", ""), data.get("synths_ios", ""),
+            data.get("ipad", ""), data.get("zynthian", ""),
             data.get("plugins", ""), data.get("patches"),
             data.get("audio_file"), data.get("timestamps"),
             data.get("rating") or None, data.get("tags"),
@@ -234,7 +246,7 @@ class SessionsEngine:
     def get_catalogue(self):
         conn = self._get_db()
         rows = conn.execute(
-            "SELECT * FROM catalogue WHERE active=1 ORDER BY type, manufacturer, name"
+            "SELECT * FROM catalogue WHERE active=1 ORDER BY type, favorite DESC, manufacturer, name"
         ).fetchall()
         conn.close()
         result = {k: [] for k in ITEM_TYPES}
@@ -282,9 +294,10 @@ class SessionsEngine:
         duration_min = max(1, int((datetime.now() - started_at).total_seconds() // 60))
         return {
             "id": None, "_from_live": True, "duration_min": duration_min,
-            "started_at": ls["started_at"],
+            "started_at": ls["started_at"], "session_type": "music",
             "machines": ls["machines"] or "", "effects": ls["effects"] or "",
             "daws": ls["daws"] or "", "synths_ios": ls["synths_ios"] or "",
+            "ipad": "", "zynthian": "",
             "plugins": ls["plugins"] or "", "mode": ls["mode"] or "",
             "intention": ls["intention"] or "", "oblique": ls["oblique"] or "",
             "project_id": ls["project_id"], "character": "", "influences": "",
@@ -330,8 +343,8 @@ class SessionsEngine:
             ORDER BY s.date DESC
         """).fetchall()
         conn.close()
-        cols = ["id","date","duration_min","mode","intention","energy_level","machines","effects",
-                "daws","synths_ios","plugins","patches","audio_file","timestamps","rating","tags",
+        cols = ["id","session_type","date","duration_min","mode","intention","energy_level","machines","effects",
+                "daws","synths_ios","ipad","zynthian","plugins","patches","audio_file","timestamps","rating","tags",
                 "character","lore_link","to_rework","release_potential","tempo","tonality",
                 "signal_routing","microfreak_algo","influences","oblique","comments","recap_claude","project_title"]
         buf = io.StringIO()

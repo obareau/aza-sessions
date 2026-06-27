@@ -67,6 +67,7 @@ def init_db(db_path):
     conn.execute("""
         CREATE TABLE IF NOT EXISTS sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_type TEXT DEFAULT 'music',
             date TEXT NOT NULL,
             duration_min INTEGER,
             mode TEXT,
@@ -76,6 +77,8 @@ def init_db(db_path):
             effects TEXT,
             daws TEXT,
             synths_ios TEXT,
+            ipad TEXT,
+            zynthian TEXT,
             plugins TEXT,
             patches TEXT,
             audio_file TEXT,
@@ -330,6 +333,9 @@ def init_db(db_path):
         "ALTER TABLE patch_connections ADD COLUMN note TEXT DEFAULT ''",
         "ALTER TABLE catalogue ADD COLUMN manufacturer TEXT DEFAULT ''",
         "ALTER TABLE catalogue ADD COLUMN favorite INTEGER DEFAULT 0",
+        "ALTER TABLE sessions ADD COLUMN session_type TEXT DEFAULT 'music'",
+        "ALTER TABLE sessions ADD COLUMN ipad TEXT",
+        "ALTER TABLE sessions ADD COLUMN zynthian TEXT",
     ]:
         try:
             conn.execute(migration)

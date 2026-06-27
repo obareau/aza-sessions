@@ -5,7 +5,7 @@ from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, Response, jsonify, current_app, flash
 from core.oblique import rand_oblique as _rand_oblique
 from core.ollama_client import generate_recap
-from core.constants import CHARACTERS, MODES, INTENTIONS, ITEM_TYPES
+from core.constants import CHARACTERS, MODES, INTENTIONS, ITEM_TYPES, SESSION_TYPES
 from .engine import SessionsEngine, catalogue_blocks, influence_blocks
 
 bp = Blueprint("sessions", __name__)
@@ -42,6 +42,7 @@ def _save_config(data):
 
 def _form_to_data(form):
     return {
+        "session_type":     form.get("session_type") or "music",
         "title":            form.get("title", "").strip(),
         "date":             form.get("date", datetime.now().strftime("%Y-%m-%d %H:%M")),
         "duration_min":     form.get("duration_min") or None,
@@ -52,6 +53,8 @@ def _form_to_data(form):
         "effects":          ", ".join(form.getlist("effects")),
         "daws":             ", ".join(form.getlist("daws")),
         "synths_ios":       ", ".join(form.getlist("synths_ios")),
+        "ipad":             ", ".join(form.getlist("ipad")),
+        "zynthian":         ", ".join(form.getlist("zynthian")),
         "plugins":          ", ".join(form.getlist("plugins")),
         "patches":          form.get("patches"),
         "audio_file":       form.get("audio_file"),
@@ -125,6 +128,7 @@ def new_session():
                            catalogue=cat,
                            catalogue_blocks=catalogue_blocks(cat),
                            item_types=ITEM_TYPES,
+                           session_types=SESSION_TYPES,
                            characters=CHARACTERS,
                            modes=MODES,
                            intentions=INTENTIONS,
@@ -201,6 +205,7 @@ def edit_session(sid):
                            session=session,
                            catalogue=cat,
                            item_types=ITEM_TYPES,
+                           session_types=SESSION_TYPES,
                            characters=CHARACTERS,
                            modes=MODES,
                            intentions=INTENTIONS,
@@ -274,6 +279,7 @@ def search():
     engine = _engine()
     q = request.args.get("q", "").strip()
     machine = request.args.get("machine", "").strip()
+    session_type = request.args.get("session_type", "").strip()
     mode = request.args.get("mode", "").strip()
     intention = request.args.get("intention", "").strip()
     tag = request.args.get("tag", "").strip()
@@ -299,6 +305,8 @@ def search():
         sessions = [s for s in sessions if (s.get("date") or "").startswith(date)]
     if machine:
         sessions = [s for s in sessions if machine.lower() in (s.get("machines") or "").lower()]
+    if session_type:
+        sessions = [s for s in sessions if (s.get("session_type") or "music") == session_type]
     if mode:
         sessions = [s for s in sessions if s.get("mode") == mode]
     if intention:
@@ -324,8 +332,10 @@ def search():
                            is_search=True,
                            search_q=q,
                            search_date=date,
+                           search_session_type=session_type,
                            modes=MODES,
                            intentions=INTENTIONS,
+                           session_types=SESSION_TYPES,
                            projects=engine.get_projects(),
                            page=page,
                            total_pages=total_pages,

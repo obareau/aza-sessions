@@ -1,7 +1,8 @@
 CHARACTERS    = ["Drone","Rythmique","Texturé","Mélodique","Noise","Ambient","Industriel","Génératif","Percussif"]
 MODES         = ["Dawless","Hybride","Full DAW","iOS seul","MiRack seul"]
 INTENTIONS    = ["Exploration","B.O AZA","Exercice technique","Défouloir","Jam","Post-prod"]
-ITEM_TYPES    = {"machine":"Hardware / Machines","effet":"Effets Hardware","daw":"DAW","synth_ios":"Synthés iOS","plugin":"Plugins VST/AU"}
+ITEM_TYPES    = {"machine":"Hardware / Machines","effet":"Effets Hardware","daw":"DAW","synth_ios":"Synthés iOS","ipad":"Apps iPad","zynthian":"Zynthian / Raspberry Pi","plugin":"Plugins VST/AU"}
+SESSION_TYPES = {"music":"Musique","lore":"Écriture lore","veille":"Veille & code"}
 SAMPLE_TYPES  = ["Drums","Percussions","Basses","Synthés","Textures","Field recordings","Loops","Effets","Voix","Autre"]
 MIRACK_CATS   = ["Oscillateur","Filtre","LFO","Enveloppe","Séquenceur","Effet","Utilitaire","Mixer","Aléatoire","Autre"]
 WISHLIST_TYPES= ["Synthétiseur","Effet hardware","DAW/Logiciel","Contrôleur","Interface audio","Câbles/Accessoires","Autre"]

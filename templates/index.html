@@ -89,11 +89,12 @@
 {% if is_search %}
 <div class="card" style="margin-bottom:16px;padding:14px 18px;">
 <form method="GET" action="{{ url_for('sessions.search') }}"
-      style="display:grid;grid-template-columns:1fr auto auto auto auto auto;gap:8px;align-items:end;"
+      style="display:grid;grid-template-columns:1fr auto auto auto auto auto auto;gap:8px;align-items:end;"
       class="search-form-grid">
 <style>@media(max-width:700px){.search-form-grid{grid-template-columns:1fr 1fr!important}}
 @media(max-width:450px){.search-form-grid{grid-template-columns:1fr!important}}</style>
     <input type="text" name="q" value="{{ search_q }}" placeholder="Rechercher…" autofocus>
+    <select name="session_type"><option value="">Type</option>{% for k, v in (session_types or {}).items() %}<option value="{{ k }}" {% if request.args.get('session_type')==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select>
     <select name="mode"><option value="">Mode</option>{% for m in (modes or []) %}<option {% if m==request.args.get('mode') %}selected{% endif %}>{{ m }}</option>{% endfor %}</select>
     <select name="rating"><option value="">★ Note</option>{% for i in range(5,0,-1) %}<option value="{{ i }}" {% if request.args.get('rating')==i|string %}selected{% endif %}>{{ '★'*i }}</option>{% endfor %}</select>
     <select name="project_id"><option value="">Projet</option>{% for p in (projects or []) %}<option value="{{ p.id }}" {% if request.args.get('project_id')==p.id|string %}selected{% endif %}>{{ p.title }}</option>{% endfor %}</select>
@@ -115,6 +116,7 @@
         </span>
         <span class="session-machines">{{ s.machines or '—' }}{% if s.daws %} · {{ s.daws }}{% endif %}</span>
         <span class="session-badges" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            {% if s.session_type and s.session_type != 'music' %}<span class="badge badge-neu" style="border-style:dashed;">{% if s.session_type == 'lore' %}✎ Lore{% elif s.session_type == 'veille' %}⚙ Veille{% else %}{{ s.session_type }}{% endif %}</span>{% endif %}
             {% if s.project_title %}<span class="badge" style="background:{{ s.project_color }}22;color:{{ s.project_color }};border:1px solid {{ s.project_color }}66;">◈ {{ s.project_title }}</span>{% endif %}
             {% if s.release_potential %}<span class="badge badge-release">Release</span>{% endif %}
             {% if s.to_rework %}<span class="badge badge-rework">Retravailler</span>{% endif %}

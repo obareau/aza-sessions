@@ -1,14 +1,5 @@
 from core.db import get_db
-
-ITEM_TYPES = {
-    "machine":  "Hardware / Machines",
-    "effet":    "Effets Hardware",
-    "daw":      "DAW",
-    "synth_ios":"Synthés iOS",
-    "ipad":     "Apps iPad",
-    "zynthian": "Zynthian / Raspberry Pi",
-    "plugin":   "Plugins VST/AU",
-}
+from core.constants import ITEM_TYPES  # noqa: F401 — ré-exporté pour catalogue.api
 
 
 class CatalogueEngine:

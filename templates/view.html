@@ -32,6 +32,7 @@
 
 
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+    {% if session.session_type and session.session_type != 'music' %}<span class="badge badge-neu" style="border-style:dashed;">{% if session.session_type == 'lore' %}✎ Écriture lore{% elif session.session_type == 'veille' %}⚙ Veille & code{% else %}{{ session.session_type }}{% endif %}</span>{% endif %}
     {% if session.rating %}<span class="rating-stars" style="font-size:16px">{{ '★' * session.rating }}</span>{% endif %}
     {% if session.energy_level %}<span class="badge badge-neu">{{ '⚡' * session.energy_level }}</span>{% endif %}
     {% if session.mode %}<span class="badge badge-neu">{{ session.mode }}</span>{% endif %}
@@ -82,6 +83,18 @@
             <div class="detail-label">Synthés iOS</div>
             <div class="detail-value">{{ session.synths_ios or '—' }}</div>
         </div>
+        {% if session.ipad %}
+        <div class="detail-field">
+            <div class="detail-label">Apps iPad</div>
+            <div class="detail-value">{{ session.ipad }}</div>
+        </div>
+        {% endif %}
+        {% if session.zynthian %}
+        <div class="detail-field">
+            <div class="detail-label">Zynthian / Raspberry Pi</div>
+            <div class="detail-value">{{ session.zynthian }}</div>
+        </div>
+        {% endif %}
         <div class="detail-field full">
             <div class="detail-label">Plugins VST/AU</div>
             <div class="detail-value">{{ session.plugins or '—' }}</div>

@@ -25,9 +25,35 @@ Données de session :
 
 Récit :"""
 
+_PROMPT_LORE = """Tu es un archiviste de l'univers AZA — une dystopie Dark Ambient / Industriel, Scaër, Bretagne.
+Rédige un court récit de session d'écriture du lore, en français, entre 80 et 150 mots, à la première personne,
+dans un style sombre et atmosphérique. Synthétise ce qui a été écrit/exploré sans tout lister.
+
+Données de session :
+- Durée : {duration_min} min
+- Intention : {intention}
+- Stratégie oblique : {oblique}
+- Notes : {notes_live}
+
+Récit :"""
+
+_PROMPT_VEILLE = """Tu es l'assistant d'Olivier, qui documente une session de veille technologique / codage d'outils
+pour son écosystème créatif AZA. Rédige un résumé factuel en français, entre 60 et 120 mots, à la première personne,
+clair et concret. Mentionne les pistes explorées et ce qui reste à faire, sans jargon promotionnel.
+
+Données de session :
+- Durée : {duration_min} min
+- Intention : {intention}
+- Notes : {notes_live}
+
+Résumé :"""
+
+_PROMPTS_BY_TYPE = {"lore": _PROMPT_LORE, "veille": _PROMPT_VEILLE}
+
 
 def generate_recap(session_data: dict, timeout: int = 30):
-    prompt = _PROMPT_TEMPLATE.format(
+    template = _PROMPTS_BY_TYPE.get(session_data.get("session_type") or "music", _PROMPT_TEMPLATE)
+    prompt = template.format(
         duration_min=session_data.get("duration_min", "?"),
         mode=session_data.get("mode") or "—",
         intention=session_data.get("intention") or "—",

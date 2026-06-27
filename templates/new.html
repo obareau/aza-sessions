@@ -6,7 +6,10 @@
 {% set pf_effects    = (prefill.effects    or '').split(', ') if prefill else [] %}
 {% set pf_daws       = (prefill.daws       or '').split(', ') if prefill else [] %}
 {% set pf_ios        = (prefill.synths_ios or '').split(', ') if prefill else [] %}
+{% set pf_ipad       = (prefill.ipad       or '').split(', ') if prefill else [] %}
+{% set pf_zynthian   = (prefill.zynthian   or '').split(', ') if prefill else [] %}
 {% set pf_plugins    = (prefill.plugins    or '').split(', ') if prefill else [] %}
+{% set pf_stype      = (prefill.session_type or 'music') if prefill else 'music' %}
 {% set pf_characters = (prefill.character  or '').split(', ') if prefill else [] %}
 {% set pf_influences = (prefill.influences or '').split(', ') if prefill else [] %}
 {% set from_live = prefill and prefill.get('_from_live') if prefill is mapping else (prefill['_from_live'] if prefill else false) %}
@@ -39,6 +42,17 @@
 
 <div class="card">
     <div class="card-title">∙ Contexte</div>
+    <div class="form-group full" style="margin-bottom:16px;">
+        <label>Type de session</label>
+        <div class="stype-tabs" role="tablist">
+            {% for k, v in session_types.items() %}
+            <label class="stype-tab">
+                <input type="radio" name="session_type" value="{{ k }}" {% if k == pf_stype %}checked{% endif %} onchange="applySessionType(this.value)">
+                <span>{% if k == 'music' %}♪{% elif k == 'lore' %}✎{% elif k == 'veille' %}⚙{% endif %} {{ v }}</span>
+            </label>
+            {% endfor %}
+        </div>
+    </div>
     <div class="form-grid">
         <div class="form-group full">
             <label>Titre <span style="color:var(--text-muted);font-weight:400;">(optionnel)</span></label>
@@ -80,8 +94,17 @@
     </div>
 </div>
 
+<!-- BARRE FILTRE MATÉRIEL -->
+<div class="card gear-toolbar" data-stype="music" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 18px;">
+    <input type="text" id="gear-search" placeholder="🔍 Filtrer le matériel…" autocomplete="off"
+           style="flex:1;min-width:160px;max-width:320px;font-family:var(--mono);font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);">
+    <label style="font-family:var(--mono);font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="checkbox" id="gear-fav-only"> ★ favoris seulement
+    </label>
+</div>
+
 <!-- MACHINES HARDWARE -->
-<div class="card">
+<div class="card gear-card" data-stype="music">
     <div class="card-header">
         <span class="card-title">∙ Hardware / Machines</span>
         <div style="display:flex;gap:6px;">
@@ -93,9 +116,9 @@
         {% for mfr, items in catalogue.machine | groupby('manufacturer') %}
         {% if mfr %}<div class="mfr-label">{{ mfr }}</div>{% endif %}
         {% for item in items %}
-        <label class="chk">
+        <label class="chk" data-name="{{ item.name|lower }}" data-fav="{{ '1' if item.favorite else '0' }}">
             <input type="checkbox" name="machines" value="{{ item.name }}" {% if item.name in pf_machines %}checked{% endif %}>
-            <span>{{ item.name }}</span>
+            <span>{{ item.name }}{% if item.favorite %} <span class="fav-star">★</span>{% endif %}</span>
         </label>
         {% endfor %}
         {% endfor %}
@@ -103,7 +126,7 @@
 </div>
 
 <!-- EFFETS HARDWARE -->
-<div class="card">
+<div class="card gear-card" data-stype="music">
     <div class="card-header">
         <span class="card-title">∙ Effets Hardware</span>
         <div style="display:flex;gap:6px;">
@@ -115,9 +138,9 @@
         {% for mfr, items in catalogue.effet | groupby('manufacturer') %}
         {% if mfr %}<div class="mfr-label">{{ mfr }}</div>{% endif %}
         {% for item in items %}
-        <label class="chk">
+        <label class="chk" data-name="{{ item.name|lower }}" data-fav="{{ '1' if item.favorite else '0' }}">
             <input type="checkbox" name="effects" value="{{ item.name }}" {% if item.name in pf_effects %}checked{% endif %}>
-            <span>{{ item.name }}</span>
+            <span>{{ item.name }}{% if item.favorite %} <span class="fav-star">★</span>{% endif %}</span>
         </label>
         {% endfor %}
         {% endfor %}
@@ -125,7 +148,7 @@
 </div>
 
 <!-- DAW -->
-<div class="card">
+<div class="card gear-card" data-stype="music">
     <div class="card-header">
         <span class="card-title">∙ DAW</span>
         <div style="display:flex;gap:6px;">
@@ -137,9 +160,9 @@
         {% for mfr, items in catalogue.daw | groupby('manufacturer') %}
         {% if mfr %}<div class="mfr-label">{{ mfr }}</div>{% endif %}
         {% for item in items %}
-        <label class="chk">
+        <label class="chk" data-name="{{ item.name|lower }}" data-fav="{{ '1' if item.favorite else '0' }}">
             <input type="checkbox" name="daws" value="{{ item.name }}" {% if item.name in pf_daws %}checked{% endif %}>
-            <span>{{ item.name }}</span>
+            <span>{{ item.name }}{% if item.favorite %} <span class="fav-star">★</span>{% endif %}</span>
         </label>
         {% endfor %}
         {% endfor %}
@@ -147,7 +170,7 @@
 </div>
 
 <!-- SYNTHÉS iOS -->
-<div class="card">
+<div class="card gear-card" data-stype="music">
     <div class="card-header">
         <span class="card-title">∙ Synthés iOS</span>
         <div style="display:flex;gap:6px;">
@@ -159,9 +182,53 @@
         {% for mfr, items in catalogue.synth_ios | groupby('manufacturer') %}
         {% if mfr %}<div class="mfr-label">{{ mfr }}</div>{% endif %}
         {% for item in items %}
-        <label class="chk">
+        <label class="chk" data-name="{{ item.name|lower }}" data-fav="{{ '1' if item.favorite else '0' }}">
             <input type="checkbox" name="synths_ios" value="{{ item.name }}" {% if item.name in pf_ios %}checked{% endif %}>
-            <span>{{ item.name }}</span>
+            <span>{{ item.name }}{% if item.favorite %} <span class="fav-star">★</span>{% endif %}</span>
+        </label>
+        {% endfor %}
+        {% endfor %}
+    </div>
+</div>
+
+<!-- APPS iPAD -->
+<div class="card gear-card" data-stype="music">
+    <div class="card-header">
+        <span class="card-title">∙ Apps iPad</span>
+        <div style="display:flex;gap:6px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openQuickAdd('ipad')">+ Ajouter</button>
+            <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank" title="Gérer le catalogue">⚙</a>
+        </div>
+    </div>
+    <div class="check-grid" id="grid-ipad">
+        {% for mfr, items in catalogue.ipad | groupby('manufacturer') %}
+        {% if mfr %}<div class="mfr-label">{{ mfr }}</div>{% endif %}
+        {% for item in items %}
+        <label class="chk" data-name="{{ item.name|lower }}" data-fav="{{ '1' if item.favorite else '0' }}">
+            <input type="checkbox" name="ipad" value="{{ item.name }}" {% if item.name in pf_ipad %}checked{% endif %}>
+            <span>{{ item.name }}{% if item.favorite %} <span class="fav-star">★</span>{% endif %}</span>
+        </label>
+        {% endfor %}
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ZYNTHIAN / RASPBERRY PI -->
+<div class="card gear-card" data-stype="music">
+    <div class="card-header">
+        <span class="card-title">∙ Zynthian / Raspberry Pi</span>
+        <div style="display:flex;gap:6px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openQuickAdd('zynthian')">+ Ajouter</button>
+            <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary btn-sm" target="_blank" title="Gérer le catalogue">⚙</a>
+        </div>
+    </div>
+    <div class="check-grid" id="grid-zynthian">
+        {% for mfr, items in catalogue.zynthian | groupby('manufacturer') %}
+        {% if mfr %}<div class="mfr-label">{{ mfr }}</div>{% endif %}
+        {% for item in items %}
+        <label class="chk" data-name="{{ item.name|lower }}" data-fav="{{ '1' if item.favorite else '0' }}">
+            <input type="checkbox" name="zynthian" value="{{ item.name }}" {% if item.name in pf_zynthian %}checked{% endif %}>
+            <span>{{ item.name }}{% if item.favorite %} <span class="fav-star">★</span>{% endif %}</span>
         </label>
         {% endfor %}
         {% endfor %}
@@ -169,7 +236,7 @@
 </div>
 
 <!-- PLUGINS VST/AU -->
-<div class="card">
+<div class="card gear-card" data-stype="music">
     <div class="card-header">
         <span class="card-title">∙ Plugins VST/AU</span>
         <div style="display:flex;gap:6px;">
@@ -181,9 +248,9 @@
         {% for mfr, items in catalogue.plugin | groupby('manufacturer') %}
         {% if mfr %}<div class="mfr-label">{{ mfr }}</div>{% endif %}
         {% for item in items %}
-        <label class="chk">
+        <label class="chk" data-name="{{ item.name|lower }}" data-fav="{{ '1' if item.favorite else '0' }}">
             <input type="checkbox" name="plugins" value="{{ item.name }}" {% if item.name in pf_plugins %}checked{% endif %}>
-            <span>{{ item.name }}</span>
+            <span>{{ item.name }}{% if item.favorite %} <span class="fav-star">★</span>{% endif %}</span>
         </label>
         {% endfor %}
         {% endfor %}
@@ -191,8 +258,8 @@
 </div>
 
 <!-- CARACTÈRE -->
-<div class="card">
-    <div class="card-title">∙ Caractère sonore</div>
+<div class="card" data-stype="music lore" id="card-character">
+    <div class="card-title" data-label-music="∙ Caractère sonore" data-label-lore="∙ Caractère narratif">∙ Caractère sonore</div>
     <div class="check-grid">
         {% for c in characters %}
         <label class="chk">
@@ -204,7 +271,7 @@
 </div>
 
 <!-- TECHNIQUE -->
-<div class="card">
+<div class="card" data-stype="music">
     <div class="card-title">∙ Technique</div>
     <div class="form-grid">
         <div class="form-group">
@@ -232,7 +299,7 @@
 </div>
 
 <!-- CAPTURE -->
-<div class="card">
+<div class="card" data-stype="music">
     <div class="card-title">∙ Capture</div>
     <div class="form-grid">
         <div class="form-group">
@@ -256,7 +323,7 @@
 </div>
 
 <!-- INFLUENCES -->
-<div class="card">
+<div class="card" data-stype="music lore">
     <div class="card-header">
         <span class="card-title">∙ Influences de session</span>
         <a href="{{ url_for('influences.manage_influences') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
@@ -271,13 +338,14 @@
     </div>
 </div>
 
-<!-- LORE -->
-<div class="card">
-    <div class="card-title">∙ Univers AZA</div>
+<!-- LORE / RÉFÉRENCE -->
+<div class="card" id="card-lore">
+    <div class="card-title" id="lore-card-title">∙ Univers AZA</div>
     <div class="form-grid">
         <div class="form-group full">
-            <label>Lien avec le lore</label>
-            <input type="text" name="lore_link" placeholder="ex: Scène ouverture Secteur 7...">
+            <label id="lore-link-label">Lien avec le lore</label>
+            <input type="text" name="lore_link" id="lore-link-input" placeholder="ex: Scène ouverture Secteur 7..."
+                   value="{{ prefill.lore_link if (prefill is mapping and prefill and prefill.get('lore_link')) else '' }}">
         </div>
     </div>
 </div>
@@ -391,7 +459,7 @@
                                   border:1px solid var(--border);border-radius:var(--radius);
                                   padding:9px 12px;color:var(--text);width:100%;box-sizing:border-box;">
                     <datalist id="qa-mfr-list">
-                        {% for type_key in ['machine','effet','daw','synth_ios','plugin'] %}
+                        {% for type_key in ['machine','effet','daw','synth_ios','ipad','zynthian','plugin'] %}
                         {% for item in catalogue[type_key] %}
                         {% if item.manufacturer %}
                         <option value="{{ item.manufacturer }}">
@@ -439,16 +507,31 @@
 .check-grid .mfr-label:first-child { border-top: none; margin-top: 0; padding-top: 0; }
 .chk.new-item { animation: qaFadeIn .25s ease; }
 @keyframes qaFadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+.fav-star { color: var(--warning, #E6A700); font-size: 10px; }
+/* Onglets type de session */
+.stype-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+.stype-tab { position:relative; cursor:pointer; }
+.stype-tab input { position:absolute; opacity:0; pointer-events:none; }
+.stype-tab span {
+    display:inline-block; font-family:var(--mono); font-size:12px; font-weight:600;
+    padding:8px 16px; border:1px solid var(--border); border-radius:var(--radius);
+    background:var(--bg); color:var(--text-muted); transition:all .12s; user-select:none;
+    min-height:20px;
+}
+.stype-tab input:checked + span {
+    background:var(--accent-soft); border-color:var(--accent); color:var(--accent);
+}
+[data-stype] { transition: opacity .12s; }
 </style>
 
 <script>
 const QA_FIELD_MAP = {
     machine: 'machines', effet: 'effects', daw: 'daws',
-    synth_ios: 'synths_ios', plugin: 'plugins'
+    synth_ios: 'synths_ios', ipad: 'ipad', zynthian: 'zynthian', plugin: 'plugins'
 };
 const QA_TYPE_LABELS = {
     machine: 'Hardware / Machines', effet: 'Effets Hardware', daw: 'DAW',
-    synth_ios: 'Synthés iOS', plugin: 'Plugins VST/AU'
+    synth_ios: 'Synthés iOS', ipad: 'Apps iPad', zynthian: 'Zynthian / Raspberry Pi', plugin: 'Plugins VST/AU'
 };
 let qaType = '';
 
@@ -497,6 +580,69 @@ document.getElementById('qa-modal').addEventListener('click', function(e) {
     if (e.target === this) closeQuickAdd();
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeQuickAdd(); });
+
+// ── TYPE DE SESSION : affichage conditionnel des sections ────────────────────
+const LORE_LABELS = {
+    music:  { title: '∙ Univers AZA',  label: 'Lien avec le lore',        ph: 'ex: Scène ouverture Secteur 7...' },
+    lore:   { title: '∙ Univers AZA',  label: 'Lien vault Obsidian / lore', ph: 'ex: Secteur 7 / Mémoire résiduelle...' },
+    veille: { title: '∙ Référence',    label: 'Lien / Référence',          ph: 'ex: URL article, repo GitHub, doc...' },
+};
+function applySessionType(type) {
+    type = type || 'music';
+    document.querySelectorAll('[data-stype]').forEach(el => {
+        const types = el.getAttribute('data-stype').split(/\s+/);
+        el.style.display = types.includes(type) ? '' : 'none';
+    });
+    // Carte caractère : libellé contextuel
+    const charTitle = document.querySelector('#card-character .card-title');
+    if (charTitle) {
+        const lm = charTitle.getAttribute('data-label-music');
+        const ll = charTitle.getAttribute('data-label-lore');
+        charTitle.textContent = (type === 'lore' && ll) ? ll : lm;
+    }
+    // Carte lore / référence : libellé contextuel
+    const cfg = LORE_LABELS[type] || LORE_LABELS.music;
+    const lt = document.getElementById('lore-card-title');
+    const ll2 = document.getElementById('lore-link-label');
+    const li = document.getElementById('lore-link-input');
+    if (lt) lt.textContent = cfg.title;
+    if (ll2) ll2.textContent = cfg.label;
+    if (li) li.placeholder = cfg.ph;
+}
+
+// ── FILTRE MATÉRIEL (recherche + favoris) ────────────────────────────────────
+function applyGearFilter() {
+    const q = (document.getElementById('gear-search')?.value || '').trim().toLowerCase();
+    const fav = document.getElementById('gear-fav-only')?.checked;
+    document.querySelectorAll('.gear-card').forEach(card => {
+        const chks = card.querySelectorAll('.chk');
+        if (!chks.length) return;
+        let visible = 0;
+        chks.forEach(chk => {
+            const matchQ = !q || (chk.dataset.name || '').includes(q);
+            const matchFav = !fav || chk.dataset.fav === '1';
+            const show = matchQ && matchFav;
+            chk.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        // Replier visuellement une section vide pendant le filtrage (sans casser le type)
+        card.dataset.gearEmpty = (visible === 0 && (q || fav)) ? '1' : '0';
+        if (card.style.display !== 'none') {
+            card.style.opacity = card.dataset.gearEmpty === '1' ? '.4' : '1';
+        }
+    });
+}
+['gear-search', 'gear-fav-only'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', applyGearFilter);
+});
+
+// Init au chargement (après restauration éventuelle du brouillon)
+window.addEventListener('load', () => {
+    const checked = document.querySelector('input[name="session_type"]:checked');
+    applySessionType(checked ? checked.value : 'music');
+    applyGearFilter();
+});
 
 // ── AUTOSAVE BROUILLON ──────────────────────────────────────────────────────
 (function() {
