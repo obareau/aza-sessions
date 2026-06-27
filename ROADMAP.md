@@ -1,11 +1,11 @@
 # ROADMAP — Journal de Sessions AZA
 
 > Carte des possibles — pas un backlog, pas de deadlines.
-> Mis à jour : 2026-05-05 (après release v2.5.0)
+> Mis à jour : 2026-06-27 (après release v3.7.2)
 
 ---
 
-## ✅ Déjà livré (v1.x → v2.5.0)
+## ✅ Déjà livré (v1.x → v3.7.2)
 
 | Version | Fonctionnalité |
 |---|---|
@@ -19,6 +19,16 @@
 | v2.2.0 | Fabricants catalogue, ajout inline depuis formulaire session (modal AJAX), autosave brouillon pré-session |
 | v2.5.0 | Pagination (25/page), lien audio → Finder, export vault Obsidian direct, correctifs Pomodoro/zoom/theme picker |
 | v3.0.0-alpha | **Module Patcher** — mind map SVG drag&drop, nœuds typés/colorés, connexions audio/MIDI/CV/USB, import catalogue/session, autosave AJAX ; `app.py` → 116 lignes (`core/init_db.py`) |
+| v3.1.0 | Release Patcher complète, `SECRET_KEY` pour flask.session (patcher→session prefill) |
+| v3.2.0 | **Module SysEx** — loader DX7 / Volca FM via Web MIDI API + Bank Editor (patch librarian) |
+| v3.3.0 | **Recap auto via Ollama** (`qwen3.5`) à la fin d'une session live — narratif style AZA, silencieux si indisponible |
+| v3.4.0 | **Dictée vocale live** via Whisper GPU local (`small`, port 9000) — bouton 🎙 Dicter, route `/live/transcribe` |
+| v3.5.0 | **Patcher v2 polish** — dupliquer layout, snap-to-grid (`G`), connexions multi-type, minimap (`M`) |
+| v3.6.0 | **Responsive complet** (19 templates), **migration Fly.io → Roblab** (systemd/Gunicorn), linter ruff, suite pytest |
+| v3.6.1 | **Réécriture recap Ollama** — bouton ✦ Réécrire sur la vue session |
+| v3.7.0 | **Module Presets** — carnet de notes par preset/patch (instrument, évocation, idée, influence, ★, tags, session liée) + stats |
+| v3.7.1 | **Vue compacte** (`compact.html`) + **heatmap intensités sonores** cliquable sur l'index + smoke tests 18 blueprints |
+| v3.7.2 | **Spark contrainte unique** + historique (session Flask, `SEEN_MAX=8`) ; backup DB au démarrage Gunicorn (`wsgi.py`) ; `DIM_PORT` env |
 
 ---
 
@@ -30,12 +40,12 @@
 
 | Priorité | Idée | Notes |
 |---|---|---|
-| ★★★ | **Mode session en cours** — timer live, notes rapides temps réel, bouton "Terminer & sauvegarder" | Workflow naturel — le chrono tourne pendant que tu joues |
-| ★★★ | **Backup automatique** — copie horodatée `sessions.db` au démarrage, garder 5 derniers | Filet de sécurité silencieux |
-| ★★☆ | **Recherche full-text étendue** — couvrir comments, patches, recap_claude, lore_link | La recherche actuelle ne couvre pas tous les champs texte |
-| ★★☆ | **Vue liste compacte vs cartes** — toggle dense (50 lignes visibles) / détail | Survol rapide vs consultation |
-| ★★☆ | **Duplication complète d'une session** — tout copier sauf date/audio | Documenter des variations d'un même morceau |
-| ★☆☆ | **Import métadonnées audio** — lire date/durée via `mutagen` | Plus précis que la saisie manuelle |
+| ✅ ★★★ | ~~**Mode session en cours** — timer live, notes rapides temps réel, bouton "Terminer & sauvegarder"~~ | **Livré** (blueprint `live`) — le chrono tourne pendant que tu joues |
+| ✅ ★★★ | ~~**Backup automatique** — copie horodatée `sessions.db` au démarrage, garder 5 derniers~~ | **Livré** (v3.7.2, migré dans `wsgi.py` pour Gunicorn) |
+| ✅ ★★☆ | ~~**Recherche full-text étendue** — couvrir comments, patches, recap_claude, lore_link~~ | **Livré** — FTS5 (v3.6.0) puis revert vers recherche Python couvrant 15 champs (FTS5 corrompait la DB via triggers) |
+| ✅ ★★☆ | ~~**Vue liste compacte vs cartes** — toggle dense (50 lignes visibles) / détail~~ | **Livré** (v3.7.1, `compact.html`) |
+| ★★☆ | **Duplication complète d'une session** — tout copier sauf date/audio | Documenter des variations d'un même morceau (NB : seule la duplication de *layout Patcher* existe à ce jour) |
+| ~~★☆☆~~ | ~~**Import métadonnées audio** — lire date/durée via `mutagen`~~ | Abandonné (retiré de la roadmap, commit `7eb79d6`) |
 
 ---
 
@@ -43,7 +53,7 @@
 
 | Priorité | Idée | Notes |
 |---|---|---|
-| ★★★ | **Heatmap calendrier** — grille jour/semaine style GitHub contributions | Visualiser périodes actives vs creuses |
+| ★★★ | **Heatmap calendrier** — grille jour/semaine style GitHub contributions | Visualiser périodes actives vs creuses (NB : une heatmap *intensités sonores* existe déjà sur l'index depuis v3.7.1 — celle-ci reste à faire, axe calendrier/activité) |
 | ★★☆ | **Évolution temporelle** — courbe note moyenne, énergie, mode au fil du temps | Voir si la qualité progresse |
 | ★★☆ | **Records & badges** — session la mieux notée, la plus longue, streak consécutif | Gamification légère |
 | ★★☆ | **Corrélations** — note vs durée, énergie vs heure de la journée | Comprendre ses propres patterns |
@@ -67,9 +77,9 @@
 
 | Priorité | Idée | Notes |
 |---|---|---|
-| ★★★ | **Spark "contrainte unique"** — une seule contrainte radicale, en grand, à suivre jusqu'au bout | Moins de bruit, plus d'impact |
+| ✅ ★★★ | ~~**Spark "contrainte unique"** — une seule contrainte radicale, en grand, à suivre jusqu'au bout~~ | **Livré** (v3.7.2) — moins de bruit, plus d'impact |
 | ★★☆ | **Challenge du jour** — contrainte fixe générée à minuit, commune à toute la journée | Fil conducteur sur 24h |
-| ★★☆ | **Historique Spark** — suggestions déjà générées, noter celles suivies | Éviter les répétitions, tracer l'influence |
+| ✅ ★★☆ | ~~**Historique Spark** — suggestions déjà générées, noter celles suivies~~ | **Livré** (v3.7.2) — historique en session Flask, `SEEN_MAX=8` ; reste à faire : *noter* celles suivies |
 | ★☆☆ | **Spark ↔ Session** — lier une suggestion Spark à la session qu'elle a inspirée | Traçabilité créative complète |
 
 ---
@@ -128,7 +138,7 @@ App Flask (Prompteur)
 
 | Priorité | Idée | Notes |
 |---|---|---|
-| ★★☆ | **Tests automatisés** — suite Flask pour routes critiques | Éviter les régressions |
+| ✅ ★★☆ | ~~**Tests automatisés** — suite Flask pour routes critiques~~ | **Livré** (v3.6.0/v3.7.1) — pytest, smoke tests des 18 blueprints + DB init/schema |
 | ★☆☆ | **Compilation binaire M4** — `.app` macOS natif Apple Silicon via PyInstaller | Lancement sans terminal |
 | ★☆☆ | **Mode multi-machines** — sync `sessions.db` réseau local (rsync ou SQLite over LAN) | Mac + iPad dans le même studio |
 | ★☆☆ | **QR code vers session** — pointe vers `localhost:5001/session/<id>` | Scanner depuis iPhone en studio |
@@ -145,5 +155,5 @@ App Flask (Prompteur)
 
 ---
 
-*Dernière mise à jour : 2026-05-09 — v3.0.0-alpha*
+*Dernière mise à jour : 2026-06-27 — v3.7.2*
 *Ce fichier évolue librement — ce n'est pas un backlog, c'est une carte des possibles.*
