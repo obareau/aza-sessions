@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, current_app, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, current_app, jsonify, flash
 from core.oblique import rand_oblique
 from .engine import CatalogueEngine, ITEM_TYPES
 
@@ -22,12 +22,32 @@ def manage_catalogue():
             typ = request.form.get("type", "").strip().lower().replace(" ","_")
             if typ and name:
                 engine.add(typ, name, manufacturer, notes)
+        elif action == "bulk":
+            typ = request.form.get("type", "").strip().lower().replace(" ","_")
+            names         = request.form.getlist("bulk_name")
+            manufacturers = request.form.getlist("bulk_manufacturer")
+            bulk_notes    = request.form.getlist("bulk_notes")
+            if typ and names:
+                rows = []
+                for i, nm in enumerate(names):
+                    rows.append({
+                        "name":         nm,
+                        "manufacturer": manufacturers[i] if i < len(manufacturers) else "",
+                        "notes":        bulk_notes[i] if i < len(bulk_notes) else "",
+                    })
+                added, skipped = engine.add_bulk(typ, rows)
+                msg = f"{added} élément{'s' if added != 1 else ''} ajouté{'s' if added != 1 else ''}"
+                if skipped:
+                    msg += f", {skipped} doublon{'s' if skipped != 1 else ''} ignoré{'s' if skipped != 1 else ''}"
+                flash(msg, "success")
         elif action == "delete":
             engine.delete(item_id)
         elif action == "edit":
             engine.edit(item_id, name, manufacturer, notes)
         elif action == "toggle":
             engine.toggle(item_id)
+        elif action == "favorite":
+            engine.toggle_favorite(item_id)
         return redirect(url_for("catalogue.manage_catalogue"))
 
     db_path = current_app.config["DB_PATH"]

@@ -5,6 +5,21 @@
 
 ---
 
+## v3.8.0 — 2026-06-27 — Catalogue : saisie rapide, favoris & types dédiés
+
+### ✨ Nouveautés
+- **Saisie rapide multi-lignes** — bloc « ⊞ Saisie rapide » sur `/catalogue` : on choisit le type une fois puis on saisit plusieurs items (fabricant / nom / notes) d'un coup ; bouton « + Ligne », `Entrée` dans le champ nom ajoute une ligne ; insertion transactionnelle avec dédup `(type, nom)` et message `N ajoutés / M doublons ignorés`
+- **Favoris catalogue** — étoile ★/☆ par item, remontés en tête de chaque type (tri `favorite DESC`) ; filtre « ★ favoris seulement »
+- **Types dédiés** — `ipad` (Apps iPad) et `zynthian` (Zynthian / Raspberry Pi) ajoutés à `ITEM_TYPES` (type toujours libre)
+- **Filtres & sections repliables** — recherche instantanée (nom/fabricant), filtre par type, sections `<details>` repliables pour désengorger la page
+
+### 🛠 Infra & Qualité
+- **Messages flash globaux** — rendu centralisé dans `base.html` (bénéficie aussi au module DIM)
+- **Tests** — `tests/test_catalogue.py` (favoris, types dédiés, `add_bulk` + dédup, routes bulk/favorite)
+- Migration `catalogue.favorite` (CREATE + ALTER)
+
+---
+
 ## v3.7.2 — 2026-06-03 — Spark : contrainte unique + fix DIM
 
 ### ✨ Nouveautés

@@ -5,6 +5,8 @@ ITEM_TYPES = {
     "effet":    "Effets Hardware",
     "daw":      "DAW",
     "synth_ios":"Synthés iOS",
+    "ipad":     "Apps iPad",
+    "zynthian": "Zynthian / Raspberry Pi",
     "plugin":   "Plugins VST/AU",
 }
 
@@ -20,7 +22,7 @@ class CatalogueEngine:
         """Retourne tous les items groupés par type — types libres inclus."""
         conn = self._get_db()
         items = conn.execute(
-            "SELECT * FROM catalogue ORDER BY type, manufacturer, name"
+            "SELECT * FROM catalogue ORDER BY type, favorite DESC, manufacturer, name"
         ).fetchall()
         conn.close()
         grouped = {}
@@ -31,7 +33,7 @@ class CatalogueEngine:
     def list_active_grouped(self):
         conn = self._get_db()
         items = conn.execute(
-            "SELECT * FROM catalogue WHERE active=1 ORDER BY type, manufacturer, name"
+            "SELECT * FROM catalogue WHERE active=1 ORDER BY type, favorite DESC, manufacturer, name"
         ).fetchall()
         conn.close()
         result = {}
@@ -77,6 +79,34 @@ class CatalogueEngine:
         conn.close()
         return dict(row)
 
+    def add_bulk(self, typ, rows):
+        """Saisie rapide multi-lignes. rows = liste de dicts {name, manufacturer, notes}.
+        Ignore les lignes sans nom et les doublons (type, name). Retourne (ajoutés, ignorés)."""
+        conn = self._get_db()
+        added = skipped = 0
+        try:
+            for row in rows:
+                name = (row.get("name") or "").strip()
+                if not name:
+                    continue
+                manufacturer = (row.get("manufacturer") or "").strip()
+                notes = (row.get("notes") or "").strip()
+                existing = conn.execute(
+                    "SELECT id FROM catalogue WHERE type=? AND name=?", (typ, name)
+                ).fetchone()
+                if existing:
+                    skipped += 1
+                    continue
+                conn.execute(
+                    "INSERT INTO catalogue (type, name, manufacturer, notes) VALUES (?,?,?,?)",
+                    (typ, name, manufacturer, notes)
+                )
+                added += 1
+            conn.commit()
+        finally:
+            conn.close()
+        return added, skipped
+
     def delete(self, item_id):
         conn = self._get_db()
         conn.execute("DELETE FROM catalogue WHERE id=?", (item_id,))
@@ -95,5 +125,11 @@ class CatalogueEngine:
     def toggle(self, item_id):
         conn = self._get_db()
         conn.execute("UPDATE catalogue SET active=1-active WHERE id=?", (item_id,))
+        conn.commit()
+        conn.close()
+
+    def toggle_favorite(self, item_id):
+        conn = self._get_db()
+        conn.execute("UPDATE catalogue SET favorite=1-favorite WHERE id=?", (item_id,))
         conn.commit()
         conn.close()

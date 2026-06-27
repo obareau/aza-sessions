@@ -126,6 +126,7 @@ def init_db(db_path):
             type TEXT NOT NULL,
             name TEXT NOT NULL,
             active INTEGER DEFAULT 1,
+            favorite INTEGER DEFAULT 0,
             notes TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
@@ -328,6 +329,7 @@ def init_db(db_path):
         "ALTER TABLE patch_nodes ADD COLUMN note TEXT DEFAULT ''",
         "ALTER TABLE patch_connections ADD COLUMN note TEXT DEFAULT ''",
         "ALTER TABLE catalogue ADD COLUMN manufacturer TEXT DEFAULT ''",
+        "ALTER TABLE catalogue ADD COLUMN favorite INTEGER DEFAULT 0",
     ]:
         try:
             conn.execute(migration)

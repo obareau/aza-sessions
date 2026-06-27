@@ -10,10 +10,6 @@
     <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
 </div>
 
-<!-- AJOUTER -->
-<div class="card">
-    <div class="card-title">+ Ajouter un élément</div>
-    <form method="POST" action="{{ url_for('catalogue.manage_catalogue') }}" class="cat-add-form" style="display:grid;grid-template-columns:1fr 1fr 1fr 2fr auto;gap:10px;align-items:end;">
 <style>
 @media (max-width: 900px) { .cat-add-form { grid-template-columns: 1fr 1fr; } .cat-add-form > *:last-child { grid-column: 1 / -1; } }
 @media (max-width: 600px) { .cat-add-form { grid-template-columns: 1fr; } }
@@ -23,12 +19,27 @@
     .cat-row form[style*="flex:1"] input[style*="width:110px"] { width: 100% !important; flex-shrink: unset; }
     .cat-row form[style*="flex:1"] input[style*="width:130px"] { width: 100% !important; flex-shrink: unset; }
 }
+.cat-input { font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;color:var(--text);width:100%;box-sizing:border-box; }
+.cat-lbl { font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px; }
+.bulk-row { display:grid;grid-template-columns:1fr 1.4fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center; }
+.bulk-row input { font-family:var(--mono);font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;color:var(--text);width:100%;box-sizing:border-box; }
+.bulk-del { background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--text-muted);cursor:pointer;padding:6px 9px;font-family:var(--mono);min-height:34px; }
+@media (max-width: 600px) { .bulk-row { grid-template-columns: 1fr 1fr; } .bulk-row .bulk-del { grid-column: 1 / -1; } }
+.fav-on { color:var(--warning, #E6A700) !important; }
+.type-section[hidden] { display:none; }
+summary.section-title { cursor:pointer; list-style:none; user-select:none; }
+summary.section-title::-webkit-details-marker { display:none; }
+summary.section-title::before { content:'▸'; display:inline-block; margin-right:6px;color:var(--text-muted);transition:transform .12s; }
+details[open] > summary.section-title::before { transform:rotate(90deg); }
 </style>
+
+<!-- AJOUTER UN ÉLÉMENT -->
+<div class="card">
+    <div class="card-title">+ Ajouter un élément</div>
+    <form method="POST" action="{{ url_for('catalogue.manage_catalogue') }}" class="cat-add-form" style="display:grid;grid-template-columns:1fr 1fr 1fr 2fr auto;gap:10px;align-items:end;">
         <input type="hidden" name="action" value="add">
         <div>
-            <label style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px;">
-              Type <span style="font-weight:400;opacity:.6;">(libre)</span>
-            </label>
+            <label class="cat-lbl">Type <span style="font-weight:400;opacity:.6;">(libre)</span></label>
             {# Datalist : types existants + suggestions par défaut #}
             <datalist id="type-suggestions">
                 {% for key, label in item_types.items() %}
@@ -40,38 +51,86 @@
                 {% endif %}
                 {% endfor %}
             </datalist>
-            <input type="text" name="type" list="type-suggestions"
-                   placeholder="ex: machine, synth_android…" required
-                   style="font-family:var(--mono);font-size:13px;background:var(--bg);
-                          border:1px solid var(--border);border-radius:var(--radius);
-                          padding:9px 12px;color:var(--text);width:100%;box-sizing:border-box;">
+            <input type="text" name="type" list="type-suggestions" placeholder="ex: machine, synth_android…" required class="cat-input">
         </div>
         <div>
-            <label style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px;">Fabricant</label>
-            <input type="text" name="manufacturer" placeholder="ex: Korg, Arturia…" style="font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;color:var(--text);width:100%;">
+            <label class="cat-lbl">Fabricant</label>
+            <input type="text" name="manufacturer" placeholder="ex: Korg, Arturia…" class="cat-input">
         </div>
         <div>
-            <label style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px;">Nom</label>
-            <input type="text" name="name" placeholder="ex: Volca Keys" required style="font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;color:var(--text);width:100%;">
+            <label class="cat-lbl">Nom</label>
+            <input type="text" name="name" placeholder="ex: Volca Keys" required class="cat-input">
         </div>
         <div>
-            <label style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px;">Notes (optionnel)</label>
-            <input type="text" name="notes" placeholder="ex: futur achat, sur PC..." style="font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;color:var(--text);width:100%;">
+            <label class="cat-lbl">Notes (optionnel)</label>
+            <input type="text" name="notes" placeholder="ex: futur achat, sur PC..." class="cat-input">
         </div>
         <button type="submit" class="btn btn-primary">Ajouter</button>
     </form>
 </div>
 
+<!-- SAISIE RAPIDE MULTI-LIGNES -->
+<div class="card">
+    <div class="card-title">⊞ Saisie rapide <span style="font-weight:400;font-size:11px;color:var(--text-muted);">— plusieurs items du même type d'un coup</span></div>
+    <form method="POST" action="{{ url_for('catalogue.manage_catalogue') }}" id="bulk-form">
+        <input type="hidden" name="action" value="bulk">
+        <div style="max-width:320px;margin-bottom:14px;">
+            <label class="cat-lbl">Type pour toutes les lignes</label>
+            <input type="text" name="type" list="type-suggestions" placeholder="ex: ipad, zynthian…" required class="cat-input">
+        </div>
+        <div class="bulk-row" style="margin-bottom:6px;">
+            <span class="cat-lbl" style="margin:0;">Fabricant</span>
+            <span class="cat-lbl" style="margin:0;">Nom</span>
+            <span class="cat-lbl" style="margin:0;">Notes</span>
+            <span></span>
+        </div>
+        <div id="bulk-rows">
+            {% for i in range(5) %}
+            <div class="bulk-row">
+                <input type="text" name="bulk_manufacturer" placeholder="ex: Korg" autocomplete="off">
+                <input type="text" name="bulk_name" placeholder="ex: Volca Kick" autocomplete="off">
+                <input type="text" name="bulk_notes" placeholder="optionnel" autocomplete="off">
+                <button type="button" class="bulk-del" title="Retirer la ligne" onclick="delBulkRow(this)">✕</button>
+            </div>
+            {% endfor %}
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px;">
+            <button type="button" class="btn btn-secondary" onclick="addBulkRow()">+ Ligne</button>
+            <button type="submit" class="btn btn-primary">Ajouter tout →</button>
+        </div>
+    </form>
+</div>
+
+<!-- FILTRES -->
+<div class="card" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <input type="text" id="cat-search" placeholder="🔍 Rechercher (nom, fabricant)…" class="cat-input" style="flex:1;min-width:180px;max-width:360px;">
+    <select id="cat-type-filter" class="cat-input" style="max-width:240px;">
+        <option value="">Tous les types</option>
+        {% for type_key in grouped.keys() %}
+        <option value="{{ type_key }}">{{ item_types.get(type_key, type_key) }}</option>
+        {% endfor %}
+    </select>
+    <label style="font-family:var(--mono);font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="checkbox" id="cat-fav-only"> ★ favoris seulement
+    </label>
+</div>
+
 {% for type_key, items in grouped.items() %}
-<div class="type-section">
-    <div class="section-title">
+<details class="type-section" data-type="{{ type_key }}" open>
+    <summary class="section-title">
         <span class="type-badge type-{{ type_key }}">{{ item_types.get(type_key, type_key) }}</span>
         <span style="font-size:10px;color:var(--text-muted)">{{ items|length }} élément{% if items|length > 1 %}s{% endif %}</span>
-    </div>
+    </summary>
 
     {% if items %}
     {% for item in items %}
-    <div class="cat-row {{ 'inactive' if not item.active }}">
+    <div class="cat-row {{ 'inactive' if not item.active }}" data-name="{{ item.name|lower }}" data-mfr="{{ (item.manufacturer or '')|lower }}" data-fav="{{ '1' if item.favorite else '0' }}">
+        <!-- FAVORI -->
+        <form method="POST" action="{{ url_for('catalogue.manage_catalogue') }}">
+            <input type="hidden" name="action" value="favorite">
+            <input type="hidden" name="id" value="{{ item.id }}">
+            <button type="submit" class="btn btn-secondary btn-sm {{ 'fav-on' if item.favorite }}" title="{{ 'Retirer des favoris' if item.favorite else 'Marquer favori' }}">{{ '★' if item.favorite else '☆' }}</button>
+        </form>
         <!-- EDIT -->
         <form method="POST" action="{{ url_for('catalogue.manage_catalogue') }}"
               style="flex:1;display:flex;gap:8px;align-items:center;min-width:0;">
@@ -114,7 +173,62 @@
     {% else %}
     <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);padding:12px 0;">Aucun élément dans cette catégorie.</p>
     {% endif %}
-</div>
+</details>
 {% endfor %}
+
+<script>
+// --- Saisie rapide : lignes dynamiques ---
+function addBulkRow(focus) {
+    const rows = document.getElementById('bulk-rows');
+    const row = document.createElement('div');
+    row.className = 'bulk-row';
+    row.innerHTML = '<input type="text" name="bulk_manufacturer" placeholder="ex: Korg" autocomplete="off">' +
+                    '<input type="text" name="bulk_name" placeholder="ex: Volca Kick" autocomplete="off">' +
+                    '<input type="text" name="bulk_notes" placeholder="optionnel" autocomplete="off">' +
+                    '<button type="button" class="bulk-del" title="Retirer la ligne" onclick="delBulkRow(this)">✕</button>';
+    rows.appendChild(row);
+    if (focus !== false) row.querySelector('input[name="bulk_name"]').focus();
+}
+function delBulkRow(btn) {
+    const rows = document.getElementById('bulk-rows');
+    if (rows.children.length > 1) btn.closest('.bulk-row').remove();
+    else btn.closest('.bulk-row').querySelectorAll('input').forEach(i => i.value = '');
+}
+// Entrée dans le champ "nom" → ajoute une nouvelle ligne (saisie au fil de l'eau)
+document.getElementById('bulk-rows').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.target.name === 'bulk_name') {
+        e.preventDefault();
+        const row = e.target.closest('.bulk-row');
+        if (row === this.lastElementChild) addBulkRow();
+        else row.nextElementSibling.querySelector('input[name="bulk_name"]').focus();
+    }
+});
+
+// --- Filtres catalogue ---
+const search   = document.getElementById('cat-search');
+const typeSel  = document.getElementById('cat-type-filter');
+const favOnly  = document.getElementById('cat-fav-only');
+function applyFilters() {
+    const q = search.value.trim().toLowerCase();
+    const t = typeSel.value;
+    const fav = favOnly.checked;
+    document.querySelectorAll('.type-section').forEach(sec => {
+        const secType = sec.dataset.type;
+        let visibleRows = 0;
+        sec.querySelectorAll('.cat-row').forEach(row => {
+            const matchQ = !q || row.dataset.name.includes(q) || row.dataset.mfr.includes(q);
+            const matchFav = !fav || row.dataset.fav === '1';
+            const show = matchQ && matchFav;
+            row.style.display = show ? '' : 'none';
+            if (show) visibleRows++;
+        });
+        const matchType = !t || secType === t;
+        sec.hidden = !matchType || (visibleRows === 0 && (q || fav));
+        if (!sec.hidden && (q || fav)) sec.open = true;
+    });
+}
+[search, typeSel].forEach(el => el.addEventListener('input', applyFilters));
+favOnly.addEventListener('change', applyFilters);
+</script>
 
 {% endblock %}
