@@ -161,6 +161,8 @@ App Flask (Prompteur)
 ## Demandes externes (Argus)
 
 <!-- argus:begin -->
+- [ ] ⇐ D.I.M : Un format de métadonnées standardisé dans les comptes-rendus de session pour lier explicitement les moments narratifs aux identifiants de sections D.I.M.
+      _pourquoi : Cela permettrait d'automatiser le chargement du bon roadbook musical au début de chaque séance sans intervention manuelle, réduisant les erreurs de contexte._
 - [ ] ⇐ Homelab : Intégration d'une section dédiée aux guides d'installation dans le journal des sessions.
       _pourquoi : Cela permettrait une meilleure cohérence et facilitation de l'accès à ces informations cruciales pour les nouveaux contributeurs._
 - [ ] ⚑ Intégration avec D.I.M
