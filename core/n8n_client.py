@@ -33,7 +33,7 @@ def notify(message: str, title: str = "AZA", tags: str = "robot", priority: str 
     })
 
 
-def ollama_async(prompt: str, notify_title: str = "AZA · Ollama", model: str = "qwen3.5:latest", temperature: float = 0.7) -> bool:
+def ollama_async(prompt: str, notify_title: str = "AZA · Ollama", model: str = "qwen3.5:cloud", temperature: float = 0.7) -> bool:
     """Lance une génération Ollama en arrière-plan — résultat envoyé via ntfy."""
     return _post("aza-ollama", {
         "prompt": prompt,

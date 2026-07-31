@@ -3,7 +3,7 @@ import urllib.request
 import urllib.error
 
 OLLAMA_URL   = "http://192.168.1.100:11434/api/generate"
-OLLAMA_MODEL = "qwen3.5:latest"
+OLLAMA_MODEL = "qwen3.5:cloud"
 CODER_MODEL  = "qwen2.5-coder:7b"
 
 _PROMPT_TEMPLATE = """Tu es un archiviste de l'univers AZA — une dystopie sonore Dark Ambient / Industriel, Scaër, Bretagne.
