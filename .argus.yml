@@ -1,0 +1,4 @@
+# Ce que ce projet déclare à Argus. Le projet déclare, Argus vérifie.
+#
+# Le venv du projet, pas le python système : flask y vit.
+tests: .venv/bin/python -m pytest tests/ -q --no-header -p no:cacheprovider
