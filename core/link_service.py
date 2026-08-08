@@ -1,106 +1,77 @@
-"""Pair Ableton Link partagé par l'application.
+"""Lecture de la grille Ableton Link — **via D.I.M**, sans pair propre.
 
-Le Prompteur affiche le tempo et la phase de la grille Link — donc de tout ce
-qui tourne sur le réseau : Ableton Live, les synthés iOS (MiRack, Tera Pro,
-Peach, Seqnd, Blue Arp, LK for Live…).
+⚠️⚠️ **AZA Sessions ne tient PLUS son propre pair Link** (débranché le
+2026-08-08). Il en tenait un jusqu'ici, et D.I.M aussi : les deux apparaissaient
+comme **deux appareils distincts** dans la session Link de tous les musiciens
+présents — mesuré, `peers` passait à 2 avec les deux services allumés alors
+qu'un seul Ableton Live tournait.
 
-⚠️⚠️ **UN SEUL PAIR PAR PROCESSUS.** Chaque instance `link.Link()` apparaît comme
-un appareil distinct sur le réseau. L'unité systemd tourne en `--workers 1` :
-si ce nombre augmente un jour, l'app se dédoublera dans la session Link de tous
-les musiciens, sans erreur ni avertissement. Le singleton ci-dessous protège du
-cas simple, pas du multi-processus.
+**D.I.M possède l'horloge, AZA la lit.** C'est le partage qui correspond au
+workflow : D.I.M est le séquenceur de performance, AZA le journal de session.
+Deux outils, deux moments — ils ne s'utilisent pas en même temps.
 
-⚠️ **Le navigateur ne peut PAS parler Link** (multicast UDP) : c'est ce module
-qui tient le pair, et le client interroge `/api/link/state`.
+ℹ️ D.I.M a en plus la meilleure architecture : une abstraction `SyncSource`
+avec **trois** sources (Ableton Link, horloge MIDI, OSC) là où AZA n'avait que
+Link. Lire son état, c'est hériter des trois sans écrire une ligne.
 
-ℹ️ **Dégradation silencieuse.** Sans la bibliothèque, `available()` renvoie
-False et rien ne casse — l'app fonctionne comme avant, le widget disparaît.
-Installer avec : `pip install LinkPython-extern` (⚠️ PAS `abletonlink`, qui
-n'existe pas sur PyPI malgré ce que la roadmap a longtemps dit).
+⚠️ **Le tempo peut donc venir d'ailleurs que de Link** — `active_source` dit
+laquelle des trois parle. Ne pas supposer Link.
+
+Prérequis côté D.I.M : la source doit être démarrée une fois, par
+`POST /api/sync/link/start` avec un corps JSON (même vide) — `get_json(force=True)`
+refuse une requête sans corps par un 400.
 """
 
-import threading
+import json
+import os
+import urllib.error
+import urllib.request
 
-try:
-    import link as _link
-except ImportError:  # bibliothèque absente : le module reste inerte
-    _link = None
+DIM_HOST = os.environ.get("DIM_HOST", "localhost")
+DIM_PORT = int(os.environ.get("DIM_PORT", 5002))
+_URL = f"http://{DIM_HOST}:{DIM_PORT}/api/sync/status"
 
-# Quantum = nombre de temps par mesure. 4 = une mesure à 4/4, la maille
-# naturelle pour caler un changement de cue.
-QUANTUM = 4.0
-
-_instance = None
-_verrou = threading.Lock()
+# Court à dessein : cet appel est sur le chemin d'un changement de cue. Mieux
+# vaut avancer sans quantize qu'infliger une attente au musicien.
+_TIMEOUT_S = 0.4
 
 
 def available() -> bool:
-    """La bibliothèque est-elle installée ?"""
-    return _link is not None
+    """Toujours vrai : la disponibilité réelle se lit dans `state()`.
 
-
-def _pair():
-    """Le pair Link du processus, créé à la première demande."""
-    global _instance
-    if _link is None:
-        return None
-    if _instance is None:
-        with _verrou:
-            if _instance is None:  # re-test sous verrou
-                p = _link.Link(120.0)
-                p.enabled = True
-                # Sans ce drapeau, l'état de transport reste LOCAL : on croirait
-                # avoir lancé la lecture d'un pair distant sans que rien ne parte.
-                p.startStopSyncEnabled = True
-                _instance = p
-    return _instance
+    Gardé pour ne pas casser les appelants existants — l'absence de D.I.M n'est
+    pas une erreur de configuration d'AZA, c'est un état du réseau.
+    """
+    return True
 
 
 def state() -> dict:
-    """Instantané de la grille Link. Ne lève jamais."""
-    p = _pair()
-    if p is None:
-        return {"available": False}
-    try:
-        s = p.captureAppSessionState()
-        t = p.clock().micros()
-        tempo = s.tempo()
-        phase = s.phaseAtTime(t, QUANTUM)
-        return {
-            "available": True,
-            "peers": p.numPeers(),
-            "tempo": round(tempo, 2),
-            "beat": round(s.beatAtTime(t, QUANTUM), 3),
-            "phase": round(phase, 3),
-            "quantum": QUANTUM,
-            "playing": s.isPlaying(),
-            # Délai jusqu'au prochain temps fort — c'est tout ce qu'il faut pour
-            # qu'un changement de cue ne tombe jamais au milieu d'une mesure.
-            "next_downbeat_s": round((QUANTUM - phase) * 60.0 / tempo, 3),
-        }
-    except Exception as exc:  # un pair injoignable ne doit pas casser une page
-        return {"available": False, "error": str(exc)}
+    """Instantané de la grille, lu chez D.I.M. Ne lève jamais.
 
-
-def set_tempo(bpm: float) -> dict:
-    """Impose un tempo à toute la session Link. Vérifie par relecture.
-
-    ⚠️⚠️ **Un commit n'est PAS fiable en soi.** Mesuré le 2026-08-08 : deux
-    écritures ont échoué EN SILENCE (132 puis 96 BPM, relus inchangés) avant
-    qu'une troisième, structurellement identique, passe du premier coup. Cause
-    non isolée. On relit donc systématiquement, et l'appelant doit gérer
-    `ok: False` — ne pas découvrir ça en concert.
+    Renvoie la même forme qu'avant le débranchement, pour que le widget du
+    Prompteur et le quantize n'aient rien à changer.
     """
-    p = _pair()
-    if p is None:
-        return {"ok": False, "error": "Ableton Link indisponible"}
-    if not (20.0 <= bpm <= 999.0):
-        return {"ok": False, "error": f"tempo hors bornes : {bpm}"}
     try:
-        s = p.captureAppSessionState()
-        s.setTempo(float(bpm), p.clock().micros())
-        p.commitAppSessionState(s)
-        relu = p.captureAppSessionState().tempo()
-        return {"ok": abs(relu - bpm) < 0.01, "tempo": round(relu, 2), "demande": bpm}
-    except Exception as exc:
-        return {"ok": False, "error": str(exc)}
+        with urllib.request.urlopen(_URL, timeout=_TIMEOUT_S) as r:
+            data = json.loads(r.read().decode("utf-8"))
+    except (urllib.error.URLError, OSError, ValueError, TimeoutError):
+        # D.I.M éteint : ce n'est pas une panne, c'est le cas courant quand on
+        # tient son journal sans jouer.
+        return {"available": False, "reason": "D.I.M injoignable"}
+
+    link = data.get("link")
+    if not link or not link.get("available"):
+        return {"available": False, "reason": "sync Link non démarrée dans D.I.M"}
+
+    return {
+        "available": True,
+        "peers": link.get("peers", 0),
+        "tempo": link.get("tempo_bpm"),
+        "beat": link.get("beat"),
+        "phase": link.get("phase"),
+        "quantum": link.get("quantum", 4.0),
+        "playing": link.get("playing", False),
+        "next_downbeat_s": link.get("next_downbeat_s"),
+        # Quelle des trois sources de D.I.M parle réellement.
+        "source": data.get("active_source"),
+    }

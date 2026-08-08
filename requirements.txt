@@ -1,4 +1,5 @@
 flask>=3.0.0
 gunicorn>=21.0.0
 pytest>=8.0.0
-LinkPython-extern>=1.3.0  # Ableton Link — optionnel, l'app dégrade en silence sans lui
+# ⚠️ LinkPython-extern RETIRÉ le 2026-08-08 : AZA ne tient plus de pair Link,
+# il lit celui de D.I.M via HTTP. Deux pairs = deux appareils sur le réseau.
