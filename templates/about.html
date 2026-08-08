@@ -41,7 +41,8 @@
         <p style="margin-bottom:12px;">
             <strong>Journal de Sessions AZA</strong> est un outil de documentation et de
             performance musicale personnel — carnet de bord numérique pour tracer chaque session
-            de création sonore, et prompteur de set pour les performances Dawless en temps réel.
+            de création sonore. ⚠️ Le prompteur de set a migré vers D.I.M le 2026-08-08 :
+              AZA est le journal, D.I.M le séquenceur de performance.
         </p>
         <p style="margin-bottom:12px;">
             L'application tourne en <strong>local</strong> (SQLite, zéro cloud requis)
@@ -108,29 +109,6 @@
     </div>
 </div>
 
-<!-- PROMPTEUR -->
-<div class="card">
-    <div class="card-title">⬡ Prompteur Dawless — v2.0</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:14px;">
-        {% for feat in [
-            ('Transport DAW',       '⏮ Rewind · ⏹ Stop · ▶ Play/Pause'),
-            ('Horloge grande',      'Décompte cue (auto) ou chrono global (manuel)'),
-            ('Barre LED',           'Segments 22px · clignotement <10s / <5s · hauteur réglable'),
-            ('3 zones',             'Précédent (dim) · Courant · Suivant (dim)'),
-            ('Mode Auto',           'Avance automatique sur minutage ou durée par défaut'),
-            ('Mode Manuel',         'Barre scrub · clic / Espace / swipe'),
-            ('Zoom police',         'A+ / A− de 40 % à 250 %'),
-            ('Import / Export',     'JSON structuré · Markdown compatible Obsidian'),
-            ('Plein écran',         'Natif — touche F'),
-            ('Quitter',             'Confirmation avant sortie — touche Q'),
-        ] %}
-        <div style="padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);">
-            <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:700;margin-bottom:4px;">{{ feat[0] }}</div>
-            <div style="font-size:11px;color:var(--text);line-height:1.5;">{{ feat[1] }}</div>
-        </div>
-        {% endfor %}
-    </div>
-</div>
 
 <!-- TECHNIQUE -->
 <div class="card">
@@ -175,16 +153,6 @@
                 ('k',     'Session précédente'),
                 ('Enter', 'Ouvrir la session sélectionnée'),
                 ('Esc',   'Désélectionner / fermer'),
-            ]),
-            ('Prompteur Dawless', [
-                ('A',     'Play / Pause'),
-                ('S',     'Stop'),
-                ('R',     'Rewind — retour au début'),
-                ('Espace / →', 'Cue suivante'),
-                ('←',     'Cue précédente'),
-                ('F',     'Plein écran'),
-                ('Q',     'Quitter (avec confirmation)'),
-                ('+ / −', 'Zoom police'),
             ]),
         ] %}
         <div>

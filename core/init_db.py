@@ -234,16 +234,6 @@ def init_db(db_path):
     """)
 
     conn.execute("""
-        CREATE TABLE IF NOT EXISTS prompter_scripts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            description TEXT DEFAULT '',
-            cues TEXT DEFAULT '[]',
-            created_at TEXT DEFAULT (datetime('now'))
-        )
-    """)
-
-    conn.execute("""
         CREATE TABLE IF NOT EXISTS live_session (
             id INTEGER PRIMARY KEY,
             started_at TEXT NOT NULL,

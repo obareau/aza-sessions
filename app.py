@@ -20,7 +20,6 @@ app.config.update(DB_PATH=DB_PATH, VERSION=VERSION, CONFIG_PATH=CONFIG_PATH)
 # ── BLUEPRINTS ────────────────────────────────────────────────────────────────
 from sessions     import bp as sessions_bp;     app.register_blueprint(sessions_bp)
 from spark        import bp as spark_bp;        app.register_blueprint(spark_bp)
-from dim          import bp as dim_bp;          app.register_blueprint(dim_bp)
 from catalogue    import bp as catalogue_bp;    app.register_blueprint(catalogue_bp)
 from obliques     import bp as obliques_bp;     app.register_blueprint(obliques_bp)
 from influences   import bp as influences_bp;   app.register_blueprint(influences_bp)

@@ -20,7 +20,6 @@ EXPECTED_TABLES = [
     "gear_wishlist",
     "inspirations",
     "mirack_modules",
-    "prompter_scripts",
     "live_session",
     "patch_layouts",
     "patch_nodes",
