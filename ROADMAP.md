@@ -1,11 +1,25 @@
 # ROADMAP — Journal de Sessions AZA
 
 > Carte des possibles — pas un backlog, pas de deadlines.
-> Mis à jour : 2026-06-27 (après release v3.7.2)
+> Mis à jour : 2026-08-08 (après release **v3.10.0**)
 
 ---
 
-## ✅ Déjà livré (v1.x → v3.7.2)
+## ⏸ État du projet
+
+⚠️ **Aucun développement depuis le 2026-06-27.** Les commits postérieurs sont
+deux licences, deux fichiers Argus, une convention de session et un correctif —
+zéro fonctionnalité. Le projet n'est pas mort, il est en pause.
+
+ℹ️ **Le recap automatique a été mort sans que personne le voie.** Corrigé le
+2026-07-31 (`qwen3.5:latest` → `qwen3.5:cloud`) : le modèle n'existait pas. Même
+cascade que Subwave et Nemesis lors du retrait des modèles Ollama Cloud du
+2026-07-15. ⚠️ Réflexe : un appel LLM qui échoue en silence ne se voit jamais
+depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
+
+---
+
+## ✅ Déjà livré (v1.x → v3.10.0)
 
 | Version | Fonctionnalité |
 |---|---|
@@ -29,6 +43,9 @@
 | v3.7.0 | **Module Presets** — carnet de notes par preset/patch (instrument, évocation, idée, influence, ★, tags, session liée) + stats |
 | v3.7.1 | **Vue compacte** (`compact.html`) + **heatmap intensités sonores** cliquable sur l'index + smoke tests 18 blueprints |
 | v3.7.2 | **Spark contrainte unique** + historique (session Flask, `SEEN_MAX=8`) ; backup DB au démarrage Gunicorn (`wsgi.py`) ; `DIM_PORT` env |
+| v3.8.0 | **Catalogue** — saisie rapide multi-lignes (dédup `(type, nom)`), favoris ★ remontés en tête, types dédiés `ipad` et `zynthian`, filtres et sections repliables ; messages flash centralisés dans `base.html` |
+| v3.9.0 | **Sessions typées** — `music` / `lore` / `veille` : formulaire conditionnel sans rechargement, sections matériel iPad & Zynthian, filtre et badge par type, **recap Ollama avec un prompt dédié par type** (récit pour le lore, résumé factuel pour la veille) |
+| v3.10.0 | **Idées en vrac** — `/inspirations` recadrée, nouveau type `Idée` ; **SPARK pioche dedans en priorité** (pondération ×2 dans le pool focus, badge dédié) |
 
 ---
 
@@ -63,6 +80,15 @@
 
 ### v3.2 — Lore AZA
 
+⚠️⚠️ **Cet axe a commencé sans être décidé.** La v3.9.0 a introduit un **type de
+session `lore`** avec un prompt Ollama qui écrit du **récit**, et un type
+`veille`. C'est le premier pas concret dans cette section, livré alors qu'elle
+était donnée pour vierge — le projet a bougé quelque part que sa carte ne
+décrivait pas. Les idées ci-dessous sont donc à relire à cette lumière : une
+partie a désormais un point d'accroche réel (les sessions typées) au lieu d'être
+purement spéculative.
+
+
 | Priorité | Idée | Notes |
 |---|---|---|
 | ★★☆ | **Générateur de noms AZA** — titres dans l'esthétique de l'univers | Ex : "SÉQUENCE-09 / MÉMOIRE RÉSIDUELLE / NODE SCAER-7" |
@@ -80,7 +106,13 @@
 | ✅ ★★★ | ~~**Spark "contrainte unique"** — une seule contrainte radicale, en grand, à suivre jusqu'au bout~~ | **Livré** (v3.7.2) — moins de bruit, plus d'impact |
 | ★★☆ | **Challenge du jour** — contrainte fixe générée à minuit, commune à toute la journée | Fil conducteur sur 24h |
 | ✅ ★★☆ | ~~**Historique Spark** — suggestions déjà générées, noter celles suivies~~ | **Livré** (v3.7.2) — historique en session Flask, `SEEN_MAX=8` ; reste à faire : *noter* celles suivies |
-| ★☆☆ | **Spark ↔ Session** — lier une suggestion Spark à la session qu'elle a inspirée | Traçabilité créative complète |
+| ★☆☆ | **Spark ↔ Session** — lier une suggestion Spark à la session qu'elle a inspirée | Traçabilité créative complète — **toujours ouvert** |
+| ✅ ★★☆ | ~~**Spark puise dans les idées en vrac**~~ | **Livré** (v3.10.0) — le type `Idée` est pondéré ×2 dans le pool focus, badge dédié. N'était pas sur la carte |
+
+⚠️ **Le « noter celles suivies » reste ouvert**, malgré le ✅ de la ligne
+Historique : la v3.7.2 a livré l'historique (`SEEN_MAX=8` en session Flask), pas
+la notation. Et il rejoint le **Spark ↔ Session** ci-dessus — les deux décrivent
+la même chose vue de deux angles : savoir quelle contrainte a produit quoi.
 
 ---
 
@@ -155,7 +187,7 @@ App Flask (Prompteur)
 
 ---
 
-*Dernière mise à jour : 2026-06-27 — v3.7.2*
+*Dernière mise à jour : 2026-08-08 — v3.10.0*
 *Ce fichier évolue librement — ce n'est pas un backlog, c'est une carte des possibles.*
 
 ## Demandes externes (Argus)
