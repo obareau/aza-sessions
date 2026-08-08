@@ -93,6 +93,20 @@ html, body {
 
 /* Zoom */
 #zoom-row { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+/* Ableton Link — masqué tant qu'aucun pair n'est vu, pour ne pas encombrer
+   la barre quand on joue sans réseau. La pastille bat sur le temps fort. */
+#link-row { display: none; align-items: center; gap: 6px; flex-shrink: 0; }
+#link-row.on { display: flex; }
+#link-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--tb-muted); transition: background .08s, transform .08s;
+}
+#link-dot.beat { background: #E84B1A; transform: scale(1.5); }
+#link-bpm {
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600;
+    color: var(--tb-text); min-width: 52px; text-align: right;
+}
+#link-peers { font-size: 10px; color: var(--tb-muted); }
 .tb-btn {
     background: #F5F2EE; border: 1px solid var(--tb-border);
     color: var(--tb-text); font-family: 'IBM Plex Mono', monospace;
@@ -384,6 +398,13 @@ html, body {
     </div>
 
     <div class="tb-sep"></div>
+
+    <!-- Ableton Link -->
+    <div id="link-row" title="Tempo de la grille Ableton Link du réseau">
+        <span id="link-dot"></span>
+        <span id="link-bpm">—</span>
+        <span id="link-peers"></span>
+    </div>
 
     <!-- Plein écran -->
     <button class="tb-btn" onclick="toggleFS()" title="Plein écran (F)">⛶</button>
@@ -825,6 +846,60 @@ if (CUES.length > 0) {
     document.getElementById('cur-action').textContent = "Ajoute des cues dans l'éditeur.";
     document.getElementById('cue-counter').textContent = '0 / 0';
 }
+
+/* ─── Ableton Link ────────────────────────────────────────────────────────
+   Le navigateur ne peut pas parler Link : le serveur tient le pair et on
+   l'interroge. Deux cadences distinctes, et c'est le point important —
+   sonder à 60 Hz pour animer la pastille noierait Flask pour rien.
+
+     · sondage réseau : 1 s, il ne donne QUE tempo + phase + pairs
+     · animation       : locale, extrapolée depuis la dernière phase connue
+
+   La phase avance linéairement entre deux sondages : on la recalcule côté
+   client à partir du tempo, ce qui suffit largement pour un repère visuel.
+   ⚠️ Ne PAS s'en servir pour caler un événement musical — pour ça il faut
+   `next_downbeat_s` frais du serveur, la dérive locale n'est pas bornée. */
+(function () {
+    const row = document.getElementById('link-row');
+    const dot = document.getElementById('link-dot');
+    const bpmEl = document.getElementById('link-bpm');
+    const peersEl = document.getElementById('link-peers');
+    if (!row) return;
+
+    let tempo = 0, phase = 0, quantum = 4, majAt = 0, actif = false;
+
+    async function sonder() {
+        try {
+            const r = await fetch('{{ url_for("dim.link_state") }}', { cache: 'no-store' });
+            const d = await r.json();
+            // Pas de Link installé, ou aucun pair : on se cache. Un musicien qui
+            // joue sans réseau n'a pas à voir un widget mort dans sa barre.
+            actif = !!d.available && d.peers > 0;
+            row.classList.toggle('on', actif);
+            if (!actif) return;
+            tempo = d.tempo; phase = d.phase; quantum = d.quantum;
+            majAt = performance.now();
+            bpmEl.textContent = tempo.toFixed(1);
+            peersEl.textContent = d.peers + (d.peers > 1 ? ' pairs' : ' pair');
+        } catch (e) {
+            actif = false; row.classList.remove('on');
+        }
+    }
+
+    function animer() {
+        if (actif && tempo > 0) {
+            const ecoule = (performance.now() - majAt) / 1000;
+            const ph = (phase + ecoule * tempo / 60) % quantum;
+            // Flash court sur le premier tiers de temps de chaque temps fort.
+            dot.classList.toggle('beat', ph % 1 < 0.33);
+        }
+        requestAnimationFrame(animer);
+    }
+
+    sonder();
+    setInterval(sonder, 1000);
+    requestAnimationFrame(animer);
+})();
 </script>
 </body>
 </html>

@@ -5,6 +5,7 @@ import urllib.request
 import urllib.error
 from flask import Blueprint, render_template, request, redirect, url_for, flash, Response, current_app, jsonify
 from .engine import DimEngine
+from core import link_service
 
 bp = Blueprint("dim", __name__)
 
@@ -147,6 +148,19 @@ def prompter_play(sid):
     cues = json.loads(script["cues"])
     return render_template("prompter_play.html", script=script, cues=cues,
                            version=current_app.config.get("VERSION", ""))
+
+
+# ---------------------------------------------------------------------------
+# Ableton Link — le Prompteur lit la grille partagée du réseau
+# ⚠️ Le navigateur ne peut pas parler Link (multicast UDP) : il interroge ceci.
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/link/state")
+def link_state():
+    """Tempo, phase et nombre de pairs. Renvoie toujours 200 : l'absence de
+    Link n'est pas une erreur, c'est un état (`available: false`), et le widget
+    se cache tout seul plutôt que de faire clignoter une alerte pendant un set."""
+    return jsonify(link_service.state())
 
 
 @bp.route("/prompter/<int:sid>/export/json")
