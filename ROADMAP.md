@@ -131,24 +131,53 @@ la même chose vue de deux angles : savoir quelle contrainte a produit quoi.
 
 | Priorité | Idée | Notes |
 |---|---|---|
-| ★★★ | **Sync tempo Ableton Link** — le Prompteur s'accroche à la grille Link (tempo, beat phase) | Librairie Python : `abletonlink` (bindings CPython du SDK officiel) |
-| ★★★ | **Click IEM via réseau** — générer un click audio synced (Web Audio API ou serveur audio) streamé vers iPhone/iPad en retour d'oreille | Le musicien entend le click dans ses IEMs, synchronisé avec le set |
+| ★★★ | **Sync tempo Ableton Link** — le Prompteur s'accroche à la grille Link (tempo, beat phase) | ⚠️ **`abletonlink` N'EXISTE PAS** sur PyPI. Utiliser **`LinkPython-extern`** (1.3.0, wheels fournies) — **testé le 2026-08-08 sur Roblab, Python 3.14.4 : installation, import et découverte OK**. Alternative asyncio : `aalink` (0.2.3) |
+| ★☆☆ | **Click IEM via réseau** — click audio synchronisé dans les retours d'oreille | ⚠️⚠️ **Irréalisable tel qu'écrit — rétrogradé de ★★★.** AirPlay a ~2 s de latence, et un navigateur ne peut pas parler Link (multicast UDP). Un click *streamé* ne sera jamais en phase. La seule voie : un client natif sur l'iPhone tenant **son propre pair Link** et générant le click **localement** — le click n'est pas transporté, il est reproduit en phase. Chantier à part entière |
 | ★★☆ | **Annonces vocales de cue** — TTS au changement de cue dans le Prompteur ("Patch Drone — 32 mesures") | Web Speech API côté client ou `pyttsx3` côté serveur |
 | ★★☆ | **Affichage tempo live** — BPM courant Link affiché dans la topbar du Prompteur | Feedback visuel de la sync |
 | ★★☆ | **Quantize changement de cue** — l'avance automatique attend le prochain temps fort Link | Changements toujours musicaux, jamais au milieu d'une mesure |
 | ★☆☆ | **Multi-musiciens** — plusieurs instances de l'app sur le même réseau, toutes sync Link | Chaque musicien voit les cues sur son propre appareil |
 | ★☆☆ | **Export set vers Ableton Live** — générer une piste MIDI marker depuis les cues du Prompteur | Automatiser les marqueurs de scène dans Live |
 
+### Ce que le terrain dit — vérifié le 2026-08-08
+
+⚠️⚠️ **Ton matériel ne parle PAS Link.** MicroFreak, NTS-1, Volca Drum, Volca
+Kick : horloge MIDI ou sync analogique. Link ne les synchronisera jamais
+directement — il faudrait un pont Link→MIDI clock, chantier absent de cette
+carte. Dans un setup nommé *Dawless*, c'est l'angle mort du plan.
+
+✅ **Mais les pairs existent déjà**, et le catalogue les contient : **Ableton
+Live**, plus 8 synthés iOS dont `MiRack`, `Tera Pro`, `Peach`, `Seqnd`,
+`Blue Arp` et `LK for Live` — la plupart parlent Link nativement. **L'iPad est
+le hub.** Le cas d'usage est réel, pas spéculatif.
+
+⚠️ **Un navigateur ne peut pas parler Link** (multicast UDP). L'architecture est
+donc forcément : Flask tient le pair Link et pousse vers le navigateur en
+WebSocket/SSE. Parfait pour l'affichage du tempo et la **quantification des
+cues** ; insuffisant pour une précision à l'échantillon.
+
+ℹ️ **Non prouvé : la traversée du LAN.** Le test du 2026-08-08 faisait tourner
+deux instances **sur la même machine** — elles se sont découvertes en 2 s et ont
+négocié le tempo (la seconde a adopté les 128 BPM de la première). Reste à
+vérifier avec un vrai pair distant : lancer Ableton Live sur le Mac Mini ou une
+app iOS avec Link activé, et regarder si Roblab la voit.
+
+**Ordre conseillé** — 1. affichage tempo + quantize des cues (aucune contrainte
+de latence, brique prouvée) · 2. annonces vocales via Web Speech API (indépendant
+de Link, gain immédiat) · 3. le click IEM en dernier, repensé.
+
 ### Piste technique
 
 ```
 App Flask (Prompteur)
-    ↓ abletonlink (Python SDK)
+    ↓ LinkPython-extern  (⚠️ PAS `abletonlink`, qui n'existe pas)
     → sync tempo/beat avec Ableton Live / tout app Link sur le réseau
 
-    ↓ Web Audio API (côté client)
-    → AudioContext oscillator click, tempo = Link.bpm
-    → StreamedToIEM via AirPlay / réseau local / app iPhone dédiée
+    ↓ WebSocket / SSE  (le navigateur ne parle PAS Link)
+    → tempo + phase poussés au client, pour l'affichage et le quantize
+
+    ⚠️ PAS de click streamé : AirPlay ~2 s de latence.
+    → app iPhone tenant SON pair Link, click généré localement
 
     ↓ Web Speech API
     → speechSynthesis.speak("Patch suivant : DRONE 9")
