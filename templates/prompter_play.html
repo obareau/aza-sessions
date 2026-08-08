@@ -107,6 +107,11 @@ html, body {
     color: var(--tb-text); min-width: 52px; text-align: right;
 }
 #link-peers { font-size: 10px; color: var(--tb-muted); }
+#btn-quant.on { background: #E84B1A; color: #fff; border-color: #E84B1A; }
+/* Pendant l'attente du temps fort, la barre de temps restant pulse : le
+   musicien voit que le changement est ARMÉ, pas bloqué. */
+@keyframes quant-wait { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+body.awaiting-downbeat #remain-fill { animation: quant-wait .35s ease-in-out infinite; }
 .tb-btn {
     background: #F5F2EE; border: 1px solid var(--tb-border);
     color: var(--tb-text); font-family: 'IBM Plex Mono', monospace;
@@ -404,6 +409,8 @@ html, body {
         <span id="link-dot"></span>
         <span id="link-bpm">—</span>
         <span id="link-peers"></span>
+        <button class="tb-btn" id="btn-quant" onclick="toggleQuantize()"
+                title="Caler les changements automatiques sur le prochain temps fort">⊟ Quantize</button>
     </div>
 
     <!-- Plein écran -->
@@ -607,7 +614,7 @@ function startCountdown(secs) {
         updateBarColor();
         if (remainSec <= 0) {
             stopCountdown();
-            nextCue();
+            nextCueQuantized();   // ⚠️ auto seulement — le manuel reste instantané
         }
     }, 1000);
 }
@@ -687,17 +694,82 @@ function render(idx) {
 /* ─────────────────────────────────────
    NAVIGATION
 ───────────────────────────────────────*/
+/* ─── Quantize des cues ───────────────────────────────────────────────────
+   L'avance AUTOMATIQUE attend le prochain temps fort de la grille Link, pour
+   qu'un changement ne tombe jamais au milieu d'une mesure.
+
+   ⚠️ Seule l'avance automatique est quantifiée. Un appui manuel — clic, flèche,
+   swipe — reste instantané : si le musicien appuie, il veut maintenant, et
+   attendre donnerait l'impression d'un bouton cassé.
+
+   ⚠️⚠️ On relit `next_downbeat_s` AU MOMENT D'AVANCER, jamais la phase
+   extrapolée localement par le widget : sa dérive n'est pas bornée et elle
+   n'est bonne que pour animer une pastille. Ici on cale un événement musical.
+
+   Trois échappatoires, parce qu'un prompteur ne doit JAMAIS se figer en set :
+     · quantize désactivé, ou aucun pair Link  → avance immédiate
+     · la requête échoue ou dépasse 400 ms     → avance immédiate
+     · le délai annoncé dépasse UNE MESURE     → avance immédiate (valeur aberrante)
+*/
+let quantizeOn = localStorage.getItem('aza_quantize') === '1';
+let _quantTimer = null;
+
+function toggleQuantize() {
+    quantizeOn = !quantizeOn;
+    localStorage.setItem('aza_quantize', quantizeOn ? '1' : '0');
+    syncQuantizeBtn();
+}
+
+function syncQuantizeBtn() {
+    const b = document.getElementById('btn-quant');
+    if (b) b.classList.toggle('on', quantizeOn);
+}
+
+function annulerAttente() {
+    if (_quantTimer) { clearTimeout(_quantTimer); _quantTimer = null; }
+    document.body.classList.remove('awaiting-downbeat');
+}
+
+async function nextCueQuantized() {
+    if (!quantizeOn) { nextCue(); return; }
+    let attente = 0;
+    try {
+        const ctl = new AbortController();
+        const t = setTimeout(() => ctl.abort(), 400);
+        const r = await fetch('{{ url_for("dim.link_state") }}',
+                              { cache: 'no-store', signal: ctl.signal });
+        clearTimeout(t);
+        const d = await r.json();
+        if (d.available && d.peers > 0) {
+            const mesure = d.quantum * 60 / d.tempo;
+            if (d.next_downbeat_s > 0 && d.next_downbeat_s <= mesure + 0.05) {
+                attente = d.next_downbeat_s;
+            }
+        }
+    } catch (e) { attente = 0; }   // réseau muet : on avance, on ne bloque pas
+
+    if (attente <= 0.02) { nextCue(); return; }
+    document.body.classList.add('awaiting-downbeat');
+    _quantTimer = setTimeout(function () {
+        annulerAttente();
+        nextCue();
+    }, attente * 1000);
+}
+
 function nextCue() {
     if (isEnded) return;
+    annulerAttente();
     stopCountdown();
     render(cur + 1);
 }
 function prevCue() {
     if (isEnded) return;
+    annulerAttente();
     stopCountdown();
     if (cur > 0) render(cur - 1);
 }
 function scrubTo(idx) {
+    annulerAttente();
     stopCountdown();
     render(Math.max(0, Math.min(idx, CUES.length-1)));
 }
