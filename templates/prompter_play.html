@@ -108,6 +108,7 @@ html, body {
 }
 #link-peers { font-size: 10px; color: var(--tb-muted); }
 #btn-quant.on { background: #E84B1A; color: #fff; border-color: #E84B1A; }
+#btn-voice.on { background: #3D8A5F; color: #fff; border-color: #3D8A5F; }
 /* Pendant l'attente du temps fort, la barre de temps restant pulse : le
    musicien voit que le changement est ARMÉ, pas bloqué. */
 @keyframes quant-wait { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
@@ -413,6 +414,11 @@ body.awaiting-downbeat #remain-fill { animation: quant-wait .35s ease-in-out inf
                 title="Caler les changements automatiques sur le prochain temps fort">⊟ Quantize</button>
     </div>
 
+    <div id="voice-row" style="display:none;align-items:center;gap:4px;flex-shrink:0;">
+        <button class="tb-btn" id="btn-voice" onclick="toggleVoice()"
+                title="Annoncer le cue suivant à la voix, quelques secondes avant le changement">🔊 Voix</button>
+    </div>
+
     <!-- Plein écran -->
     <button class="tb-btn" onclick="toggleFS()" title="Plein écran (F)">⛶</button>
 
@@ -608,6 +614,15 @@ function startCountdown(secs) {
     remainSec = secs;
     setClockAuto(remainSec);
     setRemainBar(0, secs * 1000);   // se vide de 100% → 0%
+    // Pré-appel : on annonce le cue SUIVANT quelques secondes avant la bascule.
+    // Sur un cue plus court que le pré-appel, on annonce à mi-parcours plutôt
+    // que pas du tout — mieux vaut tard que muet.
+    annulerPreroll();
+    const suivant = CUES[cur + 1];
+    if (voiceOn && suivant) {
+        const avance = secs > PREROLL_S ? secs - PREROLL_S : secs / 2;
+        _preroll = setTimeout(() => parler(texteCue(suivant, 'Suivant :')), avance * 1000);
+    }
     _cdTimer = setInterval(function() {
         remainSec--;
         setClockAuto(remainSec);
@@ -694,6 +709,75 @@ function render(idx) {
 /* ─────────────────────────────────────
    NAVIGATION
 ───────────────────────────────────────*/
+/* ─── Annonces vocales ────────────────────────────────────────────────────
+   Le Prompteur annonce le cue SUIVANT quelques secondes AVANT le changement
+   automatique — pas le cue courant au moment où il arrive.
+
+   ⚠️ C'est tout l'intérêt : une annonce qui tombe AU moment du changement
+   arrive trop tard. Le musicien a besoin de savoir ce qui vient pendant qu'il
+   joue encore, pour préparer son geste. D'où le pré-appel.
+
+   Sur une avance MANUELLE, l'annonce part immédiatement : le musicien a déjà
+   agi, la voix ne fait que confirmer où il vient d'atterrir.
+
+   ℹ️ Web Speech API, donc côté client : la voix sort sur l'appareil qui affiche
+   le Prompteur — celui que le musicien a devant lui. Rien ne transite par le
+   serveur, rien à installer.
+
+   ⚠️ Chrome sous Linux n'a pas toujours de voix installée. Le bouton reste
+   caché tant que `getVoices()` ne renvoie rien : mieux vaut pas de bouton
+   qu'un bouton qui ne fait rien. */
+const PREROLL_S = 5;              // délai du pré-appel avant le changement
+let voiceOn = localStorage.getItem('aza_voice') === '1';
+let _voix = null, _preroll = null;
+
+function initVoix() {
+    if (!('speechSynthesis' in window)) return;
+    const dispo = speechSynthesis.getVoices();
+    if (!dispo.length) return;                       // voix pas encore chargées
+    _voix = dispo.find(v => v.lang.startsWith('fr')) || dispo[0];
+    document.getElementById('voice-row').style.display = 'flex';
+    syncVoiceBtn();
+}
+
+function toggleVoice() {
+    voiceOn = !voiceOn;
+    localStorage.setItem('aza_voice', voiceOn ? '1' : '0');
+    syncVoiceBtn();
+    // Première activation : Chrome exige un geste utilisateur pour autoriser la
+    // synthèse. On le consomme ici avec une annonce courte, sinon la toute
+    // première vraie annonce serait silencieusement avalée.
+    if (voiceOn) parler('Annonces activées');
+    else speechSynthesis.cancel();
+}
+
+function syncVoiceBtn() {
+    const b = document.getElementById('btn-voice');
+    if (b) b.classList.toggle('on', voiceOn);
+}
+
+function parler(texte) {
+    if (!voiceOn || !texte || !('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();                        // jamais deux voix en même temps
+    const u = new SpeechSynthesisUtterance(texte);
+    if (_voix) { u.voice = _voix; u.lang = _voix.lang; }
+    u.rate = 1.05;                                   // un peu vif : c'est un cue, pas un récit
+    speechSynthesis.speak(u);
+}
+
+/* Texte annoncé pour un cue. Court par construction — en retour d'oreille,
+   une phrase longue masque la musique plus qu'elle n'aide. */
+function texteCue(cue, prefixe) {
+    if (!cue) return '';
+    const nom = (cue.patch || '').trim();
+    if (!nom) return '';
+    return prefixe ? prefixe + ' ' + nom : nom;
+}
+
+function annulerPreroll() {
+    if (_preroll) { clearTimeout(_preroll); _preroll = null; }
+}
+
 /* ─── Quantize des cues ───────────────────────────────────────────────────
    L'avance AUTOMATIQUE attend le prochain temps fort de la grille Link, pour
    qu'un changement ne tombe jamais au milieu d'une mesure.
@@ -759,17 +843,24 @@ async function nextCueQuantized() {
 function nextCue() {
     if (isEnded) return;
     annulerAttente();
+    annulerPreroll();
+    // Avance manuelle : la voix confirme où l'on vient d'atterrir. Le pré-appel
+    // n'a plus lieu d'être, le musicien a déjà décidé.
+    if (voiceOn) parler(texteCue(CUES[cur + 1], ''));
     stopCountdown();
     render(cur + 1);
 }
 function prevCue() {
     if (isEnded) return;
     annulerAttente();
+    annulerPreroll();
+    if (voiceOn && cur > 0) parler(texteCue(CUES[cur - 1], ''));
     stopCountdown();
     if (cur > 0) render(cur - 1);
 }
 function scrubTo(idx) {
     annulerAttente();
+    annulerPreroll();
     stopCountdown();
     render(Math.max(0, Math.min(idx, CUES.length-1)));
 }
@@ -972,6 +1063,11 @@ if (CUES.length > 0) {
     setInterval(sonder, 1000);
     requestAnimationFrame(animer);
 })();
+
+/* Chrome charge les voix de façon asynchrone : getVoices() est souvent vide au
+   premier appel. On tente tout de suite, puis on réessaie sur l'événement. */
+initVoix();
+if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = initVoix;
 </script>
 </body>
 </html>

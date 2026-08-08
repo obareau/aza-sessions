@@ -39,19 +39,64 @@ def _detect_dim():
         return False
 
 
-def _script_to_dim_json(script):
+def _duree_cue_secondes(cue):
+    """Durée d'un cue en secondes.
+
+    ⚠️ Le champ est `time_s` (entier), écrit par `dim/engine.py`. Le
+    convertisseur lisait `time` — un champ qui n'a jamais existé — et
+    retombait donc sur 0, puis sur 4 mesures par défaut : **tous les cues
+    étaient exportés à 4 mesures, quelle que soit leur durée réelle.**
+    Le format "MM:SS" est gardé en repli au cas où d'anciennes données
+    traîneraient.
+    """
+    v = cue.get("time_s")
+    if isinstance(v, (int, float)) and v > 0:
+        return int(v)
+    t = str(cue.get("time") or "").strip()
+    if not t:
+        return 0
+    try:
+        parts = t.split(":")
+        return int(parts[0]) * 60 + int(parts[1]) if len(parts) == 2 else int(parts[0])
+    except (ValueError, IndexError):
+        return 0
+
+
+def _tempo_export(demande=None):
+    """Tempo servant à convertir les secondes en mesures.
+
+    Priorité : valeur explicite → grille Ableton Link en cours → 120.
+
+    ⚠️ Convertir à 120 BPM en dur était faux dès que la session ne jouait pas
+    à 120 : à 115 BPM une mesure fait 2,087 s et l'écart s'accumule à chaque
+    cue. On prend donc le tempo réel du réseau quand il est connu.
+
+    ℹ️ Le tempo retenu est écrit dans `project.tempo_bpm` : l'export reste
+    auditable, on sait toujours sur quelle base les mesures ont été calculées.
+    """
+    if demande:
+        try:
+            v = float(demande)
+            if 20.0 <= v <= 999.0:
+                return v
+        except (TypeError, ValueError):
+            pass
+    etat = link_service.state()
+    if etat.get("available") and etat.get("peers", 0) > 0:
+        return float(etat["tempo"])
+    return 120.0
+
+
+def _script_to_dim_json(script, tempo=None):
     """Convertit un script AZA (cues linéaires) en project D.I.M JSON (1 lane)."""
     cues = json.loads(script.get("cues") or "[]")
+    bpm = _tempo_export(tempo)
+    # En 4/4, une mesure dure 4 temps = 240/BPM secondes.
+    sec_par_mesure = 240.0 / bpm
     sections = []
     for i, cue in enumerate(cues):
-        # Durée en bars : MM:SS → secondes → bars à 120 BPM (4/4 = 2s/bar)
-        t = cue.get("time", "0:00")
-        try:
-            parts = t.split(":")
-            secs = int(parts[0]) * 60 + int(parts[1]) if len(parts) == 2 else int(parts[0])
-        except (ValueError, IndexError):
-            secs = 0
-        duration_bars = round(secs / 2.0, 1) if secs > 0 else 4.0
+        secs = _duree_cue_secondes(cue)
+        duration_bars = round(secs / sec_par_mesure, 2) if secs > 0 else 4.0
 
         sections.append({
             "id": f"s-{i}",
@@ -77,7 +122,7 @@ def _script_to_dim_json(script):
         "project": {
             "id": f"aza-{script['id']}-{uuid.uuid4().hex[:8]}",
             "name": script.get("title") or "Script AZA",
-            "tempo_bpm": 120.0,
+            "tempo_bpm": round(bpm, 2),
             "time_signature": "4/4",
             "gosub_stack_limit": 4,
             "lanes": [{
@@ -179,7 +224,8 @@ def prompter_export_dim(sid):
     script = _engine().get_script(sid)
     if not script:
         return redirect(url_for("dim.prompter_list"))
-    payload = _script_to_dim_json(script)
+    # ?tempo=115 force la base de conversion ; sinon Link, sinon 120.
+    payload = _script_to_dim_json(script, request.args.get("tempo"))
     filename = f"dim_{script['title'].replace(' ', '_')[:40]}.json"
     return Response(
         json.dumps(payload, indent=2, ensure_ascii=False),
@@ -198,7 +244,7 @@ def api_dim_script(sid):
     script = _engine().get_script(sid)
     if not script:
         return jsonify({"error": "script not found"}), 404
-    return jsonify(_script_to_dim_json(script))
+    return jsonify(_script_to_dim_json(script, request.args.get("tempo")))
 
 
 @bp.route("/api/dim/scripts")
