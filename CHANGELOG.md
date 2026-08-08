@@ -5,6 +5,25 @@
 
 ---
 
+## v3.11.0 — 2026-08-08 — Ableton Link : le Prompteur sur la grille
+
+### ✨ Nouveautés
+- **Pair Ableton Link** — `core/link_service.py` tient un pair unique pour le processus ; `GET /api/link/state` renvoie tempo, beat, phase, nombre de pairs et `next_downbeat_s`
+- **Affichage tempo dans la topbar du Prompteur** — pastille battant sur le temps, BPM, nombre de pairs. Le widget se cache tant qu'aucun pair n'est vu
+- **Quantize des cues** — bouton ⊟ Quantize : l'avance **automatique** attend le prochain temps fort, la barre de temps restant pulse pendant l'attente. État retenu en localStorage
+
+### ⚠️ À savoir
+- **`abletonlink` n'existe pas** sur PyPI, malgré ce que la roadmap annonçait — la bibliothèque est **`LinkPython-extern`**, ajoutée en dépendance **optionnelle** : sans elle l'app dégrade en silence
+- **Seule l'avance automatique est quantifiée.** Un appui manuel reste instantané — attendre donnerait l'impression d'un bouton cassé
+- **Le quantize relit `next_downbeat_s` au moment d'avancer**, jamais la phase extrapolée du widget : celle-ci dérive sans borne et ne sert qu'à l'animation
+- **`--workers 1` devient une contrainte** : chaque instance Link apparaît comme un appareil distinct sur le réseau, deux workers dédoubleraient l'app dans la session de tous les musiciens
+- Trois échappatoires empêchent tout blocage en set : pas de pair · requête > 400 ms · délai annoncé supérieur à une mesure
+
+### 🧪 Validé contre un Ableton Live distant
+Découverte en 2 s, tempo lu (115 BPM), phase exacte, **écriture fonctionnelle** (tempo poussé puis ramené). ⚠️ Deux écritures ont échoué en silence avant qu'une troisième passe — `set_tempo()` relit donc systématiquement et renvoie `ok: False` en cas d'échec.
+
+---
+
 ## v3.10.0 — 2026-06-27 — Idées en vrac & SPARK
 
 ### ✨ Nouveautés

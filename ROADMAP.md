@@ -1,15 +1,19 @@
 # ROADMAP — Journal de Sessions AZA
 
 > Carte des possibles — pas un backlog, pas de deadlines.
-> Mis à jour : 2026-08-08 (après release **v3.10.0**)
+> Mis à jour : 2026-08-08 (après release **v3.11.0**)
 
 ---
 
 ## ⏸ État du projet
 
-⚠️ **Aucun développement depuis le 2026-06-27.** Les commits postérieurs sont
-deux licences, deux fichiers Argus, une convention de session et un correctif —
-zéro fonctionnalité. Le projet n'est pas mort, il est en pause.
+✅ **Reprise le 2026-08-08 sur l'axe Ableton Link** (v3.11.0) : sync tempo,
+affichage BPM et quantize des cues livrés le même jour, après validation
+complète de la brique contre un Ableton Live distant.
+
+ℹ️ Auparavant, **aucun développement entre le 2026-06-27 et le 2026-08-08** — les
+commits de cette période étaient deux licences, deux fichiers Argus, une
+convention de session et un correctif. Six semaines de pause, pas d'abandon.
 
 ℹ️ **Le recap automatique a été mort sans que personne le voie.** Corrigé le
 2026-07-31 (`qwen3.5:latest` → `qwen3.5:cloud`) : le modèle n'existait pas. Même
@@ -19,7 +23,7 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 
 ---
 
-## ✅ Déjà livré (v1.x → v3.10.0)
+## ✅ Déjà livré (v1.x → v3.11.0)
 
 | Version | Fonctionnalité |
 |---|---|
@@ -46,6 +50,7 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 | v3.8.0 | **Catalogue** — saisie rapide multi-lignes (dédup `(type, nom)`), favoris ★ remontés en tête, types dédiés `ipad` et `zynthian`, filtres et sections repliables ; messages flash centralisés dans `base.html` |
 | v3.9.0 | **Sessions typées** — `music` / `lore` / `veille` : formulaire conditionnel sans rechargement, sections matériel iPad & Zynthian, filtre et badge par type, **recap Ollama avec un prompt dédié par type** (récit pour le lore, résumé factuel pour la veille) |
 | v3.10.0 | **Idées en vrac** — `/inspirations` recadrée, nouveau type `Idée` ; **SPARK pioche dedans en priorité** (pondération ×2 dans le pool focus, badge dédié) |
+| v3.11.0 | **Ableton Link** — pair partagé (`core/link_service.py`), `GET /api/link/state`, **affichage BPM + pastille battante** dans la topbar du Prompteur, et **quantize des cues** : l'avance automatique attend le prochain temps fort |
 
 ---
 
@@ -131,13 +136,29 @@ la même chose vue de deux angles : savoir quelle contrainte a produit quoi.
 
 | Priorité | Idée | Notes |
 |---|---|---|
-| ★★★ | **Sync tempo Ableton Link** — le Prompteur s'accroche à la grille Link (tempo, beat phase) | ⚠️ **`abletonlink` N'EXISTE PAS** sur PyPI. Utiliser **`LinkPython-extern`** (1.3.0, wheels fournies) — **testé le 2026-08-08 sur Roblab, Python 3.14.4 : installation, import et découverte OK**. Alternative asyncio : `aalink` (0.2.3) |
+| ✅ ★★★ | ~~**Sync tempo Ableton Link**~~ — **Livré le 2026-08-08** (`core/link_service.py`, `GET /api/link/state`, widget topbar) | ⚠️ **`abletonlink` N'EXISTE PAS** sur PyPI — c'est **`LinkPython-extern`**. Alternative asyncio : `aalink` |
 | ★☆☆ | **Click IEM via réseau** — click audio synchronisé dans les retours d'oreille | ⚠️⚠️ **Irréalisable tel qu'écrit — rétrogradé de ★★★.** AirPlay a ~2 s de latence, et un navigateur ne peut pas parler Link (multicast UDP). Un click *streamé* ne sera jamais en phase. La seule voie : un client natif sur l'iPhone tenant **son propre pair Link** et générant le click **localement** — le click n'est pas transporté, il est reproduit en phase. Chantier à part entière |
 | ★★☆ | **Annonces vocales de cue** — TTS au changement de cue dans le Prompteur ("Patch Drone — 32 mesures") | Web Speech API côté client ou `pyttsx3` côté serveur |
-| ★★☆ | **Affichage tempo live** — BPM courant Link affiché dans la topbar du Prompteur | Feedback visuel de la sync |
-| ★★☆ | **Quantize changement de cue** — l'avance automatique attend le prochain temps fort Link | Changements toujours musicaux, jamais au milieu d'une mesure |
+| ✅ ★★☆ | ~~**Affichage tempo live**~~ | **Livré** (2026-08-08) — pastille battante + BPM + nombre de pairs. Le widget **se cache quand aucun pair n'est vu** : jouer sans réseau ne doit pas laisser un affichage mort dans la barre |
+| ✅ ★★☆ | ~~**Quantize changement de cue**~~ | **Livré** (2026-08-08) — bouton ⊟ Quantize, état en localStorage. ⚠️ **Auto seulement** : un appui manuel reste instantané, sinon le bouton semble cassé. Trois échappatoires pour ne jamais figer un set (pas de pair · requête >400 ms · délai > une mesure) |
 | ★☆☆ | **Multi-musiciens** — plusieurs instances de l'app sur le même réseau, toutes sync Link | Chaque musicien voit les cues sur son propre appareil |
 | ★☆☆ | **Export set vers Ableton Live** — générer une piste MIDI marker depuis les cues du Prompteur | Automatiser les marqueurs de scène dans Live |
+
+### ⚠️ Deux pièges appris en codant — à ne pas redécouvrir
+
+**1. Ne jamais caler un événement musical sur la phase du widget.** Le widget
+anime sa pastille à partir d'une phase **extrapolée localement** entre deux
+sondages (réseau à 1 s, animation en `requestAnimationFrame`) — sonder à 60 Hz
+noierait Flask. Mais cette extrapolation **dérive sans borne**. Le quantize relit
+donc `next_downbeat_s` **au moment d'avancer**. Deux cadences, deux usages : l'une
+pour l'œil, l'autre pour la musique.
+
+**2. `--workers 1` est devenu une CONTRAINTE, plus un réglage.** Chaque instance
+`link.Link()` apparaît comme un **appareil distinct** sur le réseau. Passer à 2
+workers Gunicorn dédoublerait l'app dans la session Link de tous les musiciens
+présents — sans erreur, sans avertissement, juste un doublon fantôme.
+
+---
 
 ### Ce que le terrain dit — vérifié le 2026-08-08
 
@@ -249,7 +270,7 @@ App Flask (Prompteur)
 
 ---
 
-*Dernière mise à jour : 2026-08-08 — v3.10.0*
+*Dernière mise à jour : 2026-08-08 — v3.11.0*
 *Ce fichier évolue librement — ce n'est pas un backlog, c'est une carte des possibles.*
 
 ## Demandes externes (Argus)
