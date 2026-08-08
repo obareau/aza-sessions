@@ -1,15 +1,21 @@
 # ROADMAP — Journal de Sessions AZA
 
 > Carte des possibles — pas un backlog, pas de deadlines.
-> Mis à jour : 2026-08-08 (après release **v3.11.0**)
+> Mis à jour : 2026-08-09 (après release **v3.12.0**)
 
 ---
 
 ## ⏸ État du projet
 
-✅ **Reprise le 2026-08-08 sur l'axe Ableton Link** (v3.11.0) : sync tempo,
-affichage BPM et quantize des cues livrés le même jour, après validation
-complète de la brique contre un Ableton Live distant.
+⚠️⚠️ **AZA s'est RECENTRÉ le 2026-08-09** (v3.12.0) : le Prompteur et tout l'axe
+Ableton Link sont partis chez D.I.M. Ce n'est pas une perte — c'est la fin d'une
+confusion de périmètre. AZA est le **journal** (avant, pendant, après une
+session) ; D.I.M est le **séquenceur de performance**. Le Prompteur, outil de
+performance, a d'ailleurs engendré D.I.M : il l'a rejoint.
+
+ℹ️ Livré la veille (v3.11.0) puis migré : sync tempo, affichage BPM, quantize
+des cues, annonces vocales — tout éprouvé contre un Ableton Live distant avant
+le déplacement.
 
 ℹ️ Auparavant, **aucun développement entre le 2026-06-27 et le 2026-08-08** — les
 commits de cette période étaient deux licences, deux fichiers Argus, une
@@ -23,7 +29,7 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 
 ---
 
-## ✅ Déjà livré (v1.x → v3.11.0)
+## ✅ Déjà livré (v1.x → v3.12.0)
 
 | Version | Fonctionnalité |
 |---|---|
@@ -51,6 +57,7 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 | v3.9.0 | **Sessions typées** — `music` / `lore` / `veille` : formulaire conditionnel sans rechargement, sections matériel iPad & Zynthian, filtre et badge par type, **recap Ollama avec un prompt dédié par type** (récit pour le lore, résumé factuel pour la veille) |
 | v3.10.0 | **Idées en vrac** — `/inspirations` recadrée, nouveau type `Idée` ; **SPARK pioche dedans en priorité** (pondération ×2 dans le pool focus, badge dédié) |
 | v3.11.0 | **Ableton Link** — pair partagé (`core/link_service.py`), `GET /api/link/state`, **affichage BPM + pastille battante** dans la topbar du Prompteur, et **quantize des cues** : l'avance automatique attend le prochain temps fort |
+| v3.12.0 | ⚠️ **Le Prompteur QUITTE AZA pour D.I.M** — blueprint `dim/`, 3 templates, table `prompter_scripts` et `core/link_service.py` retirés (**−1 976 lignes**). AZA est le journal, D.I.M le séquenceur de performance : deux outils, deux moments |
 
 ---
 
@@ -121,121 +128,44 @@ la même chose vue de deux angles : savoir quelle contrainte a produit quoi.
 
 ---
 
-## 🔗 Ableton Link — Axe performance live *(nouveau)*
+## ✅ Ableton Link — axe CLOS, migré vers D.I.M *(2026-08-08)*
 
-> **Contexte :** Ableton Link synchronise tempo et beat-phase entre applications via réseau local (UDP multicast). Couplé au Prompteur Dawless, il ouvre un axe de communication musicien → in-ear monitors (IEM) : cues de changement de patch, clicks de tempo, instructions texte en retour d'oreille.
+⚠️⚠️ **Tout cet axe a quitté AZA Sessions.** Il n'a pas été abandonné — il a été
+livré, éprouvé, puis **déplacé chez D.I.M** avec le Prompteur, le même jour.
 
-### Pourquoi c'est pertinent
+**Pourquoi le déplacement.** AZA est le *journal* de session, D.I.M le
+*séquenceur de performance* : deux outils, deux moments, qui ne s'utilisent pas
+ensemble. Une horloge de performance n'a rien à faire dans un journal. Et
+surtout — mesuré, pas supposé — **les deux services tenaient chacun leur pair
+Link et apparaissaient comme deux appareils distincts** dans la session de tous
+les musiciens présents.
 
-- Le Prompteur gère déjà les cues avec minutage
-- Ableton Link donne le tempo partagé et la position dans la mesure
-- Les retours oreilles des musiciens peuvent recevoir des **clicks synchronisés** + **annonces vocales de cue** (TTS)
-- Aucun hardware MIDI nécessaire — tout passe par le réseau local Wi-Fi
+**Ce qui a été livré ici avant de partir** (v3.11.0) : pair Link, `/api/link/state`,
+affichage BPM dans la topbar, quantize des cues, annonces vocales, conversion
+secondes → mesures au tempo réel.
 
-### Idées à explorer
+**Où c'est maintenant :**
 
-| Priorité | Idée | Notes |
-|---|---|---|
-| ✅ ★★★ | ~~**Sync tempo Ableton Link**~~ — **Livré le 2026-08-08** (`core/link_service.py`, `GET /api/link/state`, widget topbar) | ⚠️ **`abletonlink` N'EXISTE PAS** sur PyPI — c'est **`LinkPython-extern`**. Alternative asyncio : `aalink` |
-| ★☆☆ | **Click IEM via réseau** — click audio synchronisé dans les retours d'oreille | ⚠️⚠️ **Irréalisable tel qu'écrit — rétrogradé de ★★★.** AirPlay a ~2 s de latence, et un navigateur ne peut pas parler Link (multicast UDP). Un click *streamé* ne sera jamais en phase. La seule voie : un client natif sur l'iPhone tenant **son propre pair Link** et générant le click **localement** — le click n'est pas transporté, il est reproduit en phase. Chantier à part entière |
-| ★★☆ | **Annonces vocales de cue** — TTS au changement de cue dans le Prompteur ("Patch Drone — 32 mesures") | Web Speech API côté client ou `pyttsx3` côté serveur |
-| ✅ ★★☆ | ~~**Affichage tempo live**~~ | **Livré** (2026-08-08) — pastille battante + BPM + nombre de pairs. Le widget **se cache quand aucun pair n'est vu** : jouer sans réseau ne doit pas laisser un affichage mort dans la barre |
-| ✅ ★★☆ | ~~**Quantize changement de cue**~~ | **Livré** (2026-08-08) — bouton ⊟ Quantize, état en localStorage. ⚠️ **Auto seulement** : un appui manuel reste instantané, sinon le bouton semble cassé. Trois échappatoires pour ne jamais figer un set (pas de pair · requête >400 ms · délai > une mesure) |
-| ★☆☆ | **Multi-musiciens** — plusieurs instances de l'app sur le même réseau, toutes sync Link | Chaque musicien voit les cues sur son propre appareil |
-| ★☆☆ | **Export set vers Ableton Live** — générer une piste MIDI marker depuis les cues du Prompteur | Automatiser les marqueurs de scène dans Live |
+| | |
+|---|---|
+| horloge Link | D.I.M `adapters/sync/link_sync.py` — abstraction à **3 sources** (Link, MIDI clock, OSC) |
+| annonces vocales | D.I.M `adapters/web/static/js/performance.js` |
+| vue de performance | D.I.M `/performance` — multi-lanes, plus riche que le Prompteur |
 
-### ⚠️ Deux pièges appris en codant — à ne pas redécouvrir
+⚠️ **Le quantize n'a PAS été porté, et il ne faut pas le recréer.** D.I.M compte
+en **mesures** (`duration_bars`), ses changements tombent sur la grille par
+construction. Le quantize n'existait ici que parce que le Prompteur comptait en
+**secondes** — c'était un pansement sur un modèle temporel inadapté.
 
-**1. Ne jamais caler un événement musical sur la phase du widget.** Le widget
-anime sa pastille à partir d'une phase **extrapolée localement** entre deux
-sondages (réseau à 1 s, animation en `requestAnimationFrame`) — sonder à 60 Hz
-noierait Flask. Mais cette extrapolation **dérive sans borne**. Le quantize relit
-donc `next_downbeat_s` **au moment d'avancer**. Deux cadences, deux usages : l'une
-pour l'œil, l'autre pour la musique.
+ℹ️ Trois leçons gardées, elles valent au-delà de ce projet :
 
-**2. `--workers 1` est devenu une CONTRAINTE, plus un réglage.** Chaque instance
-`link.Link()` apparaît comme un **appareil distinct** sur le réseau. Passer à 2
-workers Gunicorn dédoublerait l'app dans la session Link de tous les musiciens
-présents — sans erreur, sans avertissement, juste un doublon fantôme.
-
----
-
-### Ce que le terrain dit — vérifié le 2026-08-08
-
-⚠️⚠️ **Ton matériel ne parle PAS Link.** MicroFreak, NTS-1, Volca Drum, Volca
-Kick : horloge MIDI ou sync analogique. Link ne les synchronisera jamais
-directement — il faudrait un pont Link→MIDI clock, chantier absent de cette
-carte. Dans un setup nommé *Dawless*, c'est l'angle mort du plan.
-
-✅ **Mais les pairs existent déjà**, et le catalogue les contient : **Ableton
-Live**, plus 8 synthés iOS dont `MiRack`, `Tera Pro`, `Peach`, `Seqnd`,
-`Blue Arp` et `LK for Live` — la plupart parlent Link nativement. **L'iPad est
-le hub.** Le cas d'usage est réel, pas spéculatif.
-
-⚠️ **Un navigateur ne peut pas parler Link** (multicast UDP). L'architecture est
-donc forcément : Flask tient le pair Link et pousse vers le navigateur en
-WebSocket/SSE. Parfait pour l'affichage du tempo et la **quantification des
-cues** ; insuffisant pour une précision à l'échantillon.
-
-✅ **Traversée du LAN PROUVÉE** (2026-08-08). Ableton Live lancé sur le Mac Mini
-avec Link activé : **Roblab le découvre en 2 s** et lit son tempo réel —
-**115.00 BPM**, celui de Live, pas les 120 de notre valeur par défaut. Le
-multicast passe donc entre les deux machines sans rien configurer.
-
-✅ **Et la phase avance correctement**, ce qui est le point qui compte pour
-quantifier les cues. Relevé sur 5 s à 115 BPM (une mesure = 2,087 s) :
-
-| t | beat | phase/4 | prochain temps fort |
-|---|---|---|---|
-| 0,0 s | 3,86 | 3,86 | 0,07 s |
-| 0,7 s | 5,20 | 1,20 | 1,46 s |
-| 1,4 s | 6,55 | 2,55 | 0,76 s |
-| 2,1 s | 7,89 | 3,89 | 0,06 s |
-
-Le beat progresse de ~1,34 par 0,7 s — exactement 115 BPM. **`phaseAtTime` donne
-directement le délai jusqu'au prochain temps fort** : c'est tout ce qu'il faut
-pour qu'un changement de cue n'arrive jamais au milieu d'une mesure.
-
-✅ **L'écriture fonctionne aussi** (testée le 2026-08-08 sur une session Live de
-test). `captureAppSessionState` → `setTempo(bpm, t)` → `commitAppSessionState` :
-Live a suivi, tempo poussé à 140 puis ramené, aller-retour propre, transport
-intact. **Le Prompteur peut donc mener, pas seulement suivre.**
-
-⚠️⚠️ **Mais NE JAMAIS tenir un commit pour acquis — relire.** Deux tentatives
-d'écriture ont échoué en silence (132 puis 96 BPM, relus inchangés) avant qu'une
-troisième, structurellement identique, passe du premier coup. La cause n'a pas
-été isolée ; l'hypothèse est un délai de propagation. Conséquence concrète pour
-le code : un changement de tempo se **commit puis se vérifie par relecture**, et
-la fonction doit gérer l'échec. Ne pas découvrir ça en concert.
-
-ℹ️ **`setIsPlaying` ne se propage pas sans `startStopSyncEnabled = True`** — sans
-ce drapeau, l'état de transport reste local à l'instance et Live n'en sait rien.
-Utile à savoir : ça évite de croire qu'on a lancé la lecture d'un pair distant.
-
-⚠️ **Logic Pro et MainStage ne supportent PAS Ableton Link**, ni l'un ni l'autre,
-alors que les deux sont au catalogue. Ce n'est pas un refus d'être asservi —
-c'est l'absence du protocole. Toute idée de sync passant par eux est à écarter.
-
-**Ordre conseillé** — 1. affichage tempo + quantize des cues (aucune contrainte
-de latence, brique prouvée) · 2. annonces vocales via Web Speech API (indépendant
-de Link, gain immédiat) · 3. le click IEM en dernier, repensé.
-
-### Piste technique
-
-```
-App Flask (Prompteur)
-    ↓ LinkPython-extern  (⚠️ PAS `abletonlink`, qui n'existe pas)
-    → sync tempo/beat avec Ableton Live / tout app Link sur le réseau
-
-    ↓ WebSocket / SSE  (le navigateur ne parle PAS Link)
-    → tempo + phase poussés au client, pour l'affichage et le quantize
-
-    ⚠️ PAS de click streamé : AirPlay ~2 s de latence.
-    → app iPhone tenant SON pair Link, click généré localement
-
-    ↓ Web Speech API
-    → speechSynthesis.speak("Patch suivant : DRONE 9")
-```
+1. **`abletonlink` n'existe pas** sur PyPI. Les bibliothèques réelles sont
+   `aalink` et `LinkPython-extern`. Trois noms différents traînaient dans les
+   docs des deux projets — vérifier, jamais faire confiance à un `requirements`.
+2. **Un commit Link n'est pas fiable en soi** : deux écritures de tempo ont
+   échoué en silence avant qu'une troisième passe. Toujours relire après écrire.
+3. **`--workers 1` devient une contrainte** dès qu'un processus tient un pair
+   Link : chaque instance est un appareil distinct sur le réseau.
 
 ---
 
@@ -270,7 +200,7 @@ App Flask (Prompteur)
 
 ---
 
-*Dernière mise à jour : 2026-08-08 — v3.11.0*
+*Dernière mise à jour : 2026-08-09 — v3.12.0*
 *Ce fichier évolue librement — ce n'est pas un backlog, c'est une carte des possibles.*
 
 ## Demandes externes (Argus)
