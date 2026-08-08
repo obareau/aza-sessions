@@ -175,9 +175,25 @@ Le beat progresse de ~1,34 par 0,7 s — exactement 115 BPM. **`phaseAtTime` don
 directement le délai jusqu'au prochain temps fort** : c'est tout ce qu'il faut
 pour qu'un changement de cue n'arrive jamais au milieu d'une mesure.
 
-ℹ️ Reste non testé : **écrire** vers Link (imposer un tempo depuis le Prompteur
-via `commitAppSessionState`). Non essayé délibérément — ça aurait changé le tempo
-de la session Live en cours.
+✅ **L'écriture fonctionne aussi** (testée le 2026-08-08 sur une session Live de
+test). `captureAppSessionState` → `setTempo(bpm, t)` → `commitAppSessionState` :
+Live a suivi, tempo poussé à 140 puis ramené, aller-retour propre, transport
+intact. **Le Prompteur peut donc mener, pas seulement suivre.**
+
+⚠️⚠️ **Mais NE JAMAIS tenir un commit pour acquis — relire.** Deux tentatives
+d'écriture ont échoué en silence (132 puis 96 BPM, relus inchangés) avant qu'une
+troisième, structurellement identique, passe du premier coup. La cause n'a pas
+été isolée ; l'hypothèse est un délai de propagation. Conséquence concrète pour
+le code : un changement de tempo se **commit puis se vérifie par relecture**, et
+la fonction doit gérer l'échec. Ne pas découvrir ça en concert.
+
+ℹ️ **`setIsPlaying` ne se propage pas sans `startStopSyncEnabled = True`** — sans
+ce drapeau, l'état de transport reste local à l'instance et Live n'en sait rien.
+Utile à savoir : ça évite de croire qu'on a lancé la lecture d'un pair distant.
+
+⚠️ **Logic Pro et MainStage ne supportent PAS Ableton Link**, ni l'un ni l'autre,
+alors que les deux sont au catalogue. Ce n'est pas un refus d'être asservi —
+c'est l'absence du protocole. Toute idée de sync passant par eux est à écarter.
 
 **Ordre conseillé** — 1. affichage tempo + quantize des cues (aucune contrainte
 de latence, brique prouvée) · 2. annonces vocales via Web Speech API (indépendant
