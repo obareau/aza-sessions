@@ -50,6 +50,27 @@ def _get_config():
     return {}
 
 
+@app.route("/health")
+def health():
+    """Sonde de santé — décision d'écosystème `health-endpoint` (Argus).
+
+    ⚠️ Vérifie que la BASE répond, pas seulement que Flask est debout. Un
+    journal de sessions dont la base est illisible est mort pour l'usager, même
+    si le serveur renvoie des pages. C'est exactement l'angle mort qui a laissé
+    OpenClaw bloqué 12 h en « active (running) ».
+    """
+    import sqlite3
+    detail = {"status": "ok", "service": "aza-sessions"}
+    try:
+        c = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=2)
+        detail["sessions"] = c.execute("SELECT count(*) FROM sessions").fetchone()[0]
+        c.close()
+    except Exception as exc:
+        detail["status"] = "degraded"
+        detail["db_error"] = str(exc)
+    return detail, 200
+
+
 @app.after_request
 def set_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
