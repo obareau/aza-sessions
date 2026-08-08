@@ -156,11 +156,28 @@ donc forcément : Flask tient le pair Link et pousse vers le navigateur en
 WebSocket/SSE. Parfait pour l'affichage du tempo et la **quantification des
 cues** ; insuffisant pour une précision à l'échantillon.
 
-ℹ️ **Non prouvé : la traversée du LAN.** Le test du 2026-08-08 faisait tourner
-deux instances **sur la même machine** — elles se sont découvertes en 2 s et ont
-négocié le tempo (la seconde a adopté les 128 BPM de la première). Reste à
-vérifier avec un vrai pair distant : lancer Ableton Live sur le Mac Mini ou une
-app iOS avec Link activé, et regarder si Roblab la voit.
+✅ **Traversée du LAN PROUVÉE** (2026-08-08). Ableton Live lancé sur le Mac Mini
+avec Link activé : **Roblab le découvre en 2 s** et lit son tempo réel —
+**115.00 BPM**, celui de Live, pas les 120 de notre valeur par défaut. Le
+multicast passe donc entre les deux machines sans rien configurer.
+
+✅ **Et la phase avance correctement**, ce qui est le point qui compte pour
+quantifier les cues. Relevé sur 5 s à 115 BPM (une mesure = 2,087 s) :
+
+| t | beat | phase/4 | prochain temps fort |
+|---|---|---|---|
+| 0,0 s | 3,86 | 3,86 | 0,07 s |
+| 0,7 s | 5,20 | 1,20 | 1,46 s |
+| 1,4 s | 6,55 | 2,55 | 0,76 s |
+| 2,1 s | 7,89 | 3,89 | 0,06 s |
+
+Le beat progresse de ~1,34 par 0,7 s — exactement 115 BPM. **`phaseAtTime` donne
+directement le délai jusqu'au prochain temps fort** : c'est tout ce qu'il faut
+pour qu'un changement de cue n'arrive jamais au milieu d'une mesure.
+
+ℹ️ Reste non testé : **écrire** vers Link (imposer un tempo depuis le Prompteur
+via `commitAppSessionState`). Non essayé délibérément — ça aurait changé le tempo
+de la session Live en cours.
 
 **Ordre conseillé** — 1. affichage tempo + quantize des cues (aucune contrainte
 de latence, brique prouvée) · 2. annonces vocales via Web Speech API (indépendant
