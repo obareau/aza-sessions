@@ -235,16 +235,27 @@ def quick_session():
         if not texte:
             flash("Rien à enregistrer.", "error")
             return redirect(url_for("sessions.quick_session"))
+        # Les puces alimentent une colonne par type ; le champ libre complète
+        # ce qui n'est pas au catalogue et rejoint `machines`.
+        extra = (request.form.get("machines_extra") or "").strip()
+        machines = ", ".join(x for x in [(request.form.get("machines") or "").strip(), extra] if x)
         sid = _engine().create({
             "comments":     texte,
             "title":        (request.form.get("title") or "").strip(),
-            "machines":     (request.form.get("machines") or "").strip(),
+            "machines":     machines,
+            "effects":      (request.form.get("effects") or "").strip(),
+            "plugins":      (request.form.get("plugins") or "").strip(),
+            "synths_ios":   (request.form.get("synths_ios") or "").strip(),
             "session_type": request.form.get("session_type") or "music",
         })
         flash("Session enregistrée. Tu peux compléter plus tard.", "success")
         return redirect(url_for("sessions.view_session", sid=sid))
 
+    from catalogue.engine import CatalogueEngine, GearNotebookEngine
+    chips = CatalogueEngine(current_app.config["DB_PATH"]).chips(
+        GearNotebookEngine.GEAR_COLUMNS)
     return render_template("quick.html",
+                           chips=chips,
                            version=current_app.config.get("VERSION", ""),
                            oblique=_oblique())
 

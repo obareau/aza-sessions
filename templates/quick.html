@@ -23,6 +23,14 @@
 @media (max-width:600px){ .q-row{grid-template-columns:1fr;} }
 .q-bar { display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap; }
 .q-hint { font-family:var(--mono);font-size:11px;color:var(--text-muted); }
+.q-chips { display:flex;flex-wrap:wrap;gap:6px; }
+.q-chip { font-family:var(--mono);font-size:12px;padding:6px 11px;border-radius:999px;
+          border:1px solid var(--border);background:var(--bg);color:var(--text-muted);
+          cursor:pointer;line-height:1.2; }
+.q-chip:hover { border-color:var(--accent); }
+.q-chip.on { background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:600; }
+.q-chip.fav { border-color:var(--warning,#E6A700); }
+.q-chip.fav.on { background:var(--accent);border-color:var(--accent); }
 #q-saved { font-family:var(--mono);font-size:11px;color:var(--text-muted);opacity:0;transition:opacity .3s; }
 </style>
 
@@ -38,17 +46,42 @@
             <button type="submit" class="btn btn-primary">Enregistrer</button>
         </div>
 
+        <div style="margin-top:18px;">
+            <label class="q-lbl">Matériel <span style="text-transform:none;">— facultatif, un clic suffit</span></label>
+            <div class="q-chips">
+                {% for g in chips[:10] %}
+                <button type="button" class="q-chip{% if g.favorite %} fav{% endif %}"
+                        data-name="{{ g.name }}" data-type="{{ g.type }}">{% if g.favorite %}★ {% endif %}{{ g.name }}</button>
+                {% endfor %}
+            </div>
+            {% if chips|length > 10 %}
+            <details style="margin-top:8px;">
+                <summary class="q-hint" style="cursor:pointer;">tout le catalogue ({{ chips|length - 10 }} de plus)</summary>
+                <div class="q-chips" style="margin-top:8px;">
+                    {% for g in chips[10:] %}
+                    <button type="button" class="q-chip" data-name="{{ g.name }}" data-type="{{ g.type }}">{{ g.name }}</button>
+                    {% endfor %}
+                </div>
+            </details>
+            {% endif %}
+        </div>
+
         <div class="q-row">
             <div>
                 <label class="q-lbl" for="q-title">Titre <span style="text-transform:none;">— facultatif</span></label>
                 <input id="q-title" type="text" name="title" class="q-input" autocomplete="off">
             </div>
             <div>
-                <label class="q-lbl" for="q-machines">Machines <span style="text-transform:none;">— facultatif</span></label>
-                <input id="q-machines" type="text" name="machines" class="q-input" autocomplete="off"
-                       placeholder="MicroFreak, NTS-1…">
+                <label class="q-lbl" for="q-machines">Autre matériel <span style="text-transform:none;">— hors catalogue</span></label>
+                <input id="q-machines" type="text" name="machines_extra" class="q-input" autocomplete="off"
+                       placeholder="ce qui n'est pas dans les puces…">
             </div>
         </div>
+
+        <input type="hidden" name="machines"   id="h-machines">
+        <input type="hidden" name="effects"    id="h-effects">
+        <input type="hidden" name="plugins"    id="h-plugins">
+        <input type="hidden" name="synths_ios" id="h-synths_ios">
 
         <div class="q-hint" style="margin-top:14px;">
             La date est automatique. Le récap se génère ensuite depuis la session, en un bouton.
@@ -90,6 +123,46 @@
     });
 })();
 
+
+// ── Puces matériel : un clic au lieu d'une saisie ────────────────────────────
+// Le nom part tel qu'il est au catalogue, ce qui n'est pas cosmétique : le
+// carnet d'instrument croise les sessions par comparaison EXACTE. Tapé à la
+// main, « microfreak » ou « Micro Freak » ne remonterait jamais sur la fiche.
+(function () {
+    const KEY = 'aza_quick_chips';
+    // type de catalogue → colonne de session
+    const COL = { machine: 'machines', effet: 'effects', plugin: 'plugins',
+                  plugin_ios: 'plugins', synth_ios: 'synths_ios' };
+    const chips = [...document.querySelectorAll('.q-chip')];
+    if (!chips.length) return;
+
+    let picked = [];
+    try { picked = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) {}
+
+    function sync() {
+        const by = {};
+        chips.filter(c => c.classList.contains('on')).forEach(c => {
+            const col = COL[c.dataset.type] || 'machines';
+            (by[col] = by[col] || []).push(c.dataset.name);
+        });
+        ['machines', 'effects', 'plugins', 'synths_ios'].forEach(col => {
+            const el = document.getElementById('h-' + col);
+            if (el) el.value = (by[col] || []).join(', ');
+        });
+        picked = chips.filter(c => c.classList.contains('on')).map(c => c.dataset.name);
+        try { localStorage.setItem(KEY, JSON.stringify(picked)); } catch (e) {}
+    }
+
+    chips.forEach(c => {
+        if (picked.includes(c.dataset.name)) c.classList.add('on');
+        c.addEventListener('click', () => { c.classList.toggle('on'); sync(); });
+    });
+    sync();
+
+    document.getElementById('q-form').addEventListener('submit', () => {
+        try { localStorage.removeItem(KEY); } catch (e) {}
+    });
+})();
 </script>
 
 {% endblock %}

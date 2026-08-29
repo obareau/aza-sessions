@@ -125,6 +125,49 @@ class CatalogueEngine:
         conn.commit()
         conn.close()
 
+    # Ce qu'on « joue », par opposition aux interfaces et aux enregistreurs :
+    # le catalogue mélange MicroFreak et Audient ID4 sous le même type.
+    PLAYABLE_TYPES = ("machine", "effet", "plugin", "synth_ios", "plugin_ios")
+
+    def chips(self, gear_columns, limit_recent=6):
+        """Matériel proposé en un clic sur la saisie rapide.
+
+        Ordre : favoris d'abord, puis ce qui a servi le plus récemment, puis
+        l'alphabet. Le tri par usage évite d'avoir à marquer des favoris à la
+        main pour que la liste devienne utile — elle le devient en s'en servant.
+        """
+        conn = self._get_db()
+        rows = conn.execute(
+            "SELECT id, name, type, favorite FROM catalogue "
+            "WHERE active=1 AND type IN (%s) ORDER BY name"
+            % ",".join("?" * len(self.PLAYABLE_TYPES)), self.PLAYABLE_TYPES
+        ).fetchall()
+
+        # Dernière apparition de chaque nom dans les sessions, toutes colonnes
+        # matériel confondues. Peu de lignes ici : on lit et on croise en Python.
+        seen = {}
+        cols = ", ".join(gear_columns)
+        for srow in conn.execute(f"SELECT date, {cols} FROM sessions ORDER BY date DESC"):
+            for c in gear_columns:
+                for part in (srow[c] or "").split(","):
+                    part = part.strip()
+                    if part and part not in seen:
+                        seen[part] = srow["date"]
+        conn.close()
+
+        out = [{"id": r["id"], "name": r["name"], "type": r["type"],
+                "favorite": bool(r["favorite"]), "last": seen.get(r["name"], "")}
+               for r in rows]
+        out.sort(key=lambda g: (not g["favorite"], g["last"] == "",
+                                "" if not g["last"] else _invert(g["last"]), g["name"].lower()))
+        return out
+
+
+def _invert(d):
+    """Clé de tri décroissante sur une date ISO, sans reverse global."""
+    return "".join(chr(255 - ord(c)) if ord(c) < 255 else c for c in d)
+
+
 
 class GearNotebookEngine:
     """Carnet par instrument — ce qu'on apprend d'une machine à force de s'en servir.

@@ -83,3 +83,46 @@ def test_create_returns_id():
     sid = eng.create({"comments": "x"})
     assert isinstance(sid, int) and sid > 0
     _cleanup(sid)
+
+
+def test_chips_are_offered(client):
+    """La page propose le matériel du catalogue en un clic."""
+    h = client.get("/vite").get_data(as_text=True)
+    assert "q-chip" in h
+    assert "MicroFreak" in h          # présent au catalogue de test ou réel
+
+
+def test_chips_land_in_the_right_columns(client):
+    """Chaque type de fiche alimente sa colonne de session.
+
+    Un plugin ne doit pas atterrir dans `machines` : le carnet balaie toutes
+    les colonnes, mais la session mentirait sur ce qui a servi.
+    """
+    r = client.post("/vite", data={"comments": "t", "machines": "MicroFreak",
+                                   "effects": "Reverb X", "plugins": "Nave",
+                                   "synths_ios": "Moog Model 15"})
+    sid = int(r.headers["Location"].rstrip("/").split("/")[-1])
+    row = SessionsEngine(_DB).get_plain(sid)
+    assert row["machines"] == "MicroFreak"
+    assert row["effects"] == "Reverb X"
+    assert row["plugins"] == "Nave"
+    assert row["synths_ios"] == "Moog Model 15"
+    _cleanup(sid)
+
+
+def test_free_text_is_merged_into_machines(client):
+    """Le champ libre complète les puces au lieu de les écraser."""
+    r = client.post("/vite", data={"comments": "t", "machines": "MicroFreak",
+                                   "machines_extra": "Boîte à rythmes du grenier"})
+    sid = int(r.headers["Location"].rstrip("/").split("/")[-1])
+    m = SessionsEngine(_DB).get_plain(sid)["machines"]
+    assert "MicroFreak" in m and "Boîte à rythmes du grenier" in m
+    _cleanup(sid)
+
+
+def test_free_text_alone_still_works(client):
+    """Sans puce cochée, le champ libre suffit — pas de virgule en tête."""
+    r = client.post("/vite", data={"comments": "t", "machines_extra": "Truc"})
+    sid = int(r.headers["Location"].rstrip("/").split("/")[-1])
+    assert SessionsEngine(_DB).get_plain(sid)["machines"] == "Truc"
+    _cleanup(sid)

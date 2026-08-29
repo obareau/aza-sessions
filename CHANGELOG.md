@@ -5,6 +5,33 @@
 
 ---
 
+## v3.17.0 — 2026-08-29 — Puces matériel sur /vite : la boucle se ferme
+
+### ✨ Nouveautés
+- **Le matériel se choisit d'un clic** sur `/vite` — puces issues du catalogue,
+  au lieu d'un champ à taper. Favoris (★) d'abord, puis ce qui a servi le plus
+  récemment, puis l'alphabet ; les 10 premières sont visibles, le reste tient
+  dans un repli.
+- Le tri par usage évite d'avoir à marquer des favoris à la main pour que la
+  liste devienne utile : **elle le devient en s'en servant**.
+- Chaque type alimente **sa** colonne de session (`machine` → `machines`,
+  `effet` → `effects`, `plugin` / `plugin_ios` → `plugins`,
+  `synth_ios` → `synths_ios`). Un champ libre subsiste pour le hors-catalogue,
+  fusionné dans `machines`.
+
+### ⚠️ Pourquoi ça compte plus que le confort
+Le carnet d'instrument (v3.16.0) croise les sessions par **comparaison exacte**.
+Un nom tapé à la main — « microfreak », « Micro Freak » — ne serait jamais
+remonté sur la fiche. Les puces envoient le nom tel qu'il figure au catalogue,
+ce qui rend le lien fiable au lieu d'aléatoire. **C'était le maillon manquant**
+entre la saisie rapide et le carnet : sans lui, la fiche ne se remplissait que
+si on orthographiait juste.
+
+Vérifié de bout en bout : une session créée depuis `/vite` avec la puce
+MicroFreak apparaît immédiatement sur `/catalogue/1`.
+
+---
+
 ## v3.16.0 — 2026-08-29 — Le carnet lit les sessions, le formulaire se replie
 
 ### ✨ Le carnet d'instrument se remplit tout seul

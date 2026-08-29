@@ -29,7 +29,7 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 
 ---
 
-## ✅ Déjà livré (v1.x → v3.16.0)
+## ✅ Déjà livré (v1.x → v3.17.0)
 
 | Version | Fonctionnalité |
 |---|---|
@@ -64,6 +64,7 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 | v3.14.0 | **Récap à la demande** — `POST /session/<id>/recap` + bouton dans la vue session. Le récap n'était appelé que depuis `/new?from_live=1` : jamais atteint en pratique, `live_session` n'ayant jamais servi. Ollama muet → 502 explicite au lieu d'un succès vide |
 | v3.15.0 | **⚡ Vite** — `/vite`, saisie minimale à un champ (contre 45 dans le formulaire complet), dictée Whisper, brouillon auto. Création instantanée : **pas de récap au moment de valider**, il se demande après |
 | v3.16.0 | **Carnet ↔ sessions** — la fiche d'un instrument liste les sessions qui le mentionnent, sans saisie (lecture du champ matériel) ; **formulaire complet replié** en 6 sections, état retenu, ouverture forcée si un champ est rempli |
+| v3.17.0 | **Puces matériel sur `/vite`** — le matériel se clique au lieu de se taper, trié favoris puis usage récent. Envoie le nom exact du catalogue, ce dont dépend le croisement du carnet : le maillon manquant entre saisie rapide et fiche instrument |
 
 ---
 
