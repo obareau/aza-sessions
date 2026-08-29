@@ -5,6 +5,25 @@
 
 ---
 
+## v3.13.1 — 2026-08-29 — Ménage : les restes de Fly.io
+
+### 🧹 Nettoyage
+- **`fly.toml` retiré** et **branche `FLY_APP_NAME` supprimée de `wsgi.py`.** Le
+  déploiement Fly est abandonné ; ce bloc redirigeait encore `DB_PATH` et
+  `BACKUPS_DIR` vers `/data` si la variable apparaissait — un chemin qui
+  n'existe pas sur Roblab, donc une base créée ailleurs sans que rien ne le dise.
+- **`dim/` supprimé** — dossier vide depuis que le Prompteur est parti chez D.I.M
+  (v3.12.0), plus rien ne l'importait.
+- `wsgi.py` documente maintenant son rôle : c'est le chemin réel en production,
+  le bloc `__main__` de `app.py` ne tourne jamais sous Gunicorn.
+- README recalé : v3.5.0 → v3.13.0, lien « Live » vers `sessions.robotariis.com`
+  au lieu de l'URL Fly morte, et procédure de déploiement systemd.
+
+ℹ️ Le `Dockerfile` est conservé : il ne servait qu'au build Fly et n'est plus
+utilisé, mais il ne gêne pas.
+
+---
+
 ## v3.13.0 — 2026-08-29 — Carnet d'instrument
 
 ### ✨ Nouveautés

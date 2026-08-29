@@ -1,11 +1,14 @@
-"""Point d'entrée WSGI pour Gunicorn / Fly.io."""
-import os
+"""Point d'entrée WSGI pour Gunicorn.
 
-if os.environ.get("FLY_APP_NAME"):
-    os.environ.setdefault("DB_PATH", "/data/sessions.db")
-    os.environ.setdefault("BACKUPS_DIR", "/data/backups")
+C'est le chemin réel en production : le service systemd `aza-sessions` lance
+`gunicorn wsgi:app`, donc le bloc `__main__` de app.py ne tourne jamais ici.
+Tout ce qui doit se produire au démarrage se déclare donc ici, pas là-bas.
 
-from app import app, DB_PATH, BACKUPS_DIR  # noqa: E402
+DB_PATH vient de l'unité systemd. Il y avait ici une redirection vers /data
+quand FLY_APP_NAME était présent — retirée avec fly.toml, le déploiement Fly
+étant abandonné.
+"""
+from app import app, DB_PATH, BACKUPS_DIR
 from core.init_db import init_db
 from core.backup import backup_db
 

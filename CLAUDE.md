@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 App Flask + SQLite de documentation de sessions musicales pour l'univers de fiction **AZA** (dystopie personnelle d'Olivier — Dark Ambient / Industriel, Scaër, Bretagne).
 
-⚠️ **Plus sur Fly.io.** Le déploiement est bare metal sur Roblab — voir « Déploiement » plus bas. `fly.toml` et la détection `FLY_APP_NAME` dans `wsgi.py` sont des résidus non nettoyés.
+⚠️ **Plus sur Fly.io** — déploiement bare metal sur Roblab, voir « Déploiement » plus bas. `fly.toml` et la branche `FLY_APP_NAME` de `wsgi.py` ont été retirés le 2026-08-29. Le `Dockerfile` subsiste : il ne servait qu'au build Fly et n'est plus utilisé, mais il n'a rien de nuisible.
 
 Version actuelle : voir `VERSION` dans `app.py` (**v3.13.0**).
 
@@ -106,7 +106,7 @@ Les 18 blueprints enregistrés :
 - `preset_notes` — carnet de presets (module `presets`)
 - `gear_pairings` / `gear_notes` — carnet d'instrument. Une association est stockée **une fois** mais lue des deux côtés (`UNION` dans `GearNotebookEngine.pairings`) : la noter depuis une fiche l'affiche aussi sur l'autre.
 
-⚠️ `prompter_scripts` **n'existe plus** — partie chez D.I.M en v3.12.0, comme le blueprint `dim/` dont il ne reste qu'un dossier vide non nettoyé.
+⚠️ `prompter_scripts` **n'existe plus** — partie chez D.I.M en v3.12.0, avec le blueprint `dim/` (dossier résiduel supprimé le 2026-08-29).
 
 Migrations : toujours via `ALTER TABLE` dans `init_db()` avec `try/except` — pas de système de migration versionné.
 

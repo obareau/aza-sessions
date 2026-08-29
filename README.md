@@ -3,7 +3,7 @@
 > Application de documentation et de performance musicale pour le projet **AZA** —
 > univers de fiction dystopique dont les sessions de création constituent la bande originale.
 
-**Version : v3.5.0** · [Changelog](CHANGELOG.md) · [Live →](https://robotariis-sessions.fly.dev/)
+**Version : v3.13.0** · [Changelog](CHANGELOG.md) · [Live →](https://sessions.robotariis.com)
 
 ---
 
@@ -32,11 +32,12 @@ python app.py
 # → http://localhost:5000
 ```
 
-Pour le déploiement cloud :
+Pour le déploiement :
 
 ```bash
-fly deploy   # depuis le dossier du projet
-# → https://robotariis-sessions.fly.dev/
+# Sur Roblab (bare metal, systemd + Gunicorn — plus de Fly.io depuis 2026)
+git pull && sudo systemctl restart aza-sessions
+# → https://sessions.robotariis.com
 ```
 
 ---
@@ -148,8 +149,8 @@ fly deploy   # depuis le dossier du projet
 
 ```
 app.py                      # Launcher — init_db, blueprints
-wsgi.py                     # Point d'entrée Gunicorn (Fly.io)
-Dockerfile / fly.toml       # Build + config Fly.io (région CDG, 256 MB)
+wsgi.py                     # Point d'entrée Gunicorn — init_db + backup au démarrage
+Dockerfile                  # Résiduel : servait au build Fly.io, plus utilisé
 core/
   db.py                     # get_db() partagé
   init_db.py                # init_db(db_path) + migrations ALTER TABLE
