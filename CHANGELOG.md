@@ -5,6 +5,35 @@
 
 ---
 
+## v3.12.0 — 2026-08-29 — Carnet d'instrument
+
+### ✨ Nouveautés
+- **Carnet par instrument** `/catalogue/<id>` — le catalogue n'avait qu'une liste,
+  aucune page par fiche. Chaque machine, plugin ou effet a désormais la sienne, qui
+  rassemble ce qu'on finit par savoir d'un instrument à force de s'en servir.
+  - **★ Patches favoris** — repris du module **Presets** (v3.7.0), triés par note.
+    Pas de seconde table : la même information n'a qu'un seul endroit où vivre, et
+    ça donne enfin une raison de remplir `preset_notes`, restée vide depuis mai.
+  - **⇄ Marche bien avec** — associations entre deux fiches du catalogue, avec la
+    raison. Une relation et non du texte libre : l'effet nommé une fois reste lié
+    même si la fiche est renommée. **L'association se lit des deux côtés** — dire
+    « le MicroFreak passe bien dans le NTS-1 » l'affiche aussi sur la fiche du
+    NTS-1, sans double saisie (`UNION` sur les deux sens dans `pairings()`).
+  - **✎ Remarques d'utilisation** — journal horodaté qui s'empile, pas un champ
+    qu'on réécrit : apprendre une machine se fait par couches, et écraser la
+    remarque précédente perdrait le chemin parcouru.
+- Bouton ◧ sur chaque ligne du catalogue pour ouvrir le carnet.
+
+### ♻️ DB
+- `gear_pairings` (gear_id, partner_id, note) et `gear_notes` (gear_id, date, note),
+  créées par `init_db` — migration transparente, rien à faire sur une base existante.
+
+### 🛡 Garde-fous
+- Association à soi-même refusée ; doublon refusé **dans les deux sens** ; remarque
+  vide refusée ; fiche inexistante → redirection vers le catalogue, pas une 500.
+
+---
+
 ## v3.11.1 — 2026-08-29 — Durcissement de la sauvegarde automatique
 
 Le backup tournait déjà des deux côtés (bloc `__main__` de `app.py` en local,

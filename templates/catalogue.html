@@ -125,6 +125,9 @@ details[open] > summary.section-title::before { transform:rotate(90deg); }
     {% if items %}
     {% for item in items %}
     <div class="cat-row {{ 'inactive' if not item.active }}" data-name="{{ item.name|lower }}" data-mfr="{{ (item.manufacturer or '')|lower }}" data-fav="{{ '1' if item.favorite else '0' }}">
+        <!-- CARNET -->
+        <a href="{{ url_for('catalogue.gear_notebook', gear_id=item.id) }}"
+           class="btn btn-secondary btn-sm" title="Ouvrir le carnet de {{ item.name }}">◧</a>
         <!-- FAVORI -->
         <form method="POST" action="{{ url_for('catalogue.manage_catalogue') }}">
             <input type="hidden" name="action" value="favorite">

@@ -305,6 +305,33 @@ def init_db(db_path):
     """)
 
     conn.execute("""
+        -- Carnet d'instrument : ce qui marche bien AVEC cette machine.
+        -- Une relation entre deux fiches catalogue, pas du texte libre : un effet
+        -- nommé une fois est retrouvable des deux côtés, et reste lié si la fiche
+        -- est renommée.
+        CREATE TABLE IF NOT EXISTS gear_pairings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            gear_id INTEGER NOT NULL,
+            partner_id INTEGER NOT NULL,
+            note TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    conn.execute("""
+        -- Carnet d'instrument : remarques d'utilisation, empilées dans le temps.
+        -- Un journal et non un champ unique — apprendre une machine se fait par
+        -- couches, et écraser la remarque précédente perdrait le chemin parcouru.
+        CREATE TABLE IF NOT EXISTS gear_notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            gear_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            note TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS sysex_banks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL DEFAULT 'bank',

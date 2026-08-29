@@ -124,3 +124,129 @@ class CatalogueEngine:
         conn.execute("UPDATE catalogue SET favorite=1-favorite WHERE id=?", (item_id,))
         conn.commit()
         conn.close()
+
+
+class GearNotebookEngine:
+    """Carnet par instrument — ce qu'on apprend d'une machine à force de s'en servir.
+
+    Trois sources, une seule page :
+      - les patches favoris viennent de `preset_notes` (module Presets, v3.7.0) —
+        pas de seconde table, sinon la même information vivrait à deux endroits ;
+      - les associations vivent dans `gear_pairings` ;
+      - les remarques s'empilent dans `gear_notes`.
+    """
+
+    def __init__(self, db_path):
+        self.db_path = db_path
+
+    def _get_db(self):
+        return get_db(self.db_path)
+
+    def get(self, gear_id):
+        conn = self._get_db()
+        row = conn.execute("SELECT * FROM catalogue WHERE id=?", (gear_id,)).fetchone()
+        conn.close()
+        return dict(row) if row else None
+
+    def presets(self, gear_id):
+        """Patches notés pour cette machine, les mieux notés d'abord."""
+        conn = self._get_db()
+        rows = conn.execute("""
+            SELECT id, date, preset_name, evocation, song_idea, rating, tags, session_id
+            FROM preset_notes
+            WHERE catalogue_id = ?
+            ORDER BY COALESCE(rating, 0) DESC, date DESC
+        """, (gear_id,)).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+
+    def pairings(self, gear_id):
+        """Associations, vues des DEUX côtés.
+
+        Une association est stockée une fois mais concerne deux machines : dire
+        « le MicroFreak passe bien dans le NTS-1 » doit se lire aussi depuis la
+        fiche du NTS-1. D'où l'UNION plutôt qu'un simple WHERE gear_id=?, qui
+        n'aurait montré que la moitié de ce qu'on sait.
+        """
+        conn = self._get_db()
+        rows = conn.execute("""
+            SELECT p.id, p.note, c.id AS partner_id, c.name AS partner_name,
+                   c.type AS partner_type, c.manufacturer AS partner_manufacturer
+            FROM gear_pairings p JOIN catalogue c ON c.id = p.partner_id
+            WHERE p.gear_id = ?
+            UNION ALL
+            SELECT p.id, p.note, c.id AS partner_id, c.name AS partner_name,
+                   c.type AS partner_type, c.manufacturer AS partner_manufacturer
+            FROM gear_pairings p JOIN catalogue c ON c.id = p.gear_id
+            WHERE p.partner_id = ?
+            ORDER BY partner_type, partner_name
+        """, (gear_id, gear_id)).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+
+    def add_pairing(self, gear_id, partner_id, note=""):
+        """Retourne True si ajoutée, False si doublon ou association à soi-même."""
+        gear_id, partner_id = int(gear_id), int(partner_id)
+        if gear_id == partner_id:
+            return False
+        conn = self._get_db()
+        try:
+            existing = conn.execute("""
+                SELECT id FROM gear_pairings
+                WHERE (gear_id=? AND partner_id=?) OR (gear_id=? AND partner_id=?)
+            """, (gear_id, partner_id, partner_id, gear_id)).fetchone()
+            if existing:
+                return False
+            conn.execute(
+                "INSERT INTO gear_pairings (gear_id, partner_id, note) VALUES (?,?,?)",
+                (gear_id, partner_id, note.strip())
+            )
+            conn.commit()
+            return True
+        finally:
+            conn.close()
+
+    def delete_pairing(self, pairing_id):
+        conn = self._get_db()
+        conn.execute("DELETE FROM gear_pairings WHERE id=?", (pairing_id,))
+        conn.commit()
+        conn.close()
+
+    def notes(self, gear_id):
+        conn = self._get_db()
+        rows = conn.execute(
+            "SELECT * FROM gear_notes WHERE gear_id=? ORDER BY date DESC, id DESC",
+            (gear_id,)
+        ).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+
+    def add_note(self, gear_id, note, date=None):
+        note = (note or "").strip()
+        if not note:
+            return False
+        from datetime import date as _date
+        conn = self._get_db()
+        conn.execute(
+            "INSERT INTO gear_notes (gear_id, date, note) VALUES (?,?,?)",
+            (gear_id, date or _date.today().isoformat(), note)
+        )
+        conn.commit()
+        conn.close()
+        return True
+
+    def delete_note(self, note_id):
+        conn = self._get_db()
+        conn.execute("DELETE FROM gear_notes WHERE id=?", (note_id,))
+        conn.commit()
+        conn.close()
+
+    def candidates(self, gear_id):
+        """Fiches associables — tout le catalogue actif sauf soi-même."""
+        conn = self._get_db()
+        rows = conn.execute(
+            "SELECT id, name, type, manufacturer FROM catalogue "
+            "WHERE active=1 AND id != ? ORDER BY type, name", (gear_id,)
+        ).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]

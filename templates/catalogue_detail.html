@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}{{ gear.name }} — Carnet — AZA{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">◧ {{ gear.name }}</div>
+        <div class="page-subtitle">
+            {{ gear.type|replace('_',' ') }}{% if gear.manufacturer %} · {{ gear.manufacturer }}{% endif %}
+            {% if gear.favorite %} · ★ favori{% endif %}
+            {% if not gear.active %} · inactif{% endif %}
+        </div>
+    </div>
+    <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary">← Catalogue</a>
+</div>
+
+<style>
+.nb-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+@media (max-width: 900px) { .nb-grid { grid-template-columns:1fr; } }
+.nb-input { font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;color:var(--text);width:100%;box-sizing:border-box; }
+.nb-lbl { font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px; }
+.nb-item { display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border); }
+.nb-item:last-child { border-bottom:none; }
+.nb-note { font-size:13px;color:var(--text-muted);margin-top:3px;white-space:pre-wrap; }
+.nb-date { font-family:var(--mono);font-size:11px;color:var(--text-muted); }
+.nb-del { background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--text-muted);cursor:pointer;padding:3px 8px;font-family:var(--mono);font-size:12px;flex-shrink:0; }
+.nb-stars { color:var(--warning, #E6A700);letter-spacing:1px; }
+</style>
+
+{% if gear.notes %}
+<div class="card" style="margin-bottom:16px;">
+    <div class="section-title">Fiche catalogue</div>
+    <div class="nb-note">{{ gear.notes }}</div>
+</div>
+{% endif %}
+
+<div class="card" style="margin-bottom:16px;">
+    <div class="section-title">★ Patches favoris</div>
+    {% if presets %}
+        {% for p in presets %}
+        <div class="nb-item">
+            <div style="min-width:0;">
+                <div><strong>{{ p.preset_name }}</strong>
+                    {% if p.rating %}<span class="nb-stars">{{ '★' * p.rating }}</span>{% endif %}
+                </div>
+                {% if p.evocation %}<div class="nb-note">{{ p.evocation }}</div>{% endif %}
+                {% if p.song_idea %}<div class="nb-note">→ {{ p.song_idea }}</div>{% endif %}
+                {% if p.tags %}<div class="nb-date">{{ p.tags }}</div>{% endif %}
+            </div>
+            <span class="nb-date">{{ p.date }}</span>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty" style="padding:18px 0;">
+            <div class="nb-note">Aucun patch noté pour cette machine.</div>
+            <div class="nb-note" style="margin-top:6px;">
+                Les patches se saisissent dans le <a href="{{ url_for('presets.presets_list') }}">module Presets</a> —
+                le carnet les reprend d'ici, il n'en tient pas une seconde liste.
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<div class="nb-grid">
+
+    <div class="card">
+        <div class="section-title">⇄ Marche bien avec</div>
+        {% if pairings %}
+            {% for pr in pairings %}
+            <div class="nb-item">
+                <div style="min-width:0;">
+                    <div>
+                        <a href="{{ url_for('catalogue.gear_notebook', gear_id=pr.partner_id) }}">{{ pr.partner_name }}</a>
+                        <span class="nb-date">{{ pr.partner_type|replace('_',' ') }}</span>
+                    </div>
+                    {% if pr.note %}<div class="nb-note">{{ pr.note }}</div>{% endif %}
+                </div>
+                <form method="POST" onsubmit="return confirm('Retirer cette association ?');">
+                    <input type="hidden" name="action" value="delete_pairing">
+                    <input type="hidden" name="pairing_id" value="{{ pr.id }}">
+                    <button type="submit" class="nb-del">✕</button>
+                </form>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="nb-note" style="padding:10px 0;">Rien de noté pour l'instant.</div>
+        {% endif %}
+
+        <form method="POST" style="margin-top:14px;">
+            <input type="hidden" name="action" value="add_pairing">
+            <label class="nb-lbl">Associer une fiche</label>
+            <select name="partner_id" class="nb-input" required>
+                <option value="">— choisir —</option>
+                {% for c in candidates %}
+                <option value="{{ c.id }}">{{ c.type|replace('_',' ') }} · {{ c.name }}{% if c.manufacturer %} ({{ c.manufacturer }}){% endif %}</option>
+                {% endfor %}
+            </select>
+            <label class="nb-lbl" style="margin-top:10px;">Pourquoi ça marche</label>
+            <input type="text" name="pairing_note" class="nb-input" placeholder="ex : la reverb tient les nappes sans les noyer">
+            <button type="submit" class="btn btn-primary btn-sm" style="margin-top:10px;">+ Associer</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="section-title">✎ Remarques d'utilisation</div>
+        <form method="POST" style="margin-bottom:14px;">
+            <input type="hidden" name="action" value="add_note">
+            <label class="nb-lbl">Nouvelle remarque</label>
+            <textarea name="note" class="nb-input" rows="3" required
+                      placeholder="ex : l'arpégiateur se resynchronise mal après un changement de tempo — repartir du pad"></textarea>
+            <div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;">
+                <div style="flex:1;">
+                    <label class="nb-lbl">Date</label>
+                    <input type="date" name="date" value="{{ today }}" class="nb-input">
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">+ Noter</button>
+            </div>
+        </form>
+
+        {% if notes %}
+            {% for n in notes %}
+            <div class="nb-item">
+                <div style="min-width:0;">
+                    <div class="nb-date">{{ n.date }}</div>
+                    <div class="nb-note" style="color:var(--text);">{{ n.note }}</div>
+                </div>
+                <form method="POST" onsubmit="return confirm('Supprimer cette remarque ?');">
+                    <input type="hidden" name="action" value="delete_note">
+                    <input type="hidden" name="note_id" value="{{ n.id }}">
+                    <button type="submit" class="nb-del">✕</button>
+                </form>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="nb-note">Le carnet est vide. Il se remplit à l'usage.</div>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}
