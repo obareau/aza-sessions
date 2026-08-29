@@ -5,7 +5,7 @@
 
 ---
 
-## v3.12.0 — 2026-08-29 — Carnet d'instrument
+## v3.13.0 — 2026-08-29 — Carnet d'instrument
 
 ### ✨ Nouveautés
 - **Carnet par instrument** `/catalogue/<id>` — le catalogue n'avait qu'une liste,
@@ -34,7 +34,7 @@
 
 ---
 
-## v3.11.1 — 2026-08-29 — Durcissement de la sauvegarde automatique
+## v3.12.1 — 2026-08-29 — Durcissement de la sauvegarde automatique
 
 Le backup tournait déjà des deux côtés (bloc `__main__` de `app.py` en local,
 bloc inline de `wsgi.py` sous Gunicorn), mais en **double exemplaire** et avec
@@ -60,6 +60,23 @@ deux fragilités.
   consécutifs sur base identique ne produisent qu'un seul fichier.
 - Écriture par fichier temporaire puis `os.replace` — un processus tué en cours
   ne laisse plus de backup partiel.
+## v3.12.0 — 2026-08-09 — Le Prompteur quitte AZA pour D.I.M
+
+> ⚠️ Entrée ajoutée après coup le 2026-08-29. Cette version était documentée
+> dans `ROADMAP.md` mais **absente du CHANGELOG**, et `VERSION` dans `app.py`
+> était resté à 3.10.0 — deux releases de retard. C'est ce décalage qui a fait
+> numéroter le carnet d'instrument « v3.12.0 » par erreur, sur un numéro déjà pris.
+>
+> Le détail de ce qui a été déplacé vit dans le ROADMAP (blueprint `dim/`,
+> 3 templates, table `prompter_scripts` et `core/link_service.py` retirés,
+> −1 976 lignes). Résumé repris ici pour que la suite des versions soit continue,
+> **à compléter par Olivier** s'il veut le détail au même niveau que les autres.
+
+- **Le Prompteur et l'axe Ableton Link partent chez D.I.M.** AZA est le journal
+  (avant, pendant, après une session) ; D.I.M est le séquenceur de performance.
+
+---
+
 ## v3.11.0 — 2026-08-08 — Ableton Link : le Prompteur sur la grille
 
 ### ✨ Nouveautés
