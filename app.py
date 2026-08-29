@@ -1,8 +1,8 @@
-import os, json, random, socket, glob, shutil, logging
-from datetime import datetime
+import os, json, random, socket, logging
 from flask import Flask
 from core.db import get_db as _get_db
 from core.init_db import init_db, DEFAULT_OBLIQUE
+from core.backup import backup_db
 
 # Se placer dans le dossier du script — évite PermissionError quand lancé via chemin absolu
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -12,10 +12,11 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.jinja_env.filters['fromjson'] = json.loads
 app.secret_key = os.environ.get("SECRET_KEY", "aza-sessions-local-dev")
 
-VERSION     = "3.10.0"
+VERSION     = "3.11.1"
 DB_PATH     = os.environ.get("DB_PATH",     os.path.join(os.path.dirname(__file__), "sessions.db"))
 CONFIG_PATH = os.environ.get("CONFIG_PATH", os.path.join(os.path.dirname(__file__), "config.json"))
-app.config.update(DB_PATH=DB_PATH, VERSION=VERSION, CONFIG_PATH=CONFIG_PATH)
+BACKUPS_DIR = os.environ.get("BACKUPS_DIR", os.path.join(os.path.dirname(__file__), "backups"))
+app.config.update(DB_PATH=DB_PATH, VERSION=VERSION, CONFIG_PATH=CONFIG_PATH, BACKUPS_DIR=BACKUPS_DIR)
 
 # ── BLUEPRINTS ────────────────────────────────────────────────────────────────
 from sessions     import bp as sessions_bp;     app.register_blueprint(sessions_bp)
@@ -135,15 +136,9 @@ if __name__ == "__main__":
     _print_banner(port)
     init_db(DB_PATH)
 
-    if os.path.exists(DB_PATH):
-        backup_dir = os.environ.get("BACKUPS_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "backups"))
-        os.makedirs(backup_dir, exist_ok=True)
-        existing = sorted(glob.glob(os.path.join(backup_dir, "sessions_*.db")))
-        while len(existing) >= 5:
-            os.remove(existing.pop(0))
-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        shutil.copy2(DB_PATH, os.path.join(backup_dir, f"sessions_{ts}.db"))
-        print(f"  \033[38;5;240mBackup → backups/sessions_{ts}.db\033[0m\n")
+    written = backup_db(DB_PATH, BACKUPS_DIR)
+    print(f"  \033[38;5;240mBackup → {os.path.relpath(written)}\033[0m\n" if written
+          else "  \033[38;5;240mBackup ignoré — base inchangée\033[0m\n")
 
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
     app.run(debug=False, host="0.0.0.0", port=port, use_reloader=False)
