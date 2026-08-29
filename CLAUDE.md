@@ -92,7 +92,8 @@ Les 18 blueprints enregistrés :
 - `core/oblique.py` — `rand_oblique(db_path)` : stratégie aléatoire depuis la table `obliques`
 - `core/ollama_client.py` — génération du `recap_claude` via **`qwen3.5:cloud`** (`OLLAMA_MODEL`) sur `192.168.1.100` ; second modèle `qwen2.5-coder:7b` (`CODER_MODEL`) ; appelé depuis `/new?from_live=1` ; **silencieux si indisponible**
   ⚠️ Ce silence a déjà coûté : le recap est resté mort sans que personne le voie, parce que le modèle configuré (`qwen3.5:latest`) n'existait pas. Corrigé le 2026-07-31. Réflexe — un appel LLM qui échoue sans bruit ne se verra jamais depuis l'interface : vérifier le **modèle** avant de chercher un bug dans le code.
-- `core/whisper_client.py` — transcription audio via Whisper GPU local (port 9000, modèle `small`) ; appelé depuis `/live/transcribe` (POST multipart) ; silencieux si indisponible
+- `core/whisper_client.py` — transcription audio via Whisper GPU local (`192.168.1.100:9000`, modèle `small`) ; appelé depuis `/live/transcribe` (POST multipart), utilisé par `/live` **et `/vite`** ; silencieux si indisponible
+  ℹ️ Le service est le conteneur Docker `whisper` (`onerahmet/openai-whisper-asr-webservice:latest-gpu`, `--restart unless-stopped`, ~1,6 Go de VRAM), **installé le 2026-08-29** : il était absent de la machine jusque-là, donc la dictée n'avait jamais pu fonctionner, https ou non. Chaîne vérifiée de bout en bout (navigateur → https → `/live/transcribe` → Whisper → JSON) en ~6 s. Sa définition vit dans `~/homelab-install/install.sh`, section 24.
 
 ### Base de données
 
