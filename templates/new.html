@@ -258,7 +258,7 @@
 </div>
 
 <!-- CARACTÈRE -->
-<div class="card" data-stype="music lore" id="card-character">
+<div class="card" data-stype="music lore" id="card-character" data-fold>
     <div class="card-title" data-label-music="∙ Caractère sonore" data-label-lore="∙ Caractère narratif">∙ Caractère sonore</div>
     <div class="check-grid">
         {% for c in characters %}
@@ -271,7 +271,7 @@
 </div>
 
 <!-- TECHNIQUE -->
-<div class="card" data-stype="music">
+<div class="card" data-stype="music" data-fold>
     <div class="card-title">∙ Technique</div>
     <div class="form-grid">
         <div class="form-group">
@@ -299,7 +299,7 @@
 </div>
 
 <!-- CAPTURE -->
-<div class="card" data-stype="music">
+<div class="card" data-stype="music" data-fold>
     <div class="card-title">∙ Capture</div>
     <div class="form-grid">
         <div class="form-group">
@@ -323,7 +323,7 @@
 </div>
 
 <!-- INFLUENCES -->
-<div class="card" data-stype="music lore">
+<div class="card" data-stype="music lore" data-fold>
     <div class="card-header">
         <span class="card-title">∙ Influences de session</span>
         <a href="{{ url_for('influences.manage_influences') }}" class="btn btn-secondary btn-sm" target="_blank">+ Gérer</a>
@@ -339,7 +339,7 @@
 </div>
 
 <!-- LORE / RÉFÉRENCE -->
-<div class="card" id="card-lore">
+<div class="card" id="card-lore" data-fold>
     <div class="card-title" id="lore-card-title">∙ Univers AZA</div>
     <div class="form-grid">
         <div class="form-group full">
@@ -395,7 +395,7 @@
 
 {% if projects %}
 <!-- PROJET -->
-<div class="card">
+<div class="card" data-fold>
     <div class="card-title">∙ Projet</div>
     <div class="form-grid">
         <div class="form-group">
@@ -712,6 +712,59 @@ window.addEventListener('load', () => {
 
     // Effacer au submit
     form.addEventListener('submit', () => localStorage.removeItem(DRAFT_KEY));
+})();
+
+// ── Sections repliées par défaut ─────────────────────────────────────────────
+// 45 champs d'un seul tenant, c'est ce qui fait refermer l'onglet. L'essentiel
+// (contexte, évaluation) reste ouvert ; le reste se déplie à la demande et
+// retient son état, pour que le formulaire s'adapte à la façon dont on s'en
+// sert plutôt que l'inverse.
+(function () {
+    const KEY = 'aza_form_folds';
+    let open = {};
+    try { open = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+
+    document.querySelectorAll('[data-fold]').forEach((card, idx) => {
+        // Le premier enfant porte le titre : soit .card-title, soit un
+        // .card-header qui le contient. Les deux existent dans ce formulaire.
+        const head = card.firstElementChild;
+        if (!head) return;
+        const id = card.id || ('fold' + idx);
+
+        const body = document.createElement('div');
+        while (head.nextSibling) body.appendChild(head.nextSibling);
+        card.appendChild(body);
+
+        const caret = document.createElement('span');
+        caret.style.cssText = 'float:right;opacity:.5;font-size:11px;';
+        head.appendChild(caret);
+        head.style.cursor = 'pointer';
+        head.setAttribute('role', 'button');
+        head.setAttribute('tabindex', '0');
+
+        function apply(show) {
+            body.style.display = show ? '' : 'none';
+            caret.textContent = show ? '▾' : '▸';
+            head.setAttribute('aria-expanded', show ? 'true' : 'false');
+        }
+        // Un champ déjà rempli (brouillon restauré, duplication de session)
+        // force l'ouverture : cacher une valeur saisie serait pire que tout.
+        const filled = [...body.querySelectorAll('input, select, textarea')].some(el =>
+            (el.type === 'checkbox' || el.type === 'radio') ? el.checked
+                                                            : (el.value || '').trim() !== '');
+        apply(filled || open[id] === true);
+
+        function toggle() {
+            const show = body.style.display === 'none';
+            apply(show);
+            open[id] = show;
+            try { localStorage.setItem(KEY, JSON.stringify(open)); } catch (e) {}
+        }
+        head.addEventListener('click', toggle);
+        head.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+        });
+    });
 })();
 </script>
 {% endblock %}

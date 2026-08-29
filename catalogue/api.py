@@ -118,6 +118,7 @@ def gear_notebook(gear_id):
                            presets=nb.presets(gear_id),
                            pairings=nb.pairings(gear_id),
                            notes=nb.notes(gear_id),
+                           sessions=nb.sessions(gear_id),
                            candidates=nb.candidates(gear_id),
                            today=date.today().isoformat(),
                            version=current_app.config.get("VERSION", ""),

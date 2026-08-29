@@ -35,6 +35,29 @@
 {% endif %}
 
 <div class="card" style="margin-bottom:16px;">
+    <div class="section-title">♪ Sessions où elle a joué</div>
+    {% if sessions %}
+        {% for s in sessions %}
+        <div class="nb-item">
+            <div style="min-width:0;">
+                <a href="{{ url_for('sessions.view_session', sid=s.id) }}">{{ s.title or 'Sans titre' }}</a>
+                {% if s.rating %}<span class="nb-stars">{{ '★' * s.rating }}</span>{% endif %}
+                {% if s.session_type and s.session_type != 'music' %}
+                    <span class="nb-date">{{ s.session_type }}</span>
+                {% endif %}
+            </div>
+            <span class="nb-date">{{ s.date[:10] }}</span>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="nb-note" style="padding:10px 0;">
+            Aucune session ne la mentionne encore. Rien à saisir ici — la liste se
+            remplit depuis le champ matériel des sessions.
+        </div>
+    {% endif %}
+</div>
+
+<div class="card" style="margin-bottom:16px;">
     <div class="section-title">★ Patches favoris</div>
     {% if presets %}
         {% for p in presets %}

@@ -124,3 +124,65 @@ def test_route_unknown_gear_redirects(client):
     r = client.get("/catalogue/999999")
     assert r.status_code == 302
     assert "/catalogue" in r.headers["Location"]
+
+
+def test_sessions_lists_where_the_gear_played(gear):
+    """La fiche retrouve les sessions qui la mentionnent — sans saisie."""
+    a, _ = gear
+    nb = GearNotebookEngine(_DB)
+    conn = get_db(_DB)
+    cur = conn.execute(
+        "INSERT INTO sessions (date, title, machines) VALUES ('2026-08-01', 'Avec', ?)",
+        ("NBTestSynth, Autre Chose",))
+    sid = cur.lastrowid
+    conn.execute("INSERT INTO sessions (date, title, machines) VALUES ('2026-08-02', 'Sans', 'Rien')")
+    conn.commit()
+    conn.close()
+
+    titles = [s["title"] for s in nb.sessions(a)]
+    assert "Avec" in titles
+    assert "Sans" not in titles
+
+    conn = get_db(_DB)
+    conn.execute("DELETE FROM sessions WHERE title IN ('Avec','Sans')")
+    conn.commit()
+    conn.close()
+    assert sid
+
+
+def test_sessions_does_not_match_a_substring(gear):
+    """« NBTestSynth » ne doit pas remonter sur « NBTestSynthesizer ».
+
+    Un LIKE seul confondrait les deux — et sur ce catalogue réel, « Volca »
+    ramènerait Volca Drum et Volca Kick indifféremment.
+    """
+    a, _ = gear
+    conn = get_db(_DB)
+    conn.execute("INSERT INTO sessions (date, title, machines)"
+                 " VALUES ('2026-08-03', 'Piège', 'NBTestSynthesizer')")
+    conn.commit()
+    conn.close()
+
+    assert "Piège" not in [s["title"] for s in GearNotebookEngine(_DB).sessions(a)]
+
+    conn = get_db(_DB)
+    conn.execute("DELETE FROM sessions WHERE title='Piège'")
+    conn.commit()
+    conn.close()
+
+
+def test_sessions_scans_every_gear_column(gear):
+    """Une fiche citée en effet, pas en machine, est trouvée quand même."""
+    _, b = gear          # NBTestReverb, type effet
+    conn = get_db(_DB)
+    conn.execute("INSERT INTO sessions (date, title, effects)"
+                 " VALUES ('2026-08-04', 'EnEffet', 'NBTestReverb')")
+    conn.commit()
+    conn.close()
+
+    assert "EnEffet" in [s["title"] for s in GearNotebookEngine(_DB).sessions(b)]
+
+    conn = get_db(_DB)
+    conn.execute("DELETE FROM sessions WHERE title='EnEffet'")
+    conn.commit()
+    conn.close()

@@ -5,6 +5,34 @@
 
 ---
 
+## v3.16.0 — 2026-08-29 — Le carnet lit les sessions, le formulaire se replie
+
+### ✨ Le carnet d'instrument se remplit tout seul
+- **« ♪ Sessions où elle a joué »** sur `/catalogue/<id>` — la fiche liste les
+  sessions qui la mentionnent, **sans aucune saisie supplémentaire** :
+  l'information était déjà dans le champ matériel des sessions, elle n'avait
+  simplement nulle part où se lire depuis la machine. La fiche du MicroFreak
+  affiche désormais « Drone Dark Ambient ★★★ » sans qu'on ait rien tapé.
+- ⚠️ Filtrage en deux temps — `LIKE` large en SQL, puis comparaison **exacte**
+  élément par élément en Python. Le `LIKE` seul confondrait « Volca Drum » et
+  « Volca Kick » dès qu'on chercherait « Volca », et ferait correspondre tout
+  nom court contenu dans un autre. Deux tests verrouillent ce piège.
+- Les sept colonnes matériel sont balayées (`machines`, `effects`, `daws`,
+  `synths_ios`, `plugins`, `ipad`, `zynthian`) : une fiche citée comme effet est
+  trouvée comme une citée comme machine.
+
+### 🧩 Le formulaire complet ne fait plus mur
+- **Six sections repliées par défaut** — Caractère sonore, Technique, Capture,
+  Influences, Univers AZA, Projet. Contexte et Évaluation restent ouverts.
+- L'état d'ouverture est **retenu par section** : le formulaire s'adapte à la
+  façon dont on s'en sert.
+- ⚠️ **Une section contenant un champ déjà rempli s'ouvre d'office** — brouillon
+  restauré, duplication de session. Cacher une valeur saisie serait pire que le
+  mur de 45 champs.
+- Repli au clavier aussi (`Enter` / `Espace`, `aria-expanded`).
+
+---
+
 ## v3.15.2 — 2026-08-29 — Retrait de la dictée sur /vite
 
 ### 🧹 Retiré

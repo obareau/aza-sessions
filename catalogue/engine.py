@@ -241,6 +241,50 @@ class GearNotebookEngine:
         conn.commit()
         conn.close()
 
+    # Les colonnes de session qui portent du matériel, telles que les remplit
+    # sessions/api.py — ", ".join(form.getlist(...)).
+    GEAR_COLUMNS = ("machines", "effects", "daws", "synths_ios",
+                    "plugins", "ipad", "zynthian")
+
+    def sessions(self, gear_id):
+        """Les sessions où cette fiche a joué.
+
+        Rien à saisir : l'information est déjà dans les sessions, elle n'avait
+        simplement aucun endroit où se lire depuis la machine.
+
+        Le filtrage se fait en deux temps — un LIKE large en SQL pour ne pas
+        tout charger, puis une comparaison exacte élément par élément en Python.
+        Le LIKE seul confondrait « Volca Drum » et « Volca Kick » dès qu'on
+        chercherait « Volca », et surtout ferait correspondre n'importe quel
+        nom court contenu dans un autre.
+        """
+        gear = self.get(gear_id)
+        if not gear:
+            return []
+        name = (gear["name"] or "").strip()
+        if not name:
+            return []
+
+        where = " OR ".join(f"{c} LIKE ?" for c in self.GEAR_COLUMNS)
+        params = [f"%{name}%"] * len(self.GEAR_COLUMNS)
+        conn = self._get_db()
+        rows = conn.execute(
+            f"SELECT id, date, title, session_type, rating, {', '.join(self.GEAR_COLUMNS)} "
+            f"FROM sessions WHERE {where} ORDER BY date DESC", params
+        ).fetchall()
+        conn.close()
+
+        out = []
+        for r in rows:
+            named = any(
+                name == part.strip()
+                for c in self.GEAR_COLUMNS
+                for part in (r[c] or "").split(",")
+            )
+            if named:
+                out.append({k: r[k] for k in ("id", "date", "title", "session_type", "rating")})
+        return out
+
     def candidates(self, gear_id):
         """Fiches associables — tout le catalogue actif sauf soi-même."""
         conn = self._get_db()
