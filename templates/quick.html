@@ -22,8 +22,6 @@
 .q-row { display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px; }
 @media (max-width:600px){ .q-row{grid-template-columns:1fr;} }
 .q-bar { display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap; }
-.q-mic { font-size:15px; }
-.q-mic.rec { border-color:var(--danger,#c0392b);color:var(--danger,#c0392b); }
 .q-hint { font-family:var(--mono);font-size:11px;color:var(--text-muted); }
 #q-saved { font-family:var(--mono);font-size:11px;color:var(--text-muted);opacity:0;transition:opacity .3s; }
 </style>
@@ -35,8 +33,6 @@
                   placeholder="Nappe tenue au MicroFreak, filtre ouvert lentement. Le grain se casse passé 11h sur la résonance."></textarea>
 
         <div class="q-bar">
-            <button type="button" id="q-mic" class="btn btn-secondary q-mic" title="Dicter">🎙 Dicter</button>
-            <span class="q-hint" id="q-status"></span>
             <span style="flex:1;"></span>
             <span id="q-saved">brouillon gardé</span>
             <button type="submit" class="btn btn-primary">Enregistrer</button>
@@ -94,63 +90,6 @@
     });
 })();
 
-// ── Dictée : parler coûte moins que taper ────────────────────────────────────
-(function () {
-    const btn = document.getElementById('q-mic');
-    const status = document.getElementById('q-status');
-    const area = document.getElementById('q-text');
-    let recorder = null, chunks = [];
-
-    // getUserMedia n'existe QUE dans un contexte sécurisé : https, ou localhost.
-    // Servie en http sur l'IP Tailscale, navigator.mediaDevices est undefined —
-    // le bouton échouait donc en affichant « micro refusé », ce qui accusait le
-    // navigateur d'un refus qui n'a jamais eu lieu. On le dit, et on donne le lien.
-    if (!window.isSecureContext || !navigator.mediaDevices) {
-        btn.disabled = true;
-        btn.title = 'Le micro exige une connexion sécurisée';
-        btn.textContent = '🎙 indisponible en http';
-        const url = 'https://sessions.robotariis.com' + location.pathname;
-        status.innerHTML = 'dictée possible en <a href="' + url + '">https</a>';
-        return;
-    }
-
-    btn.addEventListener('click', async () => {
-        if (recorder && recorder.state === 'recording') { recorder.stop(); return; }
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            chunks = [];
-            recorder = new MediaRecorder(stream);
-            recorder.ondataavailable = e => chunks.push(e.data);
-            recorder.onstop = async () => {
-                stream.getTracks().forEach(x => x.stop());
-                btn.classList.remove('rec');
-                btn.textContent = '🎙 Dicter';
-                status.textContent = 'transcription…';
-                const fd = new FormData();
-                fd.append('audio', new Blob(chunks, { type: 'audio/webm' }), 'note.webm');
-                try {
-                    const res = await fetch('/live/transcribe', { method: 'POST', body: fd });
-                    const data = await res.json();
-                    if (data.text) {
-                        area.value += (area.value.trim() ? '\n' : '') + data.text;
-                        area.dispatchEvent(new Event('input'));   // déclenche le brouillon
-                        status.textContent = '✓ transcrit';
-                    } else {
-                        status.textContent = '✗ ' + (data.error || 'erreur');
-                    }
-                } catch { status.textContent = '✗ Whisper indisponible'; }
-                setTimeout(() => { status.textContent = ''; }, 3000);
-            };
-            recorder.start();
-            btn.classList.add('rec');
-            btn.textContent = '⏹ Arrêter';
-            status.textContent = 'enregistrement…';
-        } catch {
-            status.textContent = '✗ micro refusé';
-            setTimeout(() => { status.textContent = ''; }, 3000);
-        }
-    });
-})();
 </script>
 
 {% endblock %}

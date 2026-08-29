@@ -5,6 +5,20 @@
 
 ---
 
+## v3.15.2 — 2026-08-29 — Retrait de la dictée sur /vite
+
+### 🧹 Retiré
+- **Bouton 🎙 et transcription supprimés de `/vite`.** Décision d'usage : le
+  clavier est préféré, la dictée ne servait pas. La saisie minimale garde donc
+  une seule zone de texte et rien d'autre — ce qui était le but.
+
+ℹ️ `/live` conserve son bouton micro, et `core/whisper_client.py` comme
+`/live/transcribe` restent en place pour lui. Le conteneur Docker `whisper`
+installé plus tôt dans la journée n'a donc plus qu'un seul appelant, lui-même
+inutilisé (`live_session` : 0 ligne).
+
+---
+
 ## v3.15.1 — 2026-08-29 — La dictée dit enfin pourquoi elle ne marche pas
 
 ### 🐛 Correctif
