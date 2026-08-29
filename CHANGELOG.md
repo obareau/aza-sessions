@@ -5,6 +5,35 @@
 
 ---
 
+## v3.7.3 — 2026-08-29 — Durcissement de la sauvegarde automatique
+
+Le backup tournait déjà des deux côtés (bloc `__main__` de `app.py` en local,
+bloc inline de `wsgi.py` sous Gunicorn), mais en **double exemplaire** et avec
+deux fragilités.
+
+### ♻️ Refactor
+- **`core/backup.py`** — une seule implémentation, appelée par `app.py` et `wsgi.py`.
+  Les deux blocs inline disparaissent.
+- `BACKUPS_DIR` remonte dans `app.config`, au même titre que `DB_PATH` et `CONFIG_PATH`.
+- `app.py` : imports `glob`, `shutil`, `datetime` devenus inutiles, retirés.
+
+### 🐛 Correctifs
+- **Snapshot via `sqlite3.Connection.backup()` au lieu de `shutil.copy2`.** Sous
+  Gunicorn l'app sert déjà des requêtes au moment du boot ; copier le fichier
+  pendant une écriture donne une base déchirée. Vérifié : un snapshot pris
+  pendant une transaction ouverte non committée rend une base à
+  `integrity_check: ok`, sans l'écriture en cours.
+- **La rétention ne survivait pas à un crash-loop.** `aza-sessions.service` tourne
+  en `Restart=always` : cinq relances rapides suffisaient à évincer les cinq
+  backups et à ne garder que des copies de l'état cassé — le filet disparaissait
+  au moment précis où il aurait servi. Le snapshot est désormais **sauté si la base
+  est inchangée** (SHA-256 contre le dernier backup). Vérifié : trois boots
+  consécutifs sur base identique ne produisent qu'un seul fichier.
+- Écriture par fichier temporaire puis `os.replace` — un processus tué en cours
+  ne laisse plus de backup partiel.
+
+---
+
 ## v3.7.2 — 2026-06-03 — Spark : contrainte unique + fix DIM
 
 ### ✨ Nouveautés
