@@ -215,6 +215,35 @@ def edit_session(sid):
                            version=_version())
 
 
+@bp.route("/session/<int:sid>/recap", methods=["POST"])
+def session_recap(sid):
+    """Génère (ou régénère) le récap d'une session existante.
+
+    Le récap n'existait jusqu'ici que sur le chemin `/new?from_live=1` : une
+    session saisie normalement n'en avait donc jamais, et le module `live`
+    étant inutilisé, la fonctionnalité n'a en pratique jamais tourné.
+
+    Appel synchrone assumé (~5 s mesurées) : le service tourne en --workers 1,
+    donc l'app est bloquée pendant la génération. C'est court, et le faire en
+    tâche de fond demanderait une file dont ce projet n'a pas l'usage.
+    """
+    engine = _engine()
+    session = engine.get_plain(sid)
+    if session is None:
+        return jsonify({"error": "Session introuvable."}), 404
+
+    recap = generate_recap(session)
+    if not recap:
+        # Ollama silencieux : modèle retiré, service arrêté, timeout. L'échec
+        # est muet côté client — c'est ce qui avait laissé le récap mort sans
+        # que personne le voie (cf. ROADMAP, 2026-07-31).
+        return jsonify({"error": "Ollama n'a rien renvoyé — vérifier le modèle "
+                                 "et le service sur 192.168.1.100."}), 502
+
+    engine.set_recap(sid, recap)
+    return jsonify({"ok": True, "recap": recap})
+
+
 @bp.route("/session/<int:sid>/delete", methods=["POST"])
 def delete_session(sid):
     _engine().delete(sid)

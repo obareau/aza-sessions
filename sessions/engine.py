@@ -160,6 +160,17 @@ class SessionsEngine:
         conn.close()
         return dict(row) if row else None
 
+    def set_recap(self, sid, text):
+        """Écrit le seul champ recap_claude — pas un update() complet.
+
+        Passer par update() obligerait à relire puis réécrire les 31 colonnes
+        pour n'en changer qu'une, et écraserait toute modification concurrente.
+        """
+        conn = self._get_db()
+        conn.execute("UPDATE sessions SET recap_claude=? WHERE id=?", (text, sid))
+        conn.commit()
+        conn.close()
+
     def create(self, data, from_live=False):
         conn = self._get_db()
         conn.execute("""

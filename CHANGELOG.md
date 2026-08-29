@@ -5,6 +5,40 @@
 
 ---
 
+## v3.14.0 — 2026-08-29 — Le récap enfin atteignable
+
+### 🐛 Le fond du problème
+Le récap Ollama n'était appelé qu'à **un seul endroit** : `sessions/api.py`, dans
+la branche `/new?from_live=1`. Une session saisie normalement n'en recevait donc
+jamais — et comme le module `live` n'a jamais servi (`live_session` : 0 ligne),
+la fonctionnalité n'a **en pratique jamais tourné**. Les deux sessions de la base
+ont `recap_claude` vide.
+
+Vérifié le 2026-08-29 : le moteur fonctionne (`qwen3.5:cloud` répond en ~5 s,
+~790 caractères dans la voix de l'univers). Ce n'était pas cassé, c'était
+inaccessible.
+
+### ✨ Nouveautés
+- **`POST /session/<id>/recap`** — génère ou régénère le récap d'une session
+  existante, l'écrit en base et le renvoie.
+- **Bouton dans la vue session** — « ∙ Générer » quand le récap est absent,
+  « ↻ Régénérer » sinon. Appel AJAX avec le toast déjà utilisé pour l'export
+  Obsidian ; la carte Récap s'affiche désormais **même vide**, sinon le bouton
+  n'aurait eu nulle part où vivre.
+- **`SessionsEngine.set_recap()`** — écrit la seule colonne `recap_claude`
+  plutôt que de repasser par `update()`, qui relirait et réécrirait les 31
+  colonnes pour n'en changer qu'une.
+
+### 🛡 Échec bruyant
+Un Ollama muet renvoie désormais **502 avec un message**, jamais un succès vide.
+C'est le point qui avait coûté des semaines : un appel LLM qui échoue en silence
+ne se voit pas depuis l'interface. Couvert par un test dédié.
+
+ℹ️ Appel synchrone assumé (~5 s) : le service tourne en `--workers 1`, donc l'app
+est bloquée pendant la génération. Une file d'attente serait disproportionnée ici.
+
+---
+
 ## v3.13.1 — 2026-08-29 — Ménage : les restes de Fly.io
 
 ### 🧹 Nettoyage

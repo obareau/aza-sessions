@@ -29,7 +29,7 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 
 ---
 
-## ✅ Déjà livré (v1.x → v3.13.1)
+## ✅ Déjà livré (v1.x → v3.14.0)
 
 | Version | Fonctionnalité |
 |---|---|
@@ -61,6 +61,7 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 | v3.12.1 | **Sauvegarde durcie** — `core/backup.py` unique (le bloc vivait en double dans `app.py` et `wsgi.py`) ; snapshot par l'API SQLite au lieu de `shutil.copy2` ; **saut si la base est inchangée**, sans quoi un crash-loop en `Restart=always` évinçait les 5 backups en cinq relances |
 | v3.13.0 | **Carnet d'instrument** — `/catalogue/<id>` : patches favoris repris de `preset_notes` (qui n'avait aucune page où se montrer), associations entre fiches **lues des deux côtés**, remarques horodatées empilées. Tables `gear_pairings` et `gear_notes` |
 | v3.13.1 | **Ménage Fly.io** — `fly.toml`, la branche `FLY_APP_NAME` de `wsgi.py` et le dossier vide `dim/` retirés ; README recalé (v3.5.0 → v3.13.1, lien Live vers `sessions.robotariis.com`) |
+| v3.14.0 | **Récap à la demande** — `POST /session/<id>/recap` + bouton dans la vue session. Le récap n'était appelé que depuis `/new?from_live=1` : jamais atteint en pratique, `live_session` n'ayant jamais servi. Ollama muet → 502 explicite au lieu d'un succès vide |
 
 ---
 

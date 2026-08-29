@@ -189,12 +189,21 @@
 </div>
 {% endif %}
 
-{% if session.recap_claude %}
 <div class="card" style="border-color:var(--accent2);background:var(--accent2-soft);">
-    <div class="card-title" style="color:var(--accent2);">∙ Récap session</div>
-    <div class="detail-value" style="font-size:12px;line-height:1.7;">{{ session.recap_claude }}</div>
+    <div class="card-title" style="color:var(--accent2);display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <span>∙ Récap session</span>
+        <button type="button" id="recap-btn" onclick="genRecap()" class="btn btn-secondary btn-sm">
+            {{ '↻ Régénérer' if session.recap_claude else '∙ Générer' }}
+        </button>
+    </div>
+    <div id="recap-body" class="detail-value" style="font-size:12px;line-height:1.7;">
+        {%- if session.recap_claude -%}
+            {{ session.recap_claude }}
+        {%- else -%}
+            <span style="color:var(--text-muted);">Aucun récap. La génération prend quelques secondes.</span>
+        {%- endif -%}
+    </div>
 </div>
-{% endif %}
 
 <div id="vault-toast" style="display:none;position:fixed;bottom:80px;right:20px;z-index:400;
      padding:10px 16px;border-radius:var(--radius);font-family:var(--mono);font-size:12px;
@@ -214,6 +223,31 @@ function pushToVault() {
         .catch(() => showVaultToast('✕ Erreur réseau', false))
         .finally(() => { btn.disabled = false; btn.textContent = '⬡ Vault'; });
 }
+function genRecap() {
+    const btn  = document.getElementById('recap-btn');
+    const body = document.getElementById('recap-body');
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '… génération';
+    fetch('{{ url_for("sessions.session_recap", sid=session.id) }}', { method: 'POST' })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => {
+            if (ok && d.recap) {
+                body.textContent = d.recap;
+                btn.textContent = '↻ Régénérer';
+                showVaultToast('Récap généré', true);
+            } else {
+                btn.textContent = label;
+                showVaultToast(d.error || 'Échec de la génération', false);
+            }
+        })
+        .catch(() => {
+            btn.textContent = label;
+            showVaultToast('Ollama injoignable', false);
+        })
+        .finally(() => { btn.disabled = false; });
+}
+
 function showVaultToast(msg, ok) {
     const t = document.getElementById('vault-toast');
     t.textContent = msg;
