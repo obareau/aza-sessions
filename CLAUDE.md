@@ -120,6 +120,12 @@ Tous héritent de `base.html`. Système de thèmes via attribut `data-theme` sur
 
 Multi-sélection dans les formulaires : `form.getlist("machines")` → jointure `, ` avant stockage.
 
+⚠️ **La dictée Whisper exige https.** `getUserMedia` n'existe que dans un
+contexte sécurisé : par `http://sessions.lan` ou l'IP Tailscale en clair, le
+micro est indisponible quel que soit l'état de Whisper. Utiliser
+`https://sessions.robotariis.com`. Les pages `/vite` et `/live` détectent le cas
+et le disent, plutôt que d'échouer en accusant le navigateur.
+
 ### Déploiement — Roblab (serveur bare metal)
 
 - **URL publique** : `https://sessions.robotariis.com` via Cloudflare Tunnel

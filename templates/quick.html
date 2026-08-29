@@ -101,6 +101,19 @@
     const area = document.getElementById('q-text');
     let recorder = null, chunks = [];
 
+    // getUserMedia n'existe QUE dans un contexte sécurisé : https, ou localhost.
+    // Servie en http sur l'IP Tailscale, navigator.mediaDevices est undefined —
+    // le bouton échouait donc en affichant « micro refusé », ce qui accusait le
+    // navigateur d'un refus qui n'a jamais eu lieu. On le dit, et on donne le lien.
+    if (!window.isSecureContext || !navigator.mediaDevices) {
+        btn.disabled = true;
+        btn.title = 'Le micro exige une connexion sécurisée';
+        btn.textContent = '🎙 indisponible en http';
+        const url = 'https://sessions.robotariis.com' + location.pathname;
+        status.innerHTML = 'dictée possible en <a href="' + url + '">https</a>';
+        return;
+    }
+
     btn.addEventListener('click', async () => {
         if (recorder && recorder.state === 'recording') { recorder.stop(); return; }
         try {

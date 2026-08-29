@@ -5,6 +5,25 @@
 
 ---
 
+## v3.15.1 — 2026-08-29 — La dictée dit enfin pourquoi elle ne marche pas
+
+### 🐛 Correctif
+`getUserMedia` n'existe **que dans un contexte sécurisé** — https, ou localhost.
+Servie en http sur l'IP Tailscale (`http://100.64.201.127:5001`),
+`navigator.mediaDevices` est `undefined` : le bouton 🎙 de `/vite` tombait dans
+son `catch` et affichait **« micro refusé »**, accusant le navigateur d'un refus
+qui n'avait jamais eu lieu. Sur `live.html`, un `return` silencieux laissait un
+bouton inerte sans explication.
+
+Les deux détectent maintenant le contexte : bouton désactivé, libellé explicite,
+et sur `/vite` un lien direct vers la même page en `https://sessions.robotariis.com`
+— où la dictée fonctionne réellement.
+
+ℹ️ Rien à changer côté serveur : le tunnel Cloudflare sert déjà l'app en https.
+C'est l'accès par l'IP en clair qui empêche le micro, pas l'application.
+
+---
+
 ## v3.15.0 — 2026-08-29 — ⚡ Vite : saisie minimale
 
 ### ✨ Nouveautés

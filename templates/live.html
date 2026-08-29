@@ -230,7 +230,15 @@ window.addEventListener('beforeunload', () => {
     const label  = document.getElementById('mic-label');
     const status = document.getElementById('mic-status');
     const notes  = document.getElementById('notes-live');
-    if (!btn || !navigator.mediaDevices) return;
+    if (!btn) return;
+    // Contexte non sécurisé (http) : getUserMedia n'existe pas. Le bouton
+    // restait affiché sans rien faire — on dit pourquoi et où ça marche.
+    if (!window.isSecureContext || !navigator.mediaDevices) {
+        btn.disabled = true;
+        btn.title = 'Le micro exige une connexion sécurisée (https)';
+        if (label) label.textContent = 'dictée en https';
+        return;
+    }
 
     let recorder = null;
     let chunks   = [];

@@ -3,7 +3,7 @@
 > Application de documentation et de performance musicale pour le projet **AZA** —
 > univers de fiction dystopique dont les sessions de création constituent la bande originale.
 
-**Version : v3.13.0** · [Changelog](CHANGELOG.md) · [Live →](https://sessions.robotariis.com)
+**Version : v3.15.1** · [Changelog](CHANGELOG.md) · [Live →](https://sessions.robotariis.com)
 
 ---
 
