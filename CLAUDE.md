@@ -4,9 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Projet
 
-App Flask + SQLite de documentation de sessions musicales pour l'univers de fiction **AZA** (dystopie personnelle d'Olivier — Dark Ambient / Industriel, Scaër, Bretagne). Déployée sur Fly.io à `https://robotariis-sessions.fly.dev/`.
+App Flask + SQLite de documentation de sessions musicales pour l'univers de fiction **AZA** (dystopie personnelle d'Olivier — Dark Ambient / Industriel, Scaër, Bretagne).
 
-Version actuelle : voir `VERSION` dans `app.py` (actuellement **v3.6.1**).
+⚠️ **Plus sur Fly.io.** Le déploiement est bare metal sur Roblab — voir « Déploiement » plus bas. `fly.toml` et la détection `FLY_APP_NAME` dans `wsgi.py` sont des résidus non nettoyés.
+
+Version actuelle : voir `VERSION` dans `app.py` (**v3.13.0**).
+
+⚠️ **`VERSION` a déjà pris deux releases de retard** (resté à 3.10.0 alors que le ROADMAP documentait v3.11.0 et v3.12.0), ce qui a fait attribuer un numéro déjà pris à une nouvelle feature le 2026-08-29. Avant de bumper, croiser `app.py`, `CHANGELOG.md` **et** `ROADMAP.md` — les trois divergent facilement.
 
 ---
 
@@ -35,9 +39,11 @@ Tests : **pytest** (smoke tests routes + DB).
 
 ### Vue d'ensemble
 
-`app.py` (116 lignes) est le point d'entrée minimal : il crée l'app Flask, enregistre les 18 blueprints, injecte les globals Jinja2 (`has_live`, `obsidian_vault`) et gère le backup automatique de `sessions.db` au démarrage (5 derniers backups dans `backups/`).
+`app.py` (144 lignes) est le point d'entrée minimal : il crée l'app Flask, enregistre les 18 blueprints et injecte les globals Jinja2 (`has_live`, `obsidian_vault`).
 
-`wsgi.py` est le point d'entrée Gunicorn/Fly.io — il appelle `init_db()` explicitement car `app.py.__main__` ne tourne pas sous Gunicorn.
+`wsgi.py` est le point d'entrée Gunicorn — il appelle `init_db()` **et** `backup_db()` explicitement, car `app.py.__main__` ne tourne pas sous Gunicorn. C'est le chemin réel en production ; le bloc `__main__` ne sert qu'au lancement local.
+
+La sauvegarde vit dans `core/backup.py`, appelée des deux côtés (5 derniers backups dans `backups/`). Elle **saute le snapshot si la base est inchangée** : le service tourne en `Restart=always`, et sans ce saut un crash-loop éviderait la rétention en cinq relances.
 
 ### Blueprints (pattern uniforme)
 
@@ -64,7 +70,8 @@ Les 18 blueprints enregistrés :
 | `patcher` | Éditeur de patch SVG drag&drop (nœuds, connexions audio/MIDI/CV) — minimap, snap-to-grid, connexions multi-type, duplication layout |
 | `sysex` | Loader SysEx DX7/Volca FM via Web MIDI API, bank editor |
 | `spark` | Générateur de contraintes créatives |
-| `catalogue` | Catalogue matériel (machine, effet, daw, synth_ios, plugin) |
+| `catalogue` | Catalogue matériel (machine, effet, daw, synth_ios, plugin) + **carnet par fiche** (`/catalogue/<id>`) : patches, associations, remarques |
+| `presets` | Carnet de notes par preset/patch — alimente les « patches favoris » du carnet d'instrument |
 | `obliques` | Stratégies Obliques AZA (style Brian Eno) |
 | `influences` | Artistes et labels de référence |
 | `projects` | Regroupement de sessions sous un projet |
@@ -76,7 +83,6 @@ Les 18 blueprints enregistrés :
 | `mirack` | Catalogue de modules MiRack (iOS) |
 | `settings_app` | Paramètres app (backup, import, reset) |
 | `about` | Page À propos |
-| `dim` | Module audio spécialisé |
 
 ### Core
 
@@ -84,18 +90,23 @@ Les 18 blueprints enregistrés :
 - `core/init_db.py` — `init_db(db_path)` : crée toutes les tables si inexistantes, peuple les données par défaut (obliques, catalogue, influences), applique les migrations via `ALTER TABLE ... ADD COLUMN` dans un `try/except`
 - `core/constants.py` — enums partagés : `CHARACTERS`, `MODES`, `INTENTIONS`, `ITEM_TYPES`, `SAMPLE_TYPES`, etc.
 - `core/oblique.py` — `rand_oblique(db_path)` : stratégie aléatoire depuis la table `obliques`
-- `core/ollama_client.py` — génération du `recap_claude` via `qwen3.5:latest` sur Ollama local (`192.168.1.100`) ; appelé depuis `/new?from_live=1` ; silencieux si indisponible
+- `core/ollama_client.py` — génération du `recap_claude` via **`qwen3.5:cloud`** (`OLLAMA_MODEL`) sur `192.168.1.100` ; second modèle `qwen2.5-coder:7b` (`CODER_MODEL`) ; appelé depuis `/new?from_live=1` ; **silencieux si indisponible**
+  ⚠️ Ce silence a déjà coûté : le recap est resté mort sans que personne le voie, parce que le modèle configuré (`qwen3.5:latest`) n'existait pas. Corrigé le 2026-07-31. Réflexe — un appel LLM qui échoue sans bruit ne se verra jamais depuis l'interface : vérifier le **modèle** avant de chercher un bug dans le code.
 - `core/whisper_client.py` — transcription audio via Whisper GPU local (port 9000, modèle `small`) ; appelé depuis `/live/transcribe` (POST multipart) ; silencieux si indisponible
 
 ### Base de données
 
-15 tables SQLite, toutes créées dans `init_db()`. Tables principales :
+19 tables SQLite, toutes créées dans `init_db()`. Tables principales :
 
 - `sessions` — 31 champs dont `recap_claude` (résumé IA généré par Ollama), `project_id` (FK), `title`
 - `live_session` — session en cours (0 ou 1 ligne) — supporte dictée vocale Whisper via `/live/transcribe`
 - `patch_layouts` / `patch_nodes` / `patch_connections` — module Patcher
 - `sysex_banks` — banks SysEx (BLOB SQLite)
-- `catalogue`, `influences`, `obliques`, `projects`, `sample_banks`, `inspiring_tracks`, `gear_wishlist`, `inspirations`, `mirack_modules`, `prompter_scripts`
+- `catalogue`, `influences`, `obliques`, `projects`, `sample_banks`, `inspiring_tracks`, `gear_wishlist`, `inspirations`, `mirack_modules`
+- `preset_notes` — carnet de presets (module `presets`)
+- `gear_pairings` / `gear_notes` — carnet d'instrument. Une association est stockée **une fois** mais lue des deux côtés (`UNION` dans `GearNotebookEngine.pairings`) : la noter depuis une fiche l'affiche aussi sur l'autre.
+
+⚠️ `prompter_scripts` **n'existe plus** — partie chez D.I.M en v3.12.0, comme le blueprint `dim/` dont il ne reste qu'un dossier vide non nettoyé.
 
 Migrations : toujours via `ALTER TABLE` dans `init_db()` avec `try/except` — pas de système de migration versionné.
 
