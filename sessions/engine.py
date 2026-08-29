@@ -205,10 +205,12 @@ class SessionsEngine:
             data.get("comments"), data.get("recap_claude"),
             data.get("project_id") or None,
         ))
+        new_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
         if from_live:
             conn.execute("DELETE FROM live_session")
         conn.commit()
         conn.close()
+        return new_id
 
     def update(self, sid, data):
         conn = self._get_db()

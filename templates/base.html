@@ -700,6 +700,7 @@
                 <button type="button" class="nav-btn" onclick="toggleDrop(this)">Sessions <span class="nav-caret">▾</span></button>
                 <div class="nav-drop">
                     <span class="nav-drop-label">Sessions</span>
+                    <a href="{{ url_for('sessions.quick_session') }}">⚡ Vite</a>
                     <a href="{{ url_for('sessions.index') }}">Liste</a>
                     <a href="{{ url_for('live.live') }}">▶ Live</a>
                     <a href="{{ url_for('sessions.new_session') }}">+ Nouvelle</a>

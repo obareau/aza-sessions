@@ -5,6 +5,30 @@
 
 ---
 
+## v3.15.0 — 2026-08-29 — ⚡ Vite : saisie minimale
+
+### ✨ Nouveautés
+- **`/vite`** — une page, une zone de texte. Le formulaire complet compte
+  **45 champs** ; celui-ci n'en demande qu'un, et deux facultatifs (titre,
+  machines). La date est automatique, le type vaut `music` par défaut.
+- **Dictée intégrée** — bouton 🎙 branché sur `/live/transcribe` (Whisper), qui
+  n'était jusqu'ici accessible que depuis le module `live`. Parler coûte moins
+  que taper.
+- **Brouillon sauvegardé à chaque frappe** dans `localStorage`, restauré au
+  retour, effacé à l'enregistrement. Aucun bouton à presser pour ça.
+- Entrée « ⚡ Vite » en tête du menu Sessions.
+
+### ⚠️ Choix de conception
+**La création ne génère aucun récap.** Attendre ~5 s au moment de valider
+annulerait l'intérêt d'une saisie rapide. Le récap se demande ensuite depuis la
+vue de la session (v3.14.0), en un bouton — ou jamais. Un test verrouille ce
+comportement.
+
+`SessionsEngine.create()` renvoie désormais l'id créé (il ne renvoyait rien),
+sans quoi on ne saurait pas vers quelle session rediriger.
+
+---
+
 ## v3.14.0 — 2026-08-29 — Le récap enfin atteignable
 
 ### 🐛 Le fond du problème

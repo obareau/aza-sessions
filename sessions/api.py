@@ -215,6 +215,40 @@ def edit_session(sid):
                            version=_version())
 
 
+@bp.route("/vite", methods=["GET", "POST"])
+def quick_session():
+    """Saisie minimale — une zone de texte, et c'est tout.
+
+    Le formulaire complet compte 45 champs. C'est trop quand la fatigue tombe
+    d'un coup : la fenêtre pour noter quelque chose peut se fermer avant qu'on
+    ait fini de la remplir, et une session à moitié saisie ne vaut pas mieux
+    qu'une session non saisie.
+
+    Ici rien n'est obligatoire sauf le texte, la date est automatique, et la
+    création est INSTANTANÉE : pas de génération de récap au moment de valider,
+    parce qu'attendre cinq secondes à ce moment-là annulerait tout l'intérêt.
+    Le récap se génère ensuite d'un bouton, depuis la vue de la session, ou
+    jamais. Le reste des champs se complète plus tard — ou pas.
+    """
+    if request.method == "POST":
+        texte = (request.form.get("comments") or "").strip()
+        if not texte:
+            flash("Rien à enregistrer.", "error")
+            return redirect(url_for("sessions.quick_session"))
+        sid = _engine().create({
+            "comments":     texte,
+            "title":        (request.form.get("title") or "").strip(),
+            "machines":     (request.form.get("machines") or "").strip(),
+            "session_type": request.form.get("session_type") or "music",
+        })
+        flash("Session enregistrée. Tu peux compléter plus tard.", "success")
+        return redirect(url_for("sessions.view_session", sid=sid))
+
+    return render_template("quick.html",
+                           version=current_app.config.get("VERSION", ""),
+                           oblique=_oblique())
+
+
 @bp.route("/session/<int:sid>/recap", methods=["POST"])
 def session_recap(sid):
     """Génère (ou régénère) le récap d'une session existante.
