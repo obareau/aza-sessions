@@ -215,6 +215,4 @@ construction. Le quantize n'existait ici que parce que le Prompteur comptait en
 <!-- argus:begin -->
 - [ ] ⇐ Homelab : Intégration d'une section dédiée aux guides d'installation dans le journal des sessions.
       _pourquoi : Cela permettrait une meilleure cohérence et facilitation de l'accès à ces informations cruciales pour les nouveaux contributeurs._
-- [x] ⇐ Argus : [health-endpoint] Tout service HTTP expose GET /health répondant 200.
-      _pourquoi : Un watchdog ne peut pas surveiller ce qu'il ne peut pas interroger. Sans sonde uniforme, chaque service invente la sienne — ou n'en a aucune, et tombe sans que personne le voie (OpenClaw bloqué 12 h en « active (running) », Navidrome mort 10 h derrière un stream qui continuait de sortir)._
 <!-- argus:end -->
