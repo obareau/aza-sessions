@@ -144,6 +144,16 @@ cd /home/olivier/DEV/aza-sessions && git pull && sudo systemctl restart aza-sess
 journalctl -u aza-sessions -f
 ```
 
+⚠️ **Éditer un template suffit à casser le site en production, avant même le
+`git pull`.** Jinja relit les templates depuis le disque à chaque requête,
+alors que Gunicorn garde le code Python chargé à son dernier démarrage. Ajouter
+dans un template un `url_for()` vers une route qui n'existe pas encore dans le
+processus vivant lève un `BuildError` — donc une 500 — sur une page qui
+marchait la seconde d'avant. Arrivé le 2026-09-08 sur `/catalogue` (bouton vers
+`catalogue.fiches`). Réflexe : **une modif template + route va toujours par
+paire avec un `systemctl restart`**, et le checkout de dev EST la production —
+il n'y a pas de copie de travail séparée.
+
 ---
 
 ## Règles avant tout commit
