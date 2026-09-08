@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Fiches matériel — AZA</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --ink:      #0E0D0B;
+        --ink-soft: #6B6560;
+        --ink-faint:#A09A94;
+        --paper:    #F7F4EF;
+        --rule:     #C8C2B8;
+        --accent:   #B82E08;
+        --mono:     'IBM Plex Mono', monospace;
+        --sans:     'IBM Plex Sans', sans-serif;
+    }
+
+    html, body {
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+    /* Paysage : deux colonnes de texte libre ne tiennent pas en portrait
+       sans casser chaque phrase sur cinq lignes. */
+    @page { size: A4 landscape; margin: 14mm 12mm; }
+
+    @media print {
+        html, body { background: white; }
+        .no-print { display: none !important; }
+        .page { box-shadow: none; margin: 0; max-width: none; padding: 0; }
+        thead { display: table-header-group; }   /* en-tête répété page à page */
+        tr, .type-block { break-inside: avoid; }
+    }
+
+    .page {
+        max-width: 297mm;
+        margin: 24px auto;
+        background: white;
+        padding: 14mm 12mm;
+        box-shadow: 0 4px 32px rgba(0,0,0,0.14);
+    }
+
+    /* ── EN-TÊTE ── */
+    .doc-header {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        padding-bottom: 10px; border-bottom: 2px solid var(--ink); margin-bottom: 16px;
+    }
+    .brand {
+        font-family: var(--mono); font-size: 9px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .18em; color: var(--ink-soft);
+    }
+    .brand strong { font-size: 13px; color: var(--ink); letter-spacing: .04em; display: block; margin-top: 2px; }
+    .doc-meta { font-family: var(--mono); font-size: 9px; color: var(--ink-soft); text-align: right; line-height: 1.8; }
+    .doc-title { font-family: var(--mono); font-size: 20px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 2px; }
+    .doc-sub { font-family: var(--mono); font-size: 10px; color: var(--ink-soft); margin-bottom: 16px; }
+
+    /* ── TABLE ── */
+    .type-block { margin-bottom: 16px; }
+    .type-name {
+        font-family: var(--mono); font-size: 9px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .12em; color: var(--accent);
+        padding-bottom: 4px; margin-bottom: 0; border-bottom: 1px solid var(--accent);
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+        font-family: var(--mono); font-size: 8px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft);
+        text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--rule);
+    }
+    tbody td { padding: 7px 8px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+    .c-mfr  { width: 15%; font-family: var(--mono); font-size: 10px; color: var(--ink-soft); }
+    .c-name { width: 20%; font-family: var(--mono); font-size: 11px; font-weight: 600; }
+    .c-txt  { width: 32.5%; }
+    .star { color: #B45309; }
+
+    /* Case vide : une ligne réglée, pour être remplie au stylo. C'est le seul
+       intérêt d'imprimer une fiche incomplète. */
+    .blank {
+        display: block; border-bottom: 1px dotted var(--ink-faint);
+        height: 12px; margin-bottom: 5px;
+    }
+    .blank:last-child { margin-bottom: 0; }
+
+    .doc-footer {
+        margin-top: 14px; padding-top: 8px; border-top: 1px solid var(--rule);
+        font-family: var(--mono); font-size: 8px; color: var(--ink-faint);
+        display: flex; justify-content: space-between;
+    }
+
+    /* ── BARRE (écran seulement) ── */
+    .print-bar {
+        position: sticky; top: 0; z-index: 10; background: var(--ink); color: white;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 16px; padding: 10px 20px; font-family: var(--mono); font-size: 11px;
+    }
+    .print-btn {
+        background: var(--accent); color: white; border: none;
+        font-family: var(--mono); font-size: 11px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .08em;
+        padding: 8px 20px; cursor: pointer; border-radius: 2px;
+    }
+    .close-btn { color: rgba(255,255,255,.5); text-decoration: none; font-size: 11px; }
+    .close-btn:hover { color: white; }
+</style>
+</head>
+<body>
+
+<div class="print-bar no-print">
+    <a href="{{ url_for('catalogue.fiches') }}" class="close-btn">← Retour aux fiches</a>
+    <div style="opacity:.6;">Cmd+P · Ctrl+P → Enregistrer en PDF · A4 paysage</div>
+    <button class="print-btn" onclick="window.print()">↓ Imprimer / PDF</button>
+</div>
+
+<div class="page">
+
+    <div class="doc-header">
+        <div class="brand">Journal de Sessions <strong>AZA</strong></div>
+        <div class="doc-meta">
+            Fiches matériel<br>
+            v{{ version }}<br>
+            {{ today }}
+        </div>
+    </div>
+
+    <div class="doc-title">Fiches matériel</div>
+    <div class="doc-sub">
+        {{ total }} fiche{% if total > 1 %}s{% endif %} — fabricant, fonction, usage prévu
+        {%- if filters %} · filtre : {{ filters }}{% endif %}
+    </div>
+
+    {% for type_key, items in grouped.items() %}
+    <div class="type-block">
+        <div class="type-name">{{ item_types.get(type_key, type_key) }} — {{ items|length }}</div>
+        <table>
+            <thead>
+                <tr>
+                    <th class="c-mfr">Fabricant</th>
+                    <th class="c-name">Nom</th>
+                    <th class="c-txt">À quoi ça sert</th>
+                    <th class="c-txt">Comment je m'en sers</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in items %}
+                <tr>
+                    <td class="c-mfr">{{ r.manufacturer or '—' }}</td>
+                    <td class="c-name">
+                        {{ r.name }}{% if r.favorite %} <span class="star">★</span>{% endif %}
+                        {%- if not r.active %} <span style="color:var(--ink-faint);font-weight:400;">(inactif)</span>{% endif %}
+                    </td>
+                    <td class="c-txt">
+                        {% if r.purpose %}{{ r.purpose }}{% else %}<span class="blank"></span><span class="blank"></span>{% endif %}
+                    </td>
+                    <td class="c-txt">
+                        {% if r.intent %}{{ r.intent }}{% else %}<span class="blank"></span><span class="blank"></span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="font-family:var(--mono);font-size:11px;color:var(--ink-soft);">
+        Aucune fiche ne correspond au filtre.
+    </p>
+    {% endfor %}
+
+    <div class="doc-footer">
+        <span>Journal de Sessions AZA · v{{ version }}</span>
+        <span>{{ today }}</span>
+    </div>
+
+</div>
+
+<script>
+    window.addEventListener('load', () => setTimeout(() => window.print(), 400));
+</script>
+
+</body>
+</html>

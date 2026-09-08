@@ -10,7 +10,11 @@
             {% if incomplete %} · <span style="color:var(--warning, #E6A700);">{{ incomplete }} à compléter</span>{% endif %}
         </div>
     </div>
-    <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary">← Catalogue</a>
+    <div style="display:flex;gap:8px;">
+        <a href="{{ url_for('catalogue.fiches_print') }}" id="fi-print" target="_blank"
+           class="btn btn-secondary" title="A4 paysage — imprime ce qui est affiché">⎙ Imprimer</a>
+        <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary">← Catalogue</a>
+    </div>
 </div>
 
 <style>
@@ -136,8 +140,21 @@ tr[hidden] { display:none; }
         });
         shown.textContent = n === rows.length ? '' : n + ' / ' + rows.length + ' affichées';
     }
-    [search, typeSel].forEach(el => el.addEventListener('input', applyFilters));
-    todoOnly.addEventListener('change', applyFilters);
+    // Le lien d'impression suit les filtres : imprimer, c'est imprimer ce qu'on
+    // regarde — sinon il faudrait refiltrer côté papier, ce qui ne se fait pas.
+    const printLink = document.getElementById('fi-print');
+    const printBase = printLink.getAttribute('href');
+    function syncPrintLink() {
+        const p = new URLSearchParams();
+        if (search.value.trim()) p.set('q', search.value.trim());
+        if (typeSel.value) p.set('type', typeSel.value);
+        if (todoOnly.checked) p.set('todo', '1');
+        const qs = p.toString();
+        printLink.href = qs ? printBase + '?' + qs : printBase;
+    }
+
+    [search, typeSel].forEach(el => el.addEventListener('input', () => { applyFilters(); syncPrintLink(); }));
+    todoOnly.addEventListener('change', () => { applyFilters(); syncPrintLink(); });
 
     // Les lignes masquées restent dans le POST : le formulaire porte toute la
     // table, et le moteur n'écrit que ce qui a changé — filtrer ne perd donc
@@ -159,6 +176,14 @@ tr[hidden] { display:none; }
     });
     window.addEventListener('beforeunload', e => {
         if (dirty.size) { e.preventDefault(); e.returnValue = ''; }
+    });
+
+    // La page d'impression relit la base : elle ignorerait ce qui est tapé mais
+    // pas encore enregistré. Le dire plutôt que d'imprimer une version périmée.
+    printLink.addEventListener('click', e => {
+        if (dirty.size && !confirm(
+            "Des modifications ne sont pas enregistrées — l'impression reprendra "
+            + "la version en base. Imprimer quand même ?")) e.preventDefault();
     });
     form.addEventListener('submit', () => dirty.clear());
 

@@ -197,3 +197,50 @@ def test_fiche_shown_on_gear_notebook(client):
     assert resp.status_code == 200
     assert "Boite a rythmes analogique".encode() in resp.data
     assert "Ossature rythmique des sessions live".encode() in resp.data
+
+
+def test_fiches_print_route(client):
+    """GET /catalogue/fiches/print rend la version papier."""
+    eng = CatalogueEngine(_DB)
+    eng.add("machine", "FichePrintItem")
+    conn = get_db(_DB)
+    item_id = conn.execute("SELECT id FROM catalogue WHERE name='FichePrintItem'").fetchone()["id"]
+    conn.close()
+    eng.update_fiches([{"id": item_id, "manufacturer": "Moog",
+                        "purpose": "Basse analogique", "intent": "Fondations"}])
+
+    resp = client.get("/catalogue/fiches/print")
+    assert resp.status_code == 200
+    body = resp.data.decode()
+    assert "FichePrintItem" in body
+    assert "Basse analogique" in body
+    assert "landscape" in body          # A4 paysage
+
+
+def test_fiches_print_honours_filters(client):
+    """Les filtres de l'écran (type, todo, q) s'appliquent au papier."""
+    eng = CatalogueEngine(_DB)
+    eng.add("effet", "FichePrintFiltre")   # laissée vide → « à compléter »
+    conn = get_db(_DB)
+    item_id = conn.execute("SELECT id FROM catalogue WHERE name='FichePrintFiltre'").fetchone()["id"]
+    conn.close()
+
+    # Filtre par type : une fiche machine ne doit pas sortir sur un tirage 'effet'
+    body = client.get("/catalogue/fiches/print?type=effet").data.decode()
+    assert "FichePrintFiltre" in body
+    assert "FichePrintItem" not in body
+
+    # Filtre « à compléter » : la fiche renseignée disparaît, la vide reste
+    body = client.get("/catalogue/fiches/print?todo=1").data.decode()
+    assert "FichePrintFiltre" in body
+    assert "FichePrintItem" not in body
+
+    # Recherche libre
+    body = client.get("/catalogue/fiches/print?q=fichceprintintrouvable").data.decode()
+    assert "Aucune fiche ne correspond" in body
+
+    # Une fois renseignée, elle sort du tirage « à compléter »
+    eng.update_fiches([{"id": item_id, "manufacturer": "Boss",
+                        "purpose": "Delay", "intent": "Nappes"}])
+    body = client.get("/catalogue/fiches/print?todo=1").data.decode()
+    assert "FichePrintFiltre" not in body

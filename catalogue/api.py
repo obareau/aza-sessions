@@ -106,6 +106,53 @@ def fiches():
                            oblique=rand_oblique(db_path))
 
 
+@bp.route("/catalogue/fiches/print")
+def fiches_print():
+    """Version papier de la vue table — A4 paysage, groupée par type.
+
+    Reprend les filtres de l'écran (`q`, `type`, `todo`) : imprimer, c'est
+    presque toujours imprimer *ce qu'on regarde*, et souvent justement les
+    fiches à compléter — les cases vides sortent réglées pour être remplies
+    au stylo pendant une session.
+    """
+    q    = (request.args.get("q") or "").strip().lower()
+    typ  = (request.args.get("type") or "").strip()
+    todo = request.args.get("todo") == "1"
+
+    rows = []
+    for r in _engine().fiches():
+        if typ and r["type"] != typ:
+            continue
+        if todo and (r["purpose"] or "").strip() and (r["intent"] or "").strip():
+            continue
+        if q:
+            hay = " ".join(str(r[f] or "") for f in
+                           ("name", "manufacturer", "purpose", "intent")).lower()
+            if q not in hay:
+                continue
+        rows.append(r)
+
+    grouped = {}
+    for r in rows:
+        grouped.setdefault(r["type"], []).append(r)
+
+    filters = []
+    if typ:
+        filters.append(ITEM_TYPES.get(typ, typ))
+    if todo:
+        filters.append("à compléter")
+    if q:
+        filters.append(f'« {q} »')
+
+    return render_template("catalogue_fiches_print.html",
+                           grouped=grouped,
+                           total=len(rows),
+                           filters=" · ".join(filters),
+                           item_types=ITEM_TYPES,
+                           today=date.today().isoformat(),
+                           version=current_app.config.get("VERSION", ""))
+
+
 @bp.route("/api/catalogue/add", methods=["POST"])
 def api_catalogue_add():
     """Ajout rapide inline depuis formulaire session (AJAX)."""

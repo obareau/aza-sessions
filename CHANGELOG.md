@@ -5,6 +5,27 @@
 
 ---
 
+## v3.18.1 — 2026-09-08 — Les fiches sur papier
+
+### ✨ Nouveautés
+- **`/catalogue/fiches/print`** — tirage **A4 paysage** de la vue table, groupé
+  par type, en-tête de colonnes répété à chaque page, pas de ligne coupée en
+  deux entre deux feuilles. Même mise en page « papier » que l'impression de
+  session (v1.x) : IBM Plex, encre sur crème, en-tête et pied de document.
+- **Le tirage suit les filtres de l'écran** (`?q=`, `?type=`, `?todo=1`) — le
+  bouton ⎙ construit l'URL depuis les filtres actifs. Imprimer, c'est imprimer
+  ce qu'on regarde.
+- **Les cases vides sortent réglées**, deux lignes pointillées par cellule :
+  c'est tout l'intérêt d'imprimer des fiches incomplètes — les remplir au stylo
+  pendant une session, les ressaisir après.
+- Cliquer ⎙ avec des modifications non enregistrées **prévient** : la page
+  d'impression relit la base et ignorerait ce qui est tapé.
+
+### ✅ Tests
+2 tests ajoutés (rendu papier, respect des filtres). Suite : **81 passants**.
+
+---
+
 ## v3.18.0 — 2026-09-08 — Fiches matériel : ce que c'est, ce que j'en fais
 
 ### ✨ Nouveautés
