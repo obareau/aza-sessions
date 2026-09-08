@@ -244,3 +244,76 @@ def test_fiches_print_honours_filters(client):
                         "purpose": "Delay", "intent": "Nappes"}])
     body = client.get("/catalogue/fiches/print?todo=1").data.decode()
     assert "FichePrintFiltre" not in body
+
+
+def test_add_fiche_creates_and_dedups():
+    """add_fiche crée une fiche complète et refuse le doublon (type, nom)."""
+    eng = CatalogueEngine(_DB)
+    new_id = eng.add_fiche("Synth iOS", "FicheAjoutee", "Korg",
+                           "  Synthé virtuel  ", "Textures au casque")
+    assert new_id is not None
+
+    conn = get_db(_DB)
+    row = conn.execute(
+        "SELECT type, name, manufacturer, purpose, intent FROM catalogue WHERE id=?",
+        (new_id,)
+    ).fetchone()
+    conn.close()
+    assert row["type"] == "synth_ios"          # normalisé comme sur /catalogue
+    assert row["manufacturer"] == "Korg"
+    assert row["purpose"] == "Synthé virtuel"  # espaces retirés
+    assert row["intent"] == "Textures au casque"
+
+    assert eng.add_fiche("synth_ios", "FicheAjoutee") is None   # doublon
+    assert eng.add_fiche("machine", "") is None                 # nom vide
+    assert eng.add_fiche("", "SansType") is None                # type vide
+
+
+def test_fiches_route_add_action(client):
+    """POST action=add sur /catalogue/fiches ajoute la fiche et redirige."""
+    resp = client.post("/catalogue/fiches", data={
+        "action": "add",
+        "type": "effet",
+        "manufacturer": "Eventide",
+        "name": "FicheAjoutRoute",
+        "purpose": "Reverb granulaire",
+        "intent": "Fin de chaine",
+    }, follow_redirects=False)
+    assert resp.status_code == 302
+
+    conn = get_db(_DB)
+    row = conn.execute(
+        "SELECT manufacturer, purpose, intent FROM catalogue WHERE name='FicheAjoutRoute'"
+    ).fetchone()
+    conn.close()
+    assert row["manufacturer"] == "Eventide"
+    assert row["purpose"] == "Reverb granulaire"
+    assert row["intent"] == "Fin de chaine"
+
+    # La nouvelle fiche s'affiche dans la table
+    assert b"FicheAjoutRoute" in client.get("/catalogue/fiches").data
+
+
+def test_fiches_save_action_still_saves(client):
+    """L'enregistrement de la table n'est pas confondu avec un ajout."""
+    eng = CatalogueEngine(_DB)
+    eng.add("machine", "FicheActionSave")
+    conn = get_db(_DB)
+    item_id = conn.execute("SELECT id FROM catalogue WHERE name='FicheActionSave'").fetchone()["id"]
+    before = conn.execute("SELECT COUNT(*) FROM catalogue").fetchone()[0]
+    conn.close()
+
+    client.post("/catalogue/fiches", data={
+        "action": "save",
+        "id": [str(item_id)],
+        "manufacturer": ["Roland"],
+        "purpose": ["Boite a rythmes"],
+        "intent": ["Rythmique"],
+    })
+
+    conn = get_db(_DB)
+    after = conn.execute("SELECT COUNT(*) FROM catalogue").fetchone()[0]
+    row = conn.execute("SELECT manufacturer FROM catalogue WHERE id=?", (item_id,)).fetchone()
+    conn.close()
+    assert after == before          # rien de créé au passage
+    assert row["manufacturer"] == "Roland"

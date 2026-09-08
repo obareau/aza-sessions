@@ -123,6 +123,35 @@ class CatalogueEngine:
         conn.close()
         return [dict(r) for r in rows]
 
+    def add_fiche(self, typ, name, manufacturer="", purpose="", intent=""):
+        """Crée une fiche complète depuis la vue table.
+
+        Retourne l'id créé, ou None si le couple (type, nom) existe déjà — même
+        garde que `add_inline` : le carnet croise les sessions par comparaison
+        exacte du nom, deux fiches homonymes le rendraient ambigu.
+        """
+        typ  = (typ or "").strip().lower().replace(" ", "_")
+        name = (name or "").strip()
+        if not typ or not name:
+            return None
+        conn = self._get_db()
+        try:
+            existing = conn.execute(
+                "SELECT id FROM catalogue WHERE type=? AND name=?", (typ, name)
+            ).fetchone()
+            if existing:
+                return None
+            cur = conn.execute(
+                "INSERT INTO catalogue (type, name, manufacturer, purpose, intent) "
+                "VALUES (?,?,?,?,?)",
+                (typ, name, (manufacturer or "").strip(),
+                 (purpose or "").strip(), (intent or "").strip())
+            )
+            conn.commit()
+            return cur.lastrowid
+        finally:
+            conn.close()
+
     def update_fiches(self, rows):
         """Enregistre la table d'un coup. rows = [{id, manufacturer, purpose, intent}].
 

@@ -38,8 +38,49 @@ textarea.fi-in { resize:vertical;min-height:34px;line-height:1.45; }
           border:1px solid var(--border);border-radius:var(--radius); }
 .fi-count { font-family:var(--mono);font-size:11px;color:var(--text-muted); }
 tr[hidden] { display:none; }
+.fi-add { display:grid;grid-template-columns:150px 150px 1fr 1.5fr 1.5fr auto;gap:10px;align-items:end; }
+@media (max-width: 1000px) { .fi-add { grid-template-columns:1fr 1fr 1fr; } .fi-add > *:last-child { grid-column:1 / -1; } }
+@media (max-width: 600px) { .fi-add { grid-template-columns:1fr; } }
+.fi-lbl { font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;
+          color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px; }
 @media (max-width: 700px) { .fi-table { min-width:760px; } }
 </style>
+
+<div class="card">
+    <div class="card-title">+ Ajouter du matériel</div>
+    <form method="POST" action="{{ url_for('catalogue.fiches') }}" class="fi-add">
+        <input type="hidden" name="action" value="add">
+        <datalist id="fi-types">
+            {% for key, label in item_types.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+            {% for t in all_types %}{% if t not in item_types %}<option value="{{ t }}">{{ t }}</option>{% endif %}{% endfor %}
+        </datalist>
+        <div>
+            <label class="fi-lbl">Type</label>
+            <input type="text" name="type" list="fi-types" placeholder="machine…" required class="fi-in">
+        </div>
+        <div>
+            <label class="fi-lbl">Fabricant</label>
+            <input type="text" name="manufacturer" placeholder="Korg…" class="fi-in">
+        </div>
+        <div>
+            <label class="fi-lbl">Nom</label>
+            <input type="text" name="name" placeholder="Volca Keys" required class="fi-in">
+        </div>
+        <div>
+            <label class="fi-lbl">À quoi ça sert</label>
+            <input type="text" name="purpose" placeholder="sa fonction" class="fi-in">
+        </div>
+        <div>
+            <label class="fi-lbl">Comment je m'en sers</label>
+            <input type="text" name="intent" placeholder="son rôle chez moi" class="fi-in">
+        </div>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+    </form>
+    <div class="fi-count" style="margin-top:8px;">
+        La fiche rejoint le catalogue et les puces de <a href="{{ url_for('sessions.quick_session') }}">/vite</a> —
+        c'est le même matériel partout. Les deux dernières colonnes peuvent attendre.
+    </div>
+</div>
 
 <div class="card" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
     <input type="text" id="fi-search" placeholder="🔍 Rechercher (nom, fabricant, usage)…" class="fi-in" style="flex:1;min-width:180px;max-width:340px;">
@@ -56,6 +97,7 @@ tr[hidden] { display:none; }
 
 {% if rows %}
 <form method="POST" action="{{ url_for('catalogue.fiches') }}" id="fi-form">
+<input type="hidden" name="action" value="save">
 <div class="card">
     <div class="fi-wrap">
         <table class="fi-table">

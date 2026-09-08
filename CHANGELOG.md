@@ -5,6 +5,31 @@
 
 ---
 
+## v3.18.2 — 2026-09-08 — Ajouter du matériel sans quitter la table
+
+### ✨ Nouveautés
+- **Formulaire d'ajout en tête de `/catalogue/fiches`** — type, fabricant, nom,
+  et les deux champs de la fiche d'un coup. Plus besoin de créer l'élément sur
+  `/catalogue` puis de revenir le décrire ici : l'aller-retour était la seule
+  raison de quitter la table.
+- Le type se choisit dans une **datalist** alimentée par les types déjà
+  présents en base *et* les types par défaut — comme sur `/catalogue`.
+- **Doublon refusé** sur le couple (type, nom), avec message : le carnet croise
+  les sessions par comparaison exacte du nom, deux fiches homonymes le
+  rendraient ambigu.
+
+### 🔧 Détail
+Les deux formulaires de la page — l'ajout et l'enregistrement de la table —
+postent sur la même route, distingués par un champ `action`. Les imbriquer
+aurait donné du HTML invalide ; une seconde route aurait éclaté en deux
+endroits ce qui se lit comme une seule page.
+
+### ✅ Tests
+3 tests ajoutés (création + normalisation du type, refus des doublons, non-
+confusion entre ajout et enregistrement). Suite : **84 passants**.
+
+---
+
 ## v3.18.1 — 2026-09-08 — Les fiches sur papier
 
 ### ✨ Nouveautés

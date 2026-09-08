@@ -75,6 +75,23 @@ def fiches():
     """
     engine = _engine()
     if request.method == "POST":
+        # Deux formulaires distincts postent ici : l'ajout d'une fiche et
+        # l'enregistrement de la table. Les imbriquer serait du HTML invalide,
+        # d'où le champ `action` plutôt qu'une seconde route.
+        if request.form.get("action") == "add":
+            new_id = engine.add_fiche(
+                request.form.get("type", ""),
+                request.form.get("name", ""),
+                request.form.get("manufacturer", ""),
+                request.form.get("purpose", ""),
+                request.form.get("intent", ""),
+            )
+            if new_id is None:
+                flash("Type et nom sont requis, et ce nom existe peut-être déjà pour ce type.", "error")
+            else:
+                flash(f"« {request.form.get('name', '').strip()} » ajouté au catalogue.", "success")
+            return redirect(url_for("catalogue.fiches"))
+
         ids           = request.form.getlist("id")
         manufacturers = request.form.getlist("manufacturer")
         purposes      = request.form.getlist("purpose")
@@ -100,6 +117,7 @@ def fiches():
     return render_template("catalogue_fiches.html",
                            rows=rows,
                            item_types=ITEM_TYPES,
+                           all_types=engine.get_all_types(),
                            incomplete=sum(1 for r in rows if not (r["purpose"] or "").strip()
                                           or not (r["intent"] or "").strip()),
                            version=current_app.config.get("VERSION", ""),

@@ -1,7 +1,7 @@
 # ROADMAP — Journal de Sessions AZA
 
 > Carte des possibles — pas un backlog, pas de deadlines.
-> Mis à jour : 2026-09-08 (après release **v3.18.1**)
+> Mis à jour : 2026-09-08 (après release **v3.18.2**)
 
 ---
 
@@ -29,7 +29,7 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 
 ---
 
-## ✅ Déjà livré (v1.x → v3.18.1)
+## ✅ Déjà livré (v1.x → v3.18.2)
 
 | Version | Fonctionnalité |
 |---|---|
@@ -67,6 +67,7 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 | v3.17.0 | **Puces matériel sur `/vite`** — le matériel se clique au lieu de se taper, trié favoris puis usage récent. Envoie le nom exact du catalogue, ce dont dépend le croisement du carnet : le maillon manquant entre saisie rapide et fiche instrument |
 | v3.18.0 | **Fiches matériel** (`/catalogue/fiches`) — vue table éditable : fabricant, à quoi ça sert, comment je compte m'en servir. Deux colonnes ajoutées au catalogue (`purpose`, `intent`), relues sur le carnet d'instrument |
 | v3.18.1 | **Impression des fiches** (`/catalogue/fiches/print`) — A4 paysage, groupé par type, suit les filtres de l'écran ; les cases vides sortent réglées pour être remplies au stylo |
+| v3.18.2 | **Ajout de matériel depuis la vue table** — type, fabricant, nom et les deux champs de la fiche d'un coup, sans repasser par `/catalogue` ; doublon (type, nom) refusé |
 
 ---
 
@@ -209,7 +210,7 @@ construction. Le quantize n'existait ici que parce que le Prompteur comptait en
 
 ---
 
-*Dernière mise à jour : 2026-09-08 — v3.18.1*
+*Dernière mise à jour : 2026-09-08 — v3.18.2*
 *Ce fichier évolue librement — ce n'est pas un backlog, c'est une carte des possibles.*
 
 ## Demandes externes (Argus)
