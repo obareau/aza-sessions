@@ -27,10 +27,33 @@
 .nb-stars { color:var(--warning, #E6A700);letter-spacing:1px; }
 </style>
 
-{% if gear.notes %}
+{% if gear.purpose or gear.intent or gear.notes %}
 <div class="card" style="margin-bottom:16px;">
     <div class="section-title">Fiche catalogue</div>
-    <div class="nb-note">{{ gear.notes }}</div>
+    {% if gear.purpose %}
+    <div style="margin-bottom:10px;">
+        <span class="nb-lbl">À quoi ça sert</span>
+        <div class="nb-note">{{ gear.purpose }}</div>
+    </div>
+    {% endif %}
+    {% if gear.intent %}
+    <div style="margin-bottom:10px;">
+        <span class="nb-lbl">Comment je m'en sers</span>
+        <div class="nb-note">{{ gear.intent }}</div>
+    </div>
+    {% endif %}
+    {% if gear.notes %}<div class="nb-note">{{ gear.notes }}</div>{% endif %}
+    <div style="margin-top:10px;">
+        <a href="{{ url_for('catalogue.fiches') }}" class="nb-date">▤ Éditer dans la vue fiches</a>
+    </div>
+</div>
+{% else %}
+<div class="card" style="margin-bottom:16px;">
+    <div class="section-title">Fiche catalogue</div>
+    <div class="nb-note">
+        Ni fonction ni usage prévu renseignés —
+        <a href="{{ url_for('catalogue.fiches') }}">la vue fiches</a> les édite en table.
+    </div>
 </div>
 {% endif %}
 

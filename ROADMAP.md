@@ -1,7 +1,7 @@
 # ROADMAP — Journal de Sessions AZA
 
 > Carte des possibles — pas un backlog, pas de deadlines.
-> Mis à jour : 2026-08-09 (après release **v3.12.0**)
+> Mis à jour : 2026-09-08 (après release **v3.18.0**)
 
 ---
 
@@ -29,7 +29,7 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 
 ---
 
-## ✅ Déjà livré (v1.x → v3.17.0)
+## ✅ Déjà livré (v1.x → v3.18.0)
 
 | Version | Fonctionnalité |
 |---|---|
@@ -65,6 +65,7 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 | v3.15.0 | **⚡ Vite** — `/vite`, saisie minimale à un champ (contre 45 dans le formulaire complet), dictée Whisper, brouillon auto. Création instantanée : **pas de récap au moment de valider**, il se demande après |
 | v3.16.0 | **Carnet ↔ sessions** — la fiche d'un instrument liste les sessions qui le mentionnent, sans saisie (lecture du champ matériel) ; **formulaire complet replié** en 6 sections, état retenu, ouverture forcée si un champ est rempli |
 | v3.17.0 | **Puces matériel sur `/vite`** — le matériel se clique au lieu de se taper, trié favoris puis usage récent. Envoie le nom exact du catalogue, ce dont dépend le croisement du carnet : le maillon manquant entre saisie rapide et fiche instrument |
+| v3.18.0 | **Fiches matériel** (`/catalogue/fiches`) — vue table éditable : fabricant, à quoi ça sert, comment je compte m'en servir. Deux colonnes ajoutées au catalogue (`purpose`, `intent`), relues sur le carnet d'instrument |
 
 ---
 
@@ -207,7 +208,7 @@ construction. Le quantize n'existait ici que parce que le Prompteur comptait en
 
 ---
 
-*Dernière mise à jour : 2026-08-09 — v3.12.0*
+*Dernière mise à jour : 2026-09-08 — v3.18.0*
 *Ce fichier évolue librement — ce n'est pas un backlog, c'est une carte des possibles.*
 
 ## Demandes externes (Argus)

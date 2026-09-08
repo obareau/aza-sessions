@@ -65,6 +65,47 @@ def manage_catalogue():
                            oblique=rand_oblique(db_path))
 
 
+@bp.route("/catalogue/fiches", methods=["GET", "POST"])
+def fiches():
+    """Vue table — fabricant, à quoi ça sert, comment je compte m'en servir.
+
+    La table entière se soumet en un POST : on remplit plusieurs lignes d'affilée,
+    et un enregistrement par ligne obligerait à recharger la page à chaque champ.
+    Le moteur ne réécrit que ce qui a changé.
+    """
+    engine = _engine()
+    if request.method == "POST":
+        ids           = request.form.getlist("id")
+        manufacturers = request.form.getlist("manufacturer")
+        purposes      = request.form.getlist("purpose")
+        intents       = request.form.getlist("intent")
+        rows = [
+            {
+                "id":           item_id,
+                "manufacturer": manufacturers[i] if i < len(manufacturers) else "",
+                "purpose":      purposes[i] if i < len(purposes) else "",
+                "intent":       intents[i] if i < len(intents) else "",
+            }
+            for i, item_id in enumerate(ids)
+        ]
+        touched = engine.update_fiches(rows)
+        if touched:
+            flash(f"{touched} fiche{'s' if touched > 1 else ''} enregistrée{'s' if touched > 1 else ''}.", "success")
+        else:
+            flash("Aucune modification à enregistrer.", "success")
+        return redirect(url_for("catalogue.fiches"))
+
+    db_path = current_app.config["DB_PATH"]
+    rows = engine.fiches()
+    return render_template("catalogue_fiches.html",
+                           rows=rows,
+                           item_types=ITEM_TYPES,
+                           incomplete=sum(1 for r in rows if not (r["purpose"] or "").strip()
+                                          or not (r["intent"] or "").strip()),
+                           version=current_app.config.get("VERSION", ""),
+                           oblique=rand_oblique(db_path))
+
+
 @bp.route("/api/catalogue/add", methods=["POST"])
 def api_catalogue_add():
     """Ajout rapide inline depuis formulaire session (AJAX)."""

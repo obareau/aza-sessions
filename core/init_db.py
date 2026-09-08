@@ -350,6 +350,8 @@ def init_db(db_path):
         "ALTER TABLE patch_connections ADD COLUMN note TEXT DEFAULT ''",
         "ALTER TABLE catalogue ADD COLUMN manufacturer TEXT DEFAULT ''",
         "ALTER TABLE catalogue ADD COLUMN favorite INTEGER DEFAULT 0",
+        "ALTER TABLE catalogue ADD COLUMN purpose TEXT DEFAULT ''",
+        "ALTER TABLE catalogue ADD COLUMN intent TEXT DEFAULT ''",
         "ALTER TABLE sessions ADD COLUMN session_type TEXT DEFAULT 'music'",
         "ALTER TABLE sessions ADD COLUMN ipad TEXT",
         "ALTER TABLE sessions ADD COLUMN zynthian TEXT",

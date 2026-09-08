@@ -5,6 +5,44 @@
 
 ---
 
+## v3.18.0 — 2026-09-08 — Fiches matériel : ce que c'est, ce que j'en fais
+
+### ✨ Nouveautés
+- **Vue table `/catalogue/fiches`** — une ligne par machine, effet, plugin ou
+  synthé iOS, avec **fabricant**, **à quoi ça sert** et **comment je compte
+  m'en servir**. Éditable en place : les trois colonnes sont des champs, la
+  table entière s'enregistre d'un bouton (ou `Ctrl/Cmd+S`).
+- Filtres : recherche libre (nom, fabricant, **et** le texte des deux nouveaux
+  champs), filtre par type, et **« à compléter seulement »** — utile quand 39
+  fiches sur 39 attendent encore leur description.
+- Les lignes modifiées se signalent avant l'enregistrement, et quitter la page
+  sans enregistrer demande confirmation.
+- Le **carnet d'instrument** (`/catalogue/<id>`) relit les deux champs en tête
+  de fiche, et renvoie vers la vue table quand ils sont vides.
+
+### 🗃 Base
+- `catalogue` gagne `purpose` et `intent` (migration `ALTER TABLE`, valeurs
+  vides par défaut). **Pas de table séparée** : ce sont des propriétés de la
+  machine, pas des événements datés comme les remarques du carnet — une
+  seconde table aurait imposé un JOIN pour lire deux colonnes.
+
+### ⚠️ Pourquoi deux champs et pas un
+« À quoi ça sert » est objectif et se recopie d'une notice ; « comment je m'en
+sers » est une décision — le rôle qu'on assigne à la machine dans ses propres
+sessions. Les fondre en un seul champ aurait laissé la seconde question sans
+réponse, celle qui rend le catalogue utile au moment de choisir quoi brancher.
+
+### 🔧 Détail
+- La table se soumet entière, mais le moteur n'écrit **que les lignes
+  modifiées** — filtrer l'affichage ne perd donc rien de ce qui a été saisi
+  avant de filtrer.
+
+### ✅ Tests
+5 tests ajoutés (colonnes, écriture sélective, ids invalides, routes GET/POST,
+relecture depuis le carnet). Suite complète : **79 tests passants**.
+
+---
+
 ## v3.17.0 — 2026-08-29 — Puces matériel sur /vite : la boucle se ferme
 
 ### ✨ Nouveautés

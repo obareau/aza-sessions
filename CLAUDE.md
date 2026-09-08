@@ -8,7 +8,7 @@ App Flask + SQLite de documentation de sessions musicales pour l'univers de fict
 
 ⚠️ **Plus sur Fly.io** — déploiement bare metal sur Roblab, voir « Déploiement » plus bas. `fly.toml` et la branche `FLY_APP_NAME` de `wsgi.py` ont été retirés le 2026-08-29. Le `Dockerfile` subsiste : il ne servait qu'au build Fly et n'est plus utilisé, mais il n'a rien de nuisible.
 
-Version actuelle : voir `VERSION` dans `app.py` (**v3.13.0**).
+Version actuelle : voir `VERSION` dans `app.py` (**v3.18.0**).
 
 ⚠️ **`VERSION` a déjà pris deux releases de retard** (resté à 3.10.0 alors que le ROADMAP documentait v3.11.0 et v3.12.0), ce qui a fait attribuer un numéro déjà pris à une nouvelle feature le 2026-08-29. Avant de bumper, croiser `app.py`, `CHANGELOG.md` **et** `ROADMAP.md` — les trois divergent facilement.
 
@@ -70,7 +70,7 @@ Les 18 blueprints enregistrés :
 | `patcher` | Éditeur de patch SVG drag&drop (nœuds, connexions audio/MIDI/CV) — minimap, snap-to-grid, connexions multi-type, duplication layout |
 | `sysex` | Loader SysEx DX7/Volca FM via Web MIDI API, bank editor |
 | `spark` | Générateur de contraintes créatives |
-| `catalogue` | Catalogue matériel (machine, effet, daw, synth_ios, plugin) + **carnet par fiche** (`/catalogue/<id>`) : patches, associations, remarques |
+| `catalogue` | Catalogue matériel (machine, effet, daw, synth_ios, plugin) + **carnet par fiche** (`/catalogue/<id>`) : patches, associations, remarques + **vue table éditable** (`/catalogue/fiches`) : fabricant, `purpose`, `intent` |
 | `presets` | Carnet de notes par preset/patch — alimente les « patches favoris » du carnet d'instrument |
 | `obliques` | Stratégies Obliques AZA (style Brian Eno) |
 | `influences` | Artistes et labels de référence |

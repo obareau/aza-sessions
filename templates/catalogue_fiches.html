@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Fiches matériel — AZA{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">▤ Fiches matériel</div>
+        <div class="page-subtitle">
+            {{ rows|length }} fiche{% if rows|length > 1 %}s{% endif %} — fabricant, fonction, usage prévu
+            {% if incomplete %} · <span style="color:var(--warning, #E6A700);">{{ incomplete }} à compléter</span>{% endif %}
+        </div>
+    </div>
+    <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary">← Catalogue</a>
+</div>
+
+<style>
+.fi-wrap { overflow-x:auto; }
+.fi-table { width:100%;font-family:var(--mono);font-size:12px;border-collapse:collapse;min-width:900px; }
+.fi-table thead th { padding:8px 10px;text-align:left;color:var(--text-muted);font-size:10px;
+                     text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--border);
+                     font-weight:600;white-space:nowrap; }
+.fi-table tbody tr { border-bottom:1px solid var(--border);vertical-align:top; }
+.fi-table tbody tr.dirty { background:color-mix(in srgb, var(--accent) 8%, transparent); }
+.fi-table td { padding:8px 10px; }
+.fi-name { font-size:13px;font-weight:600; }
+.fi-in { font-family:var(--mono);font-size:12px;background:var(--bg);border:1px solid var(--border);
+         border-radius:var(--radius);padding:6px 8px;color:var(--text);width:100%;box-sizing:border-box; }
+.fi-in::placeholder { color:var(--text-muted);opacity:.55; }
+textarea.fi-in { resize:vertical;min-height:34px;line-height:1.45; }
+.fi-inactive td { opacity:.5; }
+.fi-star { color:var(--warning, #E6A700); }
+.fi-bar { position:sticky;bottom:0;z-index:5;display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+          padding:12px 16px;margin-top:16px;background:var(--bg-alt);
+          border:1px solid var(--border);border-radius:var(--radius); }
+.fi-count { font-family:var(--mono);font-size:11px;color:var(--text-muted); }
+tr[hidden] { display:none; }
+@media (max-width: 700px) { .fi-table { min-width:760px; } }
+</style>
+
+<div class="card" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <input type="text" id="fi-search" placeholder="🔍 Rechercher (nom, fabricant, usage)…" class="fi-in" style="flex:1;min-width:180px;max-width:340px;">
+    <select id="fi-type" class="fi-in" style="max-width:220px;">
+        <option value="">Tous les types</option>
+        {% for t in rows|map(attribute='type')|unique|sort %}
+        <option value="{{ t }}">{{ item_types.get(t, t) }}</option>
+        {% endfor %}
+    </select>
+    <label style="font-family:var(--mono);font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="checkbox" id="fi-todo"> à compléter seulement
+    </label>
+</div>
+
+{% if rows %}
+<form method="POST" action="{{ url_for('catalogue.fiches') }}" id="fi-form">
+<div class="card">
+    <div class="fi-wrap">
+        <table class="fi-table">
+            <thead>
+                <tr>
+                    <th style="width:110px;">Type</th>
+                    <th style="width:130px;">Fabricant</th>
+                    <th style="width:170px;">Nom</th>
+                    <th>À quoi ça sert</th>
+                    <th>Comment je m'en sers</th>
+                    <th style="width:34px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rows %}
+                <tr class="fi-row {{ 'fi-inactive' if not r.active }}"
+                    data-type="{{ r.type }}"
+                    data-search="{{ (r.name ~ ' ' ~ (r.manufacturer or '') ~ ' ' ~ (r.purpose or '') ~ ' ' ~ (r.intent or ''))|lower }}"
+                    data-todo="{{ '1' if not (r.purpose or '').strip() or not (r.intent or '').strip() else '0' }}">
+                    <td>
+                        <span class="type-badge type-{{ r.type }}">{{ item_types.get(r.type, r.type) }}</span>
+                        <input type="hidden" name="id" value="{{ r.id }}">
+                    </td>
+                    <td><input type="text" name="manufacturer" value="{{ r.manufacturer or '' }}" placeholder="Korg…" class="fi-in"></td>
+                    <td>
+                        <a href="{{ url_for('catalogue.gear_notebook', gear_id=r.id) }}" class="fi-name">{{ r.name }}</a>
+                        {% if r.favorite %}<span class="fi-star">★</span>{% endif %}
+                        {% if not r.active %}<div class="fi-count">inactif</div>{% endif %}
+                        {% if r.notes %}<div class="fi-count" title="Notes catalogue">{{ r.notes }}</div>{% endif %}
+                    </td>
+                    <td><textarea name="purpose" rows="2" class="fi-in" placeholder="sa fonction — ce qu'il fait, pas ce que j'en fais">{{ r.purpose or '' }}</textarea></td>
+                    <td><textarea name="intent" rows="2" class="fi-in" placeholder="ma place pour lui — dans quel rôle, sur quel type de session">{{ r.intent or '' }}</textarea></td>
+                    <td>
+                        <a href="{{ url_for('catalogue.gear_notebook', gear_id=r.id) }}"
+                           class="btn btn-secondary btn-sm" title="Carnet de {{ r.name }}">◧</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="fi-bar">
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <span class="fi-count" id="fi-dirty">Aucune modification</span>
+    <span class="fi-count" style="margin-left:auto;" id="fi-shown"></span>
+</div>
+</form>
+{% else %}
+<div class="card">
+    <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);">
+        Le catalogue est vide — les fiches se peuplent depuis
+        <a href="{{ url_for('catalogue.manage_catalogue') }}">/catalogue</a>.
+    </p>
+</div>
+{% endif %}
+
+<script>
+(function () {
+    const form = document.getElementById('fi-form');
+    if (!form) return;
+
+    // --- Filtres ---
+    const search = document.getElementById('fi-search');
+    const typeSel = document.getElementById('fi-type');
+    const todoOnly = document.getElementById('fi-todo');
+    const rows = Array.from(document.querySelectorAll('.fi-row'));
+    const shown = document.getElementById('fi-shown');
+
+    function applyFilters() {
+        const q = search.value.trim().toLowerCase();
+        const t = typeSel.value;
+        const todo = todoOnly.checked;
+        let n = 0;
+        rows.forEach(row => {
+            const ok = (!q || row.dataset.search.includes(q))
+                    && (!t || row.dataset.type === t)
+                    && (!todo || row.dataset.todo === '1');
+            row.hidden = !ok;
+            if (ok) n++;
+        });
+        shown.textContent = n === rows.length ? '' : n + ' / ' + rows.length + ' affichées';
+    }
+    [search, typeSel].forEach(el => el.addEventListener('input', applyFilters));
+    todoOnly.addEventListener('change', applyFilters);
+
+    // Les lignes masquées restent dans le POST : le formulaire porte toute la
+    // table, et le moteur n'écrit que ce qui a changé — filtrer ne perd donc
+    // rien de ce qui a été saisi avant d'avoir filtré.
+
+    // --- Suivi des modifications ---
+    const dirtyLabel = document.getElementById('fi-dirty');
+    const dirty = new Set();
+    form.querySelectorAll('.fi-in').forEach(field => {
+        const initial = field.value;
+        field.addEventListener('input', () => {
+            const row = field.closest('tr');
+            if (field.value !== initial) dirty.add(field); else dirty.delete(field);
+            row.classList.toggle('dirty', Array.from(dirty).some(f => f.closest('tr') === row));
+            const n = new Set(Array.from(dirty).map(f => f.closest('tr'))).size;
+            dirtyLabel.textContent = n === 0 ? 'Aucune modification'
+                : n + ' fiche' + (n > 1 ? 's' : '') + ' modifiée' + (n > 1 ? 's' : '') + ' — non enregistrée' + (n > 1 ? 's' : '');
+        });
+    });
+    window.addEventListener('beforeunload', e => {
+        if (dirty.size) { e.preventDefault(); e.returnValue = ''; }
+    });
+    form.addEventListener('submit', () => dirty.clear());
+
+    // Ctrl/Cmd+S enregistre — on saisit au clavier, pas à la souris.
+    document.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); form.submit(); }
+    });
+})();
+</script>
+
+{% endblock %}

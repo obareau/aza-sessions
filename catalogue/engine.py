@@ -98,6 +98,66 @@ class CatalogueEngine:
             conn.close()
         return added, skipped
 
+    # ── Fiches détaillées ────────────────────────────────────────────────
+    # `purpose` (à quoi ça sert) et `intent` (comment je compte m'en servir)
+    # vivent sur la ligne du catalogue, pas dans une table à part : ce sont des
+    # propriétés de la machine, pas des événements datés comme les remarques du
+    # carnet. Une seconde table aurait obligé à un JOIN pour lire ce qui tient
+    # dans deux colonnes.
+
+    FICHE_FIELDS = ("manufacturer", "purpose", "intent")
+
+    def fiches(self, only_active=False):
+        """Toutes les fiches, à plat, pour la vue table.
+
+        À plat et non groupé : la vue table sert justement à comparer un plugin
+        et une machine ligne à ligne — le regroupement par type est déjà ce que
+        fait /catalogue.
+        """
+        conn = self._get_db()
+        where = "WHERE active=1 " if only_active else ""
+        rows = conn.execute(
+            "SELECT id, type, name, manufacturer, purpose, intent, notes, active, favorite "
+            f"FROM catalogue {where}ORDER BY type, favorite DESC, name COLLATE NOCASE"
+        ).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+
+    def update_fiches(self, rows):
+        """Enregistre la table d'un coup. rows = [{id, manufacturer, purpose, intent}].
+
+        N'écrit que les lignes réellement modifiées : la table se soumet
+        entière à chaque fois, et réécrire 40 lignes pour en changer une
+        rendrait tout historique de modification illisible.
+        Retourne le nombre de fiches touchées.
+        """
+        conn = self._get_db()
+        touched = 0
+        try:
+            for row in rows:
+                try:
+                    item_id = int(row.get("id"))
+                except (TypeError, ValueError):
+                    continue
+                current = conn.execute(
+                    "SELECT manufacturer, purpose, intent FROM catalogue WHERE id=?",
+                    (item_id,)
+                ).fetchone()
+                if current is None:
+                    continue
+                values = {f: (row.get(f) or "").strip() for f in self.FICHE_FIELDS}
+                if all(values[f] == (current[f] or "") for f in self.FICHE_FIELDS):
+                    continue
+                conn.execute(
+                    "UPDATE catalogue SET manufacturer=?, purpose=?, intent=? WHERE id=?",
+                    (values["manufacturer"], values["purpose"], values["intent"], item_id)
+                )
+                touched += 1
+            conn.commit()
+        finally:
+            conn.close()
+        return touched
+
     def delete(self, item_id):
         conn = self._get_db()
         conn.execute("DELETE FROM catalogue WHERE id=?", (item_id,))

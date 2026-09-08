@@ -7,7 +7,10 @@
         <div class="page-title">⚙ Catalogue</div>
         <div class="page-subtitle">Machines, effets et logiciels</div>
     </div>
-    <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
+    <div style="display:flex;gap:8px;">
+        <a href="{{ url_for('catalogue.fiches') }}" class="btn btn-secondary" title="Fabricant, fonction, usage prévu — en table éditable">▤ Fiches</a>
+        <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
+    </div>
 </div>
 
 <style>
