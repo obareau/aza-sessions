@@ -5,6 +5,36 @@
 
 ---
 
+## v3.19.0 — 2026-09-27 — Le nom de prise se fabrique tout seul
+
+### ✨ Nouveautés
+- **Colonne `Code` dans les fiches matériel** — `MF` pour le MicroFreak, `MG5`
+  pour la MS-50G. Six caractères, saisis une fois, mis en majuscules.
+- **`/vite` nomme la prise** à partir du matériel coché : `MFMG5-1`. Le nom
+  s'écrit dans `audio_file`, celui qu'on reporte sur le Zoom R8.
+- **Le compteur repart chaque jour** — c'est le rythme d'un enregistreur de
+  studio, où l'on refait la même chaîne trois fois dans l'après-midi.
+
+### ⚠️ Pourquoi générer plutôt que saisir
+Le R8 nomme ses prises `FOLDER01`, ce qui ne dit rien six mois plus tard. Et
+le champ libre ne vaut pas mieux : `signal_routing` porte déjà « Microfrek »,
+une faute qu'aucun croisement ne rattrapera jamais. Les codes viennent du
+catalogue, donc le nom est reconstituable et ne peut pas diverger.
+
+### 🔧 Détails qui comptent
+- **L'ordre suit le signal, pas l'alphabet** : machine, puis effet, puis iOS,
+  puis plugin. Alphabétiser aurait mis la pédale avant le synthé.
+- **Un matériel sans code est ignoré** plutôt que de se voir inventer une
+  abréviation — mieux vaut un nom court qu'un nom faux.
+- **Aucun code du tout = aucun nom.** Une session sans matériel codé se crée
+  quand même ; la saisie rapide ne doit jamais se bloquer.
+
+### ✅ Tests
+8 ajoutés (ordre du signal, compteur quotidien, matériel sans code, doublon de
+code, et deux de bout en bout sur `/vite`). Suite : **93 passants**.
+
+---
+
 ## v3.18.3 — 2026-09-27 — Deux échecs, deux messages
 
 ### 🐛 Correctif

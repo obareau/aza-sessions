@@ -105,7 +105,7 @@ class CatalogueEngine:
     # carnet. Une seconde table aurait obligé à un JOIN pour lire ce qui tient
     # dans deux colonnes.
 
-    FICHE_FIELDS = ("manufacturer", "purpose", "intent")
+    FICHE_FIELDS = ("code", "manufacturer", "purpose", "intent")
 
     def fiches(self, only_active=False):
         """Toutes les fiches, à plat, pour la vue table.
@@ -117,13 +117,78 @@ class CatalogueEngine:
         conn = self._get_db()
         where = "WHERE active=1 " if only_active else ""
         rows = conn.execute(
-            "SELECT id, type, name, manufacturer, purpose, intent, notes, active, favorite "
+            "SELECT id, type, name, code, manufacturer, purpose, intent, notes, active, favorite "
             f"FROM catalogue {where}ORDER BY type, favorite DESC, name COLLATE NOCASE"
         ).fetchall()
         conn.close()
         return [dict(r) for r in rows]
 
-    def add_fiche(self, typ, name, manufacturer="", purpose="", intent=""):
+    # ── Nom de prise ─────────────────────────────────────────────────────
+    #
+    # Le Zoom R8 nomme ses prises tout seul (« FOLDER01 »), ce qui ne dit rien
+    # six mois plus tard. Un nom construit depuis le matériel — MFMG5-1 pour
+    # MicroFreak + MS-50G, première prise du jour — se relit sans ouvrir la
+    # machine, et se retrouve dans AZA par une simple recherche.
+    #
+    # Les codes viennent du catalogue, jamais d'une saisie : c'est ce qui
+    # distingue cette colonne du champ libre `signal_routing`, où « Microfrek »
+    # s'est déjà écrit une fois.
+
+    # Ordre des colonnes = ordre du signal : la machine d'abord, l'effet
+    # ensuite. Alphabétiser les codes aurait mis la pédale avant le synthé.
+    CODE_ORDER = ("machines", "effects", "synths_ios", "plugins")
+
+    def codes_for(self, noms) -> list[str]:
+        """Codes catalogue des noms donnés, dans l'ordre reçu, sans doublon.
+
+        Un nom sans code est ignoré : mieux vaut un nom de prise plus court
+        qu'un nom qui invente une abréviation.
+        """
+        noms = [n.strip() for n in noms if n and n.strip()]
+        if not noms:
+            return []
+        conn = self._get_db()
+        try:
+            rows = conn.execute(
+                "SELECT name, code FROM catalogue WHERE code IS NOT NULL AND TRIM(code) <> ''"
+            ).fetchall()
+        finally:
+            conn.close()
+        par_nom = {r["name"]: r["code"].strip() for r in rows}
+        out = []
+        for n in noms:
+            c = par_nom.get(n)
+            if c and c not in out:
+                out.append(c)
+        return out
+
+    def take_name(self, gear_par_colonne: dict, date: str) -> str:
+        """Nom de prise du jour : codes concaténés + rang, ex. « MFMG5-1 ».
+
+        Le compteur repart chaque jour — c'est le rythme d'un enregistreur de
+        studio, où l'on refait la même chaîne trois fois dans l'après-midi.
+        Deux sessions du même jour avec le même matériel donnent donc -1 et -2.
+        """
+        noms = []
+        for col in self.CODE_ORDER:
+            for n in (gear_par_colonne.get(col) or "").split(","):
+                if n.strip():
+                    noms.append(n.strip())
+        codes = self.codes_for(noms)
+        if not codes:
+            return ""
+        prefixe = "".join(codes)
+        conn = self._get_db()
+        try:
+            deja = conn.execute(
+                "SELECT COUNT(*) FROM sessions WHERE date LIKE ? AND audio_file LIKE ?",
+                (f"{date[:10]}%", f"{prefixe}-%")
+            ).fetchone()[0]
+        finally:
+            conn.close()
+        return f"{prefixe}-{deja + 1}"
+
+    def add_fiche(self, typ, name, manufacturer="", purpose="", intent="", code=""):
         """Crée une fiche complète depuis la vue table.
 
         Retourne l'id créé, ou None si le couple (type, nom) existe déjà — même
@@ -147,10 +212,11 @@ class CatalogueEngine:
             if existing:
                 return None
             cur = conn.execute(
-                "INSERT INTO catalogue (type, name, manufacturer, purpose, intent) "
-                "VALUES (?,?,?,?,?)",
+                "INSERT INTO catalogue (type, name, manufacturer, purpose, intent, code) "
+                "VALUES (?,?,?,?,?,?)",
                 (typ, name, (manufacturer or "").strip(),
-                 (purpose or "").strip(), (intent or "").strip())
+                 (purpose or "").strip(), (intent or "").strip(),
+                 (code or "").strip().upper())
             )
             conn.commit()
             return cur.lastrowid
@@ -174,7 +240,7 @@ class CatalogueEngine:
                 except (TypeError, ValueError):
                     continue
                 current = conn.execute(
-                    "SELECT manufacturer, purpose, intent FROM catalogue WHERE id=?",
+                    "SELECT code, manufacturer, purpose, intent FROM catalogue WHERE id=?",
                     (item_id,)
                 ).fetchone()
                 if current is None:
@@ -183,8 +249,9 @@ class CatalogueEngine:
                 if all(values[f] == (current[f] or "") for f in self.FICHE_FIELDS):
                     continue
                 conn.execute(
-                    "UPDATE catalogue SET manufacturer=?, purpose=?, intent=? WHERE id=?",
-                    (values["manufacturer"], values["purpose"], values["intent"], item_id)
+                    "UPDATE catalogue SET code=?, manufacturer=?, purpose=?, intent=? WHERE id=?",
+                    (values["code"], values["manufacturer"],
+                     values["purpose"], values["intent"], item_id)
                 )
                 touched += 1
             conn.commit()

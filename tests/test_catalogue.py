@@ -349,3 +349,66 @@ def test_les_deux_echecs_d_ajout_disent_des_choses_differentes(client):
                     follow_redirects=True)
     assert "requis".encode() in r.data
     assert "existe déjà".encode() not in r.data, "une saisie vide ne doit pas parler de doublon"
+
+
+# ── Nom de prise (codes catalogue) ───────────────────────────────────────────
+
+def _avec_code(eng, typ, nom, code):
+    eng.add_fiche(typ, nom)
+    conn = get_db(_DB)
+    conn.execute("UPDATE catalogue SET code=? WHERE type=? AND name=?", (code, typ, nom))
+    conn.commit(); conn.close()
+
+
+def test_code_column_exists():
+    conn = get_db(_DB)
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(catalogue)").fetchall()}
+    conn.close()
+    assert "code" in cols
+
+
+def test_take_name_suit_l_ordre_du_signal_pas_l_alphabet():
+    """MicroFreak puis MS-50G : la machine avant l'effet, quoi qu'en dise l'alphabet."""
+    eng = CatalogueEngine(_DB)
+    _avec_code(eng, "machine", "TakeMicroFreak", "MF")
+    _avec_code(eng, "effet", "TakeMS50G", "MG5")
+    nom = eng.take_name({"machines": "TakeMicroFreak", "effects": "TakeMS50G"}, "2026-09-27")
+    assert nom == "MFMG5-1"
+
+
+def test_le_compteur_repart_chaque_jour():
+    eng = CatalogueEngine(_DB)
+    _avec_code(eng, "machine", "TakeCompteur", "TC")
+    conn = get_db(_DB)
+    for d in ("2026-09-27", "2026-09-27", "2026-09-28"):
+        conn.execute("INSERT INTO sessions (date, audio_file) VALUES (?, ?)",
+                     (d + "T10:00", "TC-1" if d == "2026-09-28" else "TC-x"))
+    conn.execute("UPDATE sessions SET audio_file='TC-1' WHERE date LIKE '2026-09-27%' LIMIT 1")
+    conn.commit(); conn.close()
+    # 2026-09-28 a déjà TC-1 → la prochaine du 28 est TC-2
+    assert eng.take_name({"machines": "TakeCompteur"}, "2026-09-28") == "TC-2"
+    # un autre jour repart de 1
+    assert eng.take_name({"machines": "TakeCompteur"}, "2026-10-01") == "TC-1"
+
+
+def test_matos_sans_code_est_ignore_plutot_qu_invente():
+    eng = CatalogueEngine(_DB)
+    _avec_code(eng, "machine", "TakeAvecCode", "AC")
+    eng.add_fiche("effet", "TakeSansCode")          # pas de code
+    nom = eng.take_name({"machines": "TakeAvecCode", "effects": "TakeSansCode"}, "2026-11-01")
+    assert nom == "AC-1", "un nom sans code ne doit pas fabriquer d'abréviation"
+
+
+def test_aucun_code_du_tout_ne_donne_pas_de_nom():
+    eng = CatalogueEngine(_DB)
+    eng.add_fiche("machine", "TakeRien")
+    assert eng.take_name({"machines": "TakeRien"}, "2026-11-02") == ""
+    assert eng.take_name({}, "2026-11-02") == ""
+
+
+def test_doublon_de_code_compte_une_fois():
+    """Deux machines partageant un code ne doivent pas le répéter."""
+    eng = CatalogueEngine(_DB)
+    _avec_code(eng, "machine", "TakeJumeauA", "JX")
+    _avec_code(eng, "machine", "TakeJumeauB", "JX")
+    assert eng.take_name({"machines": "TakeJumeauA, TakeJumeauB"}, "2026-11-03") == "JX-1"

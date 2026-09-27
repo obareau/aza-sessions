@@ -239,13 +239,25 @@ def quick_session():
         # ce qui n'est pas au catalogue et rejoint `machines`.
         extra = (request.form.get("machines_extra") or "").strip()
         machines = ", ".join(x for x in [(request.form.get("machines") or "").strip(), extra] if x)
+        gear = {
+            "machines":   machines,
+            "effects":    (request.form.get("effects") or "").strip(),
+            "plugins":    (request.form.get("plugins") or "").strip(),
+            "synths_ios": (request.form.get("synths_ios") or "").strip(),
+        }
+        # Nom de prise depuis les codes catalogue : le R8 nomme « FOLDER01 »,
+        # ce qui ne dit rien six mois plus tard. Vide si aucun matériel choisi
+        # ne porte de code — on ne fabrique pas d'abréviation.
+        from catalogue.engine import CatalogueEngine
+        from datetime import date as _date
+        take = CatalogueEngine(current_app.config["DB_PATH"]).take_name(
+            gear, _date.today().isoformat())
+
         sid = _engine().create({
             "comments":     texte,
+            "audio_file":   take,
             "title":        (request.form.get("title") or "").strip(),
-            "machines":     machines,
-            "effects":      (request.form.get("effects") or "").strip(),
-            "plugins":      (request.form.get("plugins") or "").strip(),
-            "synths_ios":   (request.form.get("synths_ios") or "").strip(),
+            **gear,
             "session_type": request.form.get("session_type") or "music",
         })
         flash("Session enregistrée. Tu peux compléter plus tard.", "success")

@@ -126,3 +126,42 @@ def test_free_text_alone_still_works(client):
     sid = int(r.headers["Location"].rstrip("/").split("/")[-1])
     assert SessionsEngine(_DB).get_plain(sid)["machines"] == "Truc"
     _cleanup(sid)
+
+
+def test_vite_nomme_la_prise_depuis_les_codes_catalogue(client):
+    """Bout en bout : des puces cochées → un nom de prise en base.
+
+    C'est le seul endroit où le nom se fabrique ; si le câblage casse, la
+    session est créée quand même et le nom manque en silence.
+    """
+    from catalogue.engine import CatalogueEngine
+    eng = CatalogueEngine(_DB)
+    eng.add_fiche("machine", "ViteMicroFreak", code="VMF")
+    eng.add_fiche("effet", "ViteMS50G", code="VMG")
+
+    r = client.post("/vite", data={
+        "comments": "essai de nom de prise",
+        "machines": "ViteMicroFreak",
+        "effects":  "ViteMS50G",
+    }, follow_redirects=False)
+    assert r.status_code == 302
+
+    conn = get_db(_DB)
+    row = conn.execute(
+        "SELECT audio_file, machines, effects FROM sessions "
+        "WHERE comments='essai de nom de prise'").fetchone()
+    conn.close()
+    assert row["audio_file"] == "VMF VMG-1".replace(" ", ""), row["audio_file"]
+    assert row["machines"] == "ViteMicroFreak"
+
+
+def test_vite_sans_code_ne_bloque_pas_la_session(client):
+    """Une session sans matériel codé doit se créer quand même, sans nom."""
+    r = client.post("/vite", data={"comments": "essai sans code"},
+                    follow_redirects=False)
+    assert r.status_code == 302
+    conn = get_db(_DB)
+    row = conn.execute(
+        "SELECT audio_file FROM sessions WHERE comments='essai sans code'").fetchone()
+    conn.close()
+    assert (row["audio_file"] or "") == ""

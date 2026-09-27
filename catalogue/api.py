@@ -87,6 +87,7 @@ def fiches():
                     request.form.get("manufacturer", ""),
                     request.form.get("purpose", ""),
                     request.form.get("intent", ""),
+                    request.form.get("code", ""),
                 )
             except ValueError as exc:
                 flash(str(exc).capitalize() + ".", "error")
@@ -98,12 +99,14 @@ def fiches():
             return redirect(url_for("catalogue.fiches"))
 
         ids           = request.form.getlist("id")
+        codes         = request.form.getlist("code")
         manufacturers = request.form.getlist("manufacturer")
         purposes      = request.form.getlist("purpose")
         intents       = request.form.getlist("intent")
         rows = [
             {
                 "id":           item_id,
+                "code":         codes[i] if i < len(codes) else "",
                 "manufacturer": manufacturers[i] if i < len(manufacturers) else "",
                 "purpose":      purposes[i] if i < len(purposes) else "",
                 "intent":       intents[i] if i < len(intents) else "",

@@ -38,7 +38,7 @@ textarea.fi-in { resize:vertical;min-height:34px;line-height:1.45; }
           border:1px solid var(--border);border-radius:var(--radius); }
 .fi-count { font-family:var(--mono);font-size:11px;color:var(--text-muted); }
 tr[hidden] { display:none; }
-.fi-add { display:grid;grid-template-columns:150px 150px 1fr 1.5fr 1.5fr auto;gap:10px;align-items:end; }
+.fi-add { display:grid;grid-template-columns:130px 80px 130px 1fr 1.4fr 1.4fr auto;gap:10px;align-items:end; }
 @media (max-width: 1000px) { .fi-add { grid-template-columns:1fr 1fr 1fr; } .fi-add > *:last-child { grid-column:1 / -1; } }
 @media (max-width: 600px) { .fi-add { grid-template-columns:1fr; } }
 .fi-lbl { font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;
@@ -57,6 +57,11 @@ tr[hidden] { display:none; }
         <div>
             <label class="fi-lbl">Type</label>
             <input type="text" name="type" list="fi-types" placeholder="machine…" required class="fi-in">
+        </div>
+        <div>
+            <label class="fi-lbl">Code</label>
+            <input type="text" name="code" placeholder="MF" maxlength="6" class="fi-in"
+                   style="text-transform:uppercase;">
         </div>
         <div>
             <label class="fi-lbl">Fabricant</label>
@@ -104,6 +109,7 @@ tr[hidden] { display:none; }
             <thead>
                 <tr>
                     <th style="width:110px;">Type</th>
+                    <th style="width:74px;" title="Code court pour le nom de prise (ex. MF, MG5)">Code</th>
                     <th style="width:130px;">Fabricant</th>
                     <th style="width:170px;">Nom</th>
                     <th>À quoi ça sert</th>
@@ -115,12 +121,14 @@ tr[hidden] { display:none; }
                 {% for r in rows %}
                 <tr class="fi-row {{ 'fi-inactive' if not r.active }}"
                     data-type="{{ r.type }}"
-                    data-search="{{ (r.name ~ ' ' ~ (r.manufacturer or '') ~ ' ' ~ (r.purpose or '') ~ ' ' ~ (r.intent or ''))|lower }}"
+                    data-search="{{ (r.name ~ ' ' ~ (r.code or '') ~ ' ' ~ (r.manufacturer or '') ~ ' ' ~ (r.purpose or '') ~ ' ' ~ (r.intent or ''))|lower }}"
                     data-todo="{{ '1' if not (r.purpose or '').strip() or not (r.intent or '').strip() else '0' }}">
                     <td>
                         <span class="type-badge type-{{ r.type }}">{{ item_types.get(r.type, r.type) }}</span>
                         <input type="hidden" name="id" value="{{ r.id }}">
                     </td>
+                    <td><input type="text" name="code" value="{{ r.code or '' }}" placeholder="MF" maxlength="6"
+                               class="fi-in" style="text-transform:uppercase;"></td>
                     <td><input type="text" name="manufacturer" value="{{ r.manufacturer or '' }}" placeholder="Korg…" class="fi-in"></td>
                     <td>
                         <a href="{{ url_for('catalogue.gear_notebook', gear_id=r.id) }}" class="fi-name">{{ r.name }}</a>
