@@ -79,17 +79,22 @@ def fiches():
         # l'enregistrement de la table. Les imbriquer serait du HTML invalide,
         # d'où le champ `action` plutôt qu'une seconde route.
         if request.form.get("action") == "add":
-            new_id = engine.add_fiche(
-                request.form.get("type", ""),
-                request.form.get("name", ""),
-                request.form.get("manufacturer", ""),
-                request.form.get("purpose", ""),
-                request.form.get("intent", ""),
-            )
-            if new_id is None:
-                flash("Type et nom sont requis, et ce nom existe peut-être déjà pour ce type.", "error")
+            nom = request.form.get("name", "").strip()
+            try:
+                new_id = engine.add_fiche(
+                    request.form.get("type", ""),
+                    nom,
+                    request.form.get("manufacturer", ""),
+                    request.form.get("purpose", ""),
+                    request.form.get("intent", ""),
+                )
+            except ValueError as exc:
+                flash(str(exc).capitalize() + ".", "error")
             else:
-                flash(f"« {request.form.get('name', '').strip()} » ajouté au catalogue.", "success")
+                if new_id is None:
+                    flash(f"« {nom} » existe déjà pour ce type.", "error")
+                else:
+                    flash(f"« {nom} » ajouté au catalogue.", "success")
             return redirect(url_for("catalogue.fiches"))
 
         ids           = request.form.getlist("id")

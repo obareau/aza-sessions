@@ -264,9 +264,15 @@ def test_add_fiche_creates_and_dedups():
     assert row["purpose"] == "Synthé virtuel"  # espaces retirés
     assert row["intent"] == "Textures au casque"
 
+    # Deux sorties distinctes pour deux causes distinctes : None dit « doublon »,
+    # ValueError dit « saisie incomplète ». Elles ne se corrigent pas pareil.
     assert eng.add_fiche("synth_ios", "FicheAjoutee") is None   # doublon
-    assert eng.add_fiche("machine", "") is None                 # nom vide
-    assert eng.add_fiche("", "SansType") is None                # type vide
+    for typ, nom, cas in (("machine", "", "nom vide"), ("", "SansType", "type vide")):
+        try:
+            eng.add_fiche(typ, nom)
+        except ValueError:
+            continue
+        raise AssertionError(f"{cas} aurait du lever ValueError")
 
 
 def test_fiches_route_add_action(client):
@@ -317,3 +323,29 @@ def test_fiches_save_action_still_saves(client):
     conn.close()
     assert after == before          # rien de créé au passage
     assert row["manufacturer"] == "Roland"
+
+
+def test_les_deux_echecs_d_ajout_disent_des_choses_differentes(client):
+    """C'est là qu'était le défaut : un seul message pour deux causes.
+
+    L'utilisateur qui saisit un doublon lisait un message parlant de champs
+    manquants, et réciproquement.
+    """
+    base = {"action": "add", "type": "machine", "purpose": "", "intent": "",
+            "manufacturer": ""}
+
+    r = client.post("/catalogue/fiches", data={**base, "name": "FicheMessage"},
+                    follow_redirects=True)
+    assert "ajouté au catalogue".encode() in r.data
+
+    # même nom, même type → doublon
+    r = client.post("/catalogue/fiches", data={**base, "name": "FicheMessage"},
+                    follow_redirects=True)
+    assert "existe déjà".encode() in r.data
+    assert "requis".encode() not in r.data, "un doublon ne doit pas parler de champs requis"
+
+    # nom vide → saisie incomplète
+    r = client.post("/catalogue/fiches", data={**base, "name": "  "},
+                    follow_redirects=True)
+    assert "requis".encode() in r.data
+    assert "existe déjà".encode() not in r.data, "une saisie vide ne doit pas parler de doublon"

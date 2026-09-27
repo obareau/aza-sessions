@@ -5,6 +5,25 @@
 
 ---
 
+## v3.18.3 — 2026-09-27 — Deux échecs, deux messages
+
+### 🐛 Correctif
+- **`add_fiche` renvoyait `None` pour trois causes différentes** — type manquant,
+  nom manquant, doublon. L'appelant ne pouvait pas les distinguer, d'où un
+  message qui avouait son ignorance : « Type et nom sont requis, et ce nom
+  existe **peut-être** déjà ». Qui saisissait un doublon lisait un texte parlant
+  de champs manquants, et réciproquement.
+- La saisie incomplète lève désormais `ValueError`, le doublon garde `None`.
+  Deux sorties pour deux causes — elles ne se corrigent pas pareil.
+
+### ✅ Tests
+Le test existant est recalé sur le nouveau contrat, et un test de route vérifie
+ce qui était réellement cassé : **le message**. Il affirme aussi les négatifs —
+un doublon ne doit jamais parler de champs requis, une saisie vide ne doit
+jamais parler de doublon. Suite : **85 passants**.
+
+---
+
 ## v3.18.2 — 2026-09-08 — Ajouter du matériel sans quitter la table
 
 ### ✨ Nouveautés

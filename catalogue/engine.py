@@ -129,11 +129,16 @@ class CatalogueEngine:
         Retourne l'id créé, ou None si le couple (type, nom) existe déjà — même
         garde que `add_inline` : le carnet croise les sessions par comparaison
         exacte du nom, deux fiches homonymes le rendraient ambigu.
+
+        Lève ValueError si le type ou le nom manque. Deux sorties distinctes
+        pour deux causes distinctes : une saisie incomplète et un doublon ne se
+        corrigent pas pareil, et l'appelant ne peut le dire à l'utilisateur que
+        s'il peut les distinguer.
         """
         typ  = (typ or "").strip().lower().replace(" ", "_")
         name = (name or "").strip()
         if not typ or not name:
-            return None
+            raise ValueError("type et nom sont requis")
         conn = self._get_db()
         try:
             existing = conn.execute(
