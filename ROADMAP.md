@@ -97,7 +97,7 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 
 | Priorité | Idée | Notes |
 |---|---|---|
-| ★★★ | **Heatmap calendrier** — grille jour/semaine style GitHub contributions | Visualiser périodes actives vs creuses (NB : une heatmap *intensités sonores* existe déjà sur l'index depuis v3.7.1 — celle-ci reste à faire, axe calendrier/activité) |
+| ✅ ★★★ | ~~**Heatmap calendrier** — grille jour/semaine style GitHub contributions~~ | **Déjà livrée**, constaté le 2026-09-27 : `/stats` porte la grille 53 semaines avec étiquettes de mois, légende, infobulle, et `compute()` renvoie `heatmap`, `streak` et `max_streak`. La note « reste à faire » visait la heatmap *sonore* de l'index et a fait croire l'inverse — vérifier la page avant de rouvrir un item |
 | ★★☆ | **Évolution temporelle** — courbe note moyenne, énergie, mode au fil du temps | Voir si la qualité progresse |
 | ★★☆ | **Records & badges** — session la mieux notée, la plus longue, streak consécutif | Gamification légère |
 | ★★☆ | **Corrélations** — note vs durée, énergie vs heure de la journée | Comprendre ses propres patterns |
