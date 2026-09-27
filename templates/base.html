@@ -424,6 +424,47 @@
             transform: translateX(4px) !important;
         }
         /* Overlay aide raccourcis */
+        /* ── THÈME PERSONNALISÉ ──────────────────────────────────────
+           Cinq couleurs sont choisies à la main (fond, texte, bordure, les
+           deux accents) et posées en inline sur <body> ; les onze autres se
+           dérivent ici en `color-mix()`. Faire dériver plutôt que demander
+           évite seize sélecteurs de couleur pour un thème qu'on règle une
+           fois — et garantit que les nuances restent cohérentes entre elles. */
+        body.t-custom {
+            --bg-alt:       color-mix(in srgb, var(--bg) 93%, var(--text));
+            --surface:      color-mix(in srgb, var(--bg) 96%, #fff);
+            --border-strong:color-mix(in srgb, var(--border) 55%, var(--text));
+            --text-muted:   color-mix(in srgb, var(--text) 58%, var(--bg));
+            --accent-soft:  color-mix(in srgb, var(--accent) 12%, var(--bg));
+            --accent2-soft: color-mix(in srgb, var(--accent2) 12%, var(--bg));
+            --success-soft: color-mix(in srgb, var(--success) 12%, var(--bg));
+            --warning-soft: color-mix(in srgb, var(--warning) 12%, var(--bg));
+            --shadow: 0 1px 3px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        /* ── MODE FOCUS ──────────────────────────────────────────────
+           Pendant une session on joue ; l'interface n'a qu'à porter la page
+           en cours. On cache la navigation et tout ce qui invite à cliquer
+           ailleurs, sans toucher au contenu : rien ne bouge de place, tout
+           ce qui distrait disparaît. */
+        body.focus-mode header,
+        body.focus-mode .oblique-banner,
+        body.focus-mode footer { display: none; }
+        body.focus-mode main { padding-top: 24px; }
+        /* La sortie doit rester atteignable : sans ce bouton, un mode caché
+           sans nav est un piège — surtout au doigt, où il n'y a pas de `f`. */
+        #focus-exit {
+            display: none; position: fixed; top: 12px; right: 12px; z-index: 450;
+            font-family: var(--mono); font-size: 10px; letter-spacing: .08em;
+            text-transform: uppercase; padding: 6px 10px; cursor: pointer;
+            background: var(--bg-alt); color: var(--text-muted);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            opacity: .45; transition: opacity .15s;
+        }
+        #focus-exit:hover { opacity: 1; }
+        body.focus-mode #focus-exit { display: block; }
+        @media (max-width: 600px) { #focus-exit { opacity: .85; } }
+
         #kbd-overlay {
             display: none; position: fixed; inset: 0; z-index: 500;
             background: rgba(0,0,0,0.6); backdrop-filter: blur(3px);
@@ -686,6 +727,30 @@
                     {{ label }}
                 </button>
                 {% endfor %}
+
+                <!-- THÈME PERSONNALISÉ -->
+                <div style="margin-top:8px;padding-top:8px;border-top:1px solid #2E2C29;">
+                    <button type="button" onclick="setTheme('custom')" id="th-custom"
+                        style="display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;
+                               cursor:pointer;padding:5px 6px;border-radius:var(--radius);color:#E8E4DC;
+                               font-family:var(--mono);font-size:11px;text-align:left;">
+                        <span id="th-custom-chip" style="width:24px;height:14px;border-radius:2px;
+                              flex-shrink:0;display:inline-block;"></span>
+                        Personnalisé
+                    </button>
+                    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:6px;">
+                        {% for cle, etiquette in [('bg','Fond'), ('text','Texte'), ('border','Bordure'),
+                                                  ('accent','Accent'), ('accent2','Accent 2')] %}
+                        <label title="{{ etiquette }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+                            <input type="color" id="cu-{{ cle }}" oninput="customTheme()"
+                                   style="width:100%;height:20px;padding:0;border:1px solid #2E2C29;
+                                          border-radius:2px;background:none;cursor:pointer;">
+                            <span style="font-family:var(--mono);font-size:7px;color:#857F78;
+                                         text-transform:uppercase;letter-spacing:.06em;">{{ etiquette[:3] }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
         <button type="button" id="nav-toggle" onclick="toggleNav()" aria-label="Menu">☰</button>
@@ -794,6 +859,9 @@
 
     <footer>AZA Session Journal v{{ version }} — La machine ne ment pas. Elle déforme.</footer>
 
+    <button type="button" id="focus-exit" onclick="toggleFocus()"
+            title="Quitter le mode focus (f)">✕ focus</button>
+
     <!-- OVERLAY RACCOURCIS CLAVIER -->
     <div id="kbd-overlay" onclick="kbdClose()">
         <div id="kbd-panel" onclick="event.stopPropagation()">
@@ -805,6 +873,7 @@
                 <div class="kbd-row"><span class="kbd-desc">Accueil — liste des sessions</span><span class="kbd-keys"><kbd>g</kbd><kbd>h</kbd></span></div>
                 <div class="kbd-row"><span class="kbd-desc">Statistiques</span><span class="kbd-keys"><kbd>g</kbd><kbd>s</kbd></span></div>
                 <div class="kbd-row"><span class="kbd-desc">⚡ Spark</span><span class="kbd-keys"><kbd>g</kbd><kbd>p</kbd></span></div>
+                <div class="kbd-row"><span class="kbd-desc">Mode focus — cacher la navigation</span><span class="kbd-keys"><kbd>f</kbd></span></div>
             </div>
             <div class="kbd-section">
                 <div class="kbd-section-title">Liste des sessions</div>
@@ -847,10 +916,56 @@
 
     <script>
     // ── THEMES ──
-    const THEMES = ['t-machine','t-nord','t-solarized-dark','t-solarized-light','t-gruvbox'];
+    const THEMES = ['t-machine','t-nord','t-solarized-dark','t-solarized-light','t-gruvbox','t-custom'];
+    // Défaut du thème perso : le Béton, pour partir de quelque chose de lisible
+    // plutôt que d'un écran noir sur noir qu'il faudrait deviner.
+    const CUSTOM_DEFAUT = { bg: '#F4F1EC', text: '#1A1814', border: '#C8C2B8',
+                            accent: '#D4380D', accent2: '#2D4A6B' };
+    const CUSTOM_KEY = 'aza_theme_custom';
+
+    function customLu() {
+        try { return { ...CUSTOM_DEFAUT, ...JSON.parse(localStorage.getItem(CUSTOM_KEY) || '{}') }; }
+        catch (e) { return { ...CUSTOM_DEFAUT }; }
+    }
+    // Les pastilles et l'aperçu montrent toujours le réglage enregistré, même
+    // quand un thème fixe est actif — sinon on ouvre le menu sur des couleurs
+    // qui ne sont pas les siennes.
+    function customSyncUI(c) {
+        ['bg','text','border','accent','accent2'].forEach(k => {
+            const inp = document.getElementById('cu-' + k);
+            if (inp) inp.value = c[k];
+        });
+        const chip = document.getElementById('th-custom-chip');
+        if (chip) { chip.style.background = c.bg; chip.style.border = '2px solid ' + c.accent; }
+    }
+    // Les 5 variables sont posées en inline : elles gagnent sur la classe du
+    // thème, donc un thème perso reste perso même si la feuille change.
+    function customApplique(c) {
+        ['bg','text','border','accent','accent2']
+            .forEach(k => document.body.style.setProperty('--' + k, c[k]));
+    }
+    function customEfface() {
+        ['bg','text','border','accent','accent2']
+            .forEach(k => document.body.style.removeProperty('--' + k));
+    }
+    // Toucher une pastille bascule sur le thème perso : régler des couleurs
+    // sans les voir s'appliquer serait sans intérêt.
+    function customTheme() {
+        const c = {};
+        ['bg','text','border','accent','accent2']
+            .forEach(k => c[k] = document.getElementById('cu-' + k).value);
+        try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(c)); } catch (e) {}
+        localStorage.setItem('theme', 'custom');
+        applyTheme('custom');
+    }
+
     function applyTheme(t) {
         THEMES.forEach(c => document.body.classList.remove(c));
-        if (t && t !== 'beton') document.body.classList.add(t);
+        customEfface();
+        const perso = customLu();
+        customSyncUI(perso);
+        if (t === 'custom') { document.body.classList.add('t-custom'); customApplique(perso); }
+        else if (t && t !== 'beton') document.body.classList.add(t);
         // Marquer actif dans le dropdown
         document.querySelectorAll('#theme-dropdown button[id^="th-"]').forEach(btn => {
             btn.style.background = btn.id === 'th-' + t ? 'rgba(255,255,255,0.1)' : 'none';
@@ -917,6 +1032,21 @@
         applyTheme(saved);
     })();
 
+    // ── MODE FOCUS ───────────────────────────────────────────────────────────
+    // Persisté : on l'allume avant de jouer, pas à chaque page.
+    function toggleFocus(forcer) {
+        const actif = forcer === undefined
+            ? !document.body.classList.contains('focus-mode') : forcer;
+        document.body.classList.toggle('focus-mode', actif);
+        try { localStorage.setItem('aza_focus', actif ? '1' : '0'); } catch (e) {}
+    }
+    (function() {
+        try {
+            if (localStorage.getItem('aza_focus') === '1')
+                document.body.classList.add('focus-mode');
+        } catch (e) {}
+    })();
+
     // ── ZOOM GLOBAL ──────────────────────────────────────────────────────────
     (function() {
         const saved = localStorage.getItem('rb_zoom');
@@ -961,6 +1091,7 @@
         // Escape — ferme overlay ou désélectionne
         if (key === 'Escape') {
             if (document.getElementById('kbd-overlay').classList.contains('open')) { kbdClose(); return; }
+            if (document.body.classList.contains('focus-mode')) { toggleFocus(false); return; }
             kbdClear();
             return;
         }
@@ -992,6 +1123,10 @@
         // Touches simples
         if (key === 'n') { window.location.href = '/new'; return; }
         if (key === 'l') { window.location.href = '/live'; return; }
+
+        // f — mode focus. Esc le quitte aussi : c'est le réflexe pour sortir
+        // de n'importe quel mode, et la nav est cachée à ce moment-là.
+        if (key === 'f') { toggleFocus(); return; }
 
         // j / k — naviguer la liste
         if (key === 'j' || key === 'k') {

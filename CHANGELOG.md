@@ -5,6 +5,30 @@
 
 ---
 
+## v3.23.0 — 2026-09-27 — L'interface se tait, et se règle
+
+### ✨ Nouveauté
+- **Mode focus** — touche `f`, ou le bouton `✕ focus` pour sortir (`Esc` aussi).
+  Header, navigation, bandeau de stratégie et pied de page disparaissent ; le
+  contenu ne bouge pas d'un pixel. Persisté : on l'allume avant de jouer, pas à
+  chaque page.
+- **Thème personnalisable** — cinq pastilles dans le sélecteur de thème (fond,
+  texte, bordure, accent, accent 2). Les **onze autres variables se dérivent**
+  en `color-mix()` : demander seize couleurs aurait surtout permis de les rendre
+  incohérentes entre elles.
+- Le réglage perso reste visible dans le menu même sous un thème fixe, et un
+  `localStorage` corrompu retombe sur le Béton au lieu d'un écran illisible.
+
+### 🧪 Tests
+- **`tests/test_base_js.py` + `tests/js/base_theme_focus.mjs`** — premier test du
+  JS de l'app. Ces deux fonctionnalités vivent entièrement dans le navigateur :
+  aucune route, aucune table, donc rien que pytest n'atteignait. Le harnais
+  exécute sous Node le JS *réellement servi par la page*, contre un faux DOM
+  minimal, et vérifie ce qui casse en silence — quelle classe est posée, quelle
+  variable inline est retirée, ce qui est persisté. Sauté si Node est absent.
+
+---
+
 ## v3.22.0 — 2026-09-27 — Ce que les sessions disent au bout d'un an
 
 ### ✨ Nouveauté

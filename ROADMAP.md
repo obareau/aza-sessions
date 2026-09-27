@@ -188,8 +188,8 @@ construction. Le quantize n'existait ici que parce que le Prompteur comptait en
 
 | Priorité | Idée | Notes |
 |---|---|---|
-| ★★☆ | **Mode focus** — cacher nav, fond épuré, une seule page visible | Ne pas être distrait pendant la session |
-| ★★☆ | **Thème personnalisable** — éditeur couleurs CSS custom, sauvegardé localStorage | Au-delà des 6 thèmes fixes |
+| ✅ | ~~**Mode focus**~~ — livré en **v3.23.0** | Touche `f` (ou `Esc` pour sortir), persisté en localStorage. Cache header, nav, bandeau oblique et pied ; le contenu ne bouge pas de place. Bouton `✕ focus` en haut à droite — sans lui, un mode sans nav serait un piège au doigt |
+| ✅ | ~~**Thème personnalisable**~~ — livré en **v3.23.0** | 5 pastilles dans le sélecteur de thème (fond, texte, bordure, 2 accents) ; les 11 autres variables se **dérivent** en `color-mix()`. Régler 16 couleurs à la main n'aurait servi qu'à les rendre incohérentes |
 | ★☆☆ | **Animations subtiles** — transitions CSS sur cards, Pomodoro, filtres | Peaufinage visuel |
 
 ---
