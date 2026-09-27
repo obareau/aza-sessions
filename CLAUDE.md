@@ -156,6 +156,35 @@ il n'y a pas de copie de travail séparée.
 
 ---
 
+## Nom de prise Zoom R8 — décisions arrêtées
+
+`CatalogueEngine.take_name()` fabrique le nom depuis les codes du catalogue :
+`MFMG5_1` pour MicroFreak + MS-50G, première prise du jour.
+
+⚠️ **Contraintes de la machine, vérifiées au manuel (p. 94)** : un nom de
+**projet** fait **8 caractères au plus** et n'accepte que **A-Z, 0-9 et `_`**.
+Le tiret est refusé — un `MFMG5-1` ne rentrerait pas dans le R8. (Les noms de
+**fichier** audio, eux, tolèrent 219 caractères et le tiret ; ce n'est pas ce
+qu'AZA nomme.) Au-delà de 8, **c'est le préfixe qu'on rogne, jamais le rang** :
+deux prises du même après-midi au même nom seraient pires qu'un nom tronqué.
+
+✅ **Compteur quotidien, et la collision inter-jours est ACCEPTÉE**
+(décidé le 2026-09-27). Le R8 refuse deux projets de même nom, et `MF_1`
+revient chaque jour — mais la carte SD est **vidée régulièrement sur un PC**,
+donc deux journées ne coexistent jamais dessus. Le R8 sert à capturer des
+essais, des nappes, parfois une jam ; sa gestion de fichiers ne vaut pas qu'on
+torde le nommage pour elle.
+
+⛔ **Ne pas « corriger » ce point.** Les deux alternatives ont été pesées et
+écartées : compter les usages d'une chaîne (`MFMG5_7`) ajoute un chiffre sans
+service rendu ici, et inscrire la date (`MF0927_1`) mange l'espace des codes
+dès le deuxième appareil.
+
+ℹ️ **Des codes de deux caractères** laissent la place à trois appareils dans
+les 8 caractères ; des codes de trois s'arrêtent à deux appareils.
+
+---
+
 ## Règles avant tout commit
 
 1. Bumper `VERSION` dans `app.py`
