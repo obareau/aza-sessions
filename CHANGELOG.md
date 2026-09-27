@@ -5,6 +5,29 @@
 
 ---
 
+## v3.25.0 — 2026-09-27 — Retrait de la dictée vocale
+
+### ⛔ Suppression
+- **La dictée Whisper est retirée** — bouton 🎙 de `/live`, route
+  `/live/transcribe`, `core/whisper_client.py` : environ 80 lignes en moins.
+  Décision d'Olivier : « ça n'a jamais marché whisper dans aza ».
+- **Pourquoi elle ne pouvait pas marcher :** `getUserMedia` n'existe qu'en
+  contexte sécurisé, or Caddy ne sert `sessions.lan` qu'en **HTTP**. Au studio le
+  bouton se désactivait donc de lui-même ; seul `https://sessions.robotariis.com`
+  y donnait accès — une URL qui n'est pas celle du studio. Le conteneur `whisper`
+  a de surcroît disparu de la machine.
+- `Permissions-Policy` passe de `microphone=(self)` à `microphone=()` : plus rien
+  ne demande le micro.
+
+### 📝 Note sur une vérification qui n'en était pas une
+- Le `CLAUDE.md` affirmait la chaîne « vérifiée de bout en bout (navigateur →
+  https → `/live/transcribe` → Whisper → JSON) ». Seul le chemin **serveur →
+  Whisper** avait été testé, par curl. **« Le service répond » ne veut pas dire
+  « la fonctionnalité marche »** : la vérification doit passer par le chemin que
+  l'usager emprunte. C'est consigné dans le `CLAUDE.md`.
+
+---
+
 ## v3.24.1 — 2026-09-27 — Retrait de n8n
 
 ### 🧹 Nettoyage

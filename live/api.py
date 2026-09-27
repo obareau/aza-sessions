@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app
 from core.constants import ITEM_TYPES, MODES, INTENTIONS
-from core.whisper_client import transcribe
 from .engine import LiveEngine
 
 bp = Blueprint("live", __name__)
@@ -56,17 +55,6 @@ def live_finish():
         "intention":  request.form.get("intention", ""),
     })
     return redirect(url_for("sessions.new_session", from_live=1))
-
-
-@bp.route("/live/transcribe", methods=["POST"])
-def live_transcribe():
-    audio = request.files.get("audio")
-    if not audio:
-        return jsonify({"error": "no audio"}), 400
-    text = transcribe(audio.read(), filename=audio.filename or "audio.webm")
-    if text is None:
-        return jsonify({"error": "whisper unavailable"}), 503
-    return jsonify({"text": text})
 
 
 @bp.route("/live/abandon", methods=["POST"])

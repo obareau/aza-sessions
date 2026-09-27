@@ -12,7 +12,7 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.jinja_env.filters['fromjson'] = json.loads
 app.secret_key = os.environ.get("SECRET_KEY", "aza-sessions-local-dev")
 
-VERSION     = "3.24.1"
+VERSION     = "3.25.0"
 DB_PATH     = os.environ.get("DB_PATH",     os.path.join(os.path.dirname(__file__), "sessions.db"))
 CONFIG_PATH = os.environ.get("CONFIG_PATH", os.path.join(os.path.dirname(__file__), "config.json"))
 BACKUPS_DIR = os.environ.get("BACKUPS_DIR", os.path.join(os.path.dirname(__file__), "backups"))
@@ -78,7 +78,9 @@ def set_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(self), camera=()"
+    # `microphone=(self)` n'existait que pour la dictée Whisper, retirée en
+    # v3.25.0 : plus rien ne demande le micro, autant ne plus l'autoriser.
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
     return response
 
 

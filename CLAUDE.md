@@ -8,7 +8,7 @@ App Flask + SQLite de documentation de sessions musicales pour l'univers de fict
 
 ⚠️ **Plus sur Fly.io** — déploiement bare metal sur Roblab, voir « Déploiement » plus bas. `fly.toml` et la branche `FLY_APP_NAME` de `wsgi.py` ont été retirés le 2026-08-29. Le `Dockerfile` subsiste : il ne servait qu'au build Fly et n'est plus utilisé, mais il n'a rien de nuisible.
 
-Version actuelle : voir `VERSION` dans `app.py` (**v3.24.1**).
+Version actuelle : voir `VERSION` dans `app.py` (**v3.25.0**).
 
 ⚠️ **`VERSION` a déjà pris deux releases de retard** (resté à 3.10.0 alors que le ROADMAP documentait v3.11.0 et v3.12.0), ce qui a fait attribuer un numéro déjà pris à une nouvelle feature le 2026-08-29. Avant de bumper, croiser `app.py`, `CHANGELOG.md` **et** `ROADMAP.md` — les trois divergent facilement.
 
@@ -93,28 +93,18 @@ Les 19 blueprints enregistrés :
 - `core/oblique.py` — `rand_oblique(db_path)` : stratégie aléatoire depuis la table `obliques`
 - `core/ollama_client.py` — génération du `recap_claude` via **`qwen3.5:cloud`** (`OLLAMA_MODEL`) sur `192.168.1.100` ; second modèle `qwen2.5-coder:7b` (`CODER_MODEL`) ; appelé depuis `/new?from_live=1` ; **silencieux si indisponible**
   ⚠️ Ce silence a déjà coûté : le recap est resté mort sans que personne le voie, parce que le modèle configuré (`qwen3.5:latest`) n'existait pas. Corrigé le 2026-07-31. Réflexe — un appel LLM qui échoue sans bruit ne se verra jamais depuis l'interface : vérifier le **modèle** avant de chercher un bug dans le code.
-- `core/whisper_client.py` — transcription audio via Whisper GPU local (`192.168.1.100:9000`, modèle `small`) ; appelé depuis `/live/transcribe` (POST multipart), utilisé par `/live` **seulement** — la dictée a été retirée de `/vite` le 2026-08-29, le clavier étant préféré ; silencieux si indisponible
-  ⛔ **La dictée n'a jamais fonctionné en usage réel** — dit par Olivier le
-  2026-09-27 : « ça n'a jamais marché whisper dans aza ». Ne pas la présenter
-  comme un acquis, ne pas la « réparer » sans lui demander d'abord.
+⛔ **La dictée vocale a été retirée en v3.25.0** (2026-09-27), sur décision
+d'Olivier : « ça n'a jamais marché whisper dans aza ». `core/whisper_client.py`,
+la route `/live/transcribe` et le bouton 🎙 de `/live` sont supprimés.
 
-  ⚠️ **La note précédente affirmait le contraire et se trompait.** Elle disait la
-  chaîne « vérifiée de bout en bout (navigateur → https → `/live/transcribe` →
-  Whisper → JSON) en ~6 s » le 2026-08-29. Ce qui avait été vérifié, c'est le
-  chemin *serveur* → Whisper ; le chemin *navigateur* ne l'a jamais été dans les
-  conditions d'usage. Caddy ne sert `sessions.lan` qu'en **HTTP**
-  (`sessions.lan:80` dans `/etc/caddy/Caddyfile`), et `live.html` désactive le
-  bouton hors contexte sécurisé : sur le LAN — donc au studio — le micro est
-  toujours grisé. Seul `https://sessions.robotariis.com` pouvait y donner accès.
-  Réflexe : « le service répond » ne veut pas dire « la fonctionnalité marche » ;
-  la vérification doit passer par le chemin que l'usager emprunte.
-
-  ℹ️ Le conteneur Docker `whisper` (`onerahmet/openai-whisper-asr-webservice:latest-gpu`,
-  ~1,6 Go de VRAM) **n'existe plus** sur la machine, constaté le 2026-09-27 — pas
-  même arrêté, absent de `docker ps -a`. Sa définition reste dans
-  `~/homelab-install/install.sh`, section 24. Le client Python étant silencieux en
-  cas d'indisponibilité, rien ne le signale à l'écran : le bouton enregistre puis
-  affiche « ✗ Whisper indisponible ».
+Ne pas la reproposer sans qu'il en reparle. Pour mémoire, si la question revient :
+elle exigeait **https** (`getUserMedia` n'existe qu'en contexte sécurisé) alors
+que Caddy ne sert `sessions.lan` qu'en HTTP — le bouton était donc grisé au
+studio, et seul `https://sessions.robotariis.com` y donnait accès. Le conteneur
+`whisper` a par ailleurs disparu de la machine. Une note antérieure prétendait la
+chaîne « vérifiée de bout en bout » : seul le chemin serveur → Whisper l'avait
+été, jamais celui du navigateur. **« Le service répond » ne veut pas dire « la
+fonctionnalité marche » — vérifier par le chemin que l'usager emprunte.**
 
 ### Base de données
 
@@ -141,12 +131,6 @@ Migrations : toujours via `ALTER TABLE` dans `init_db()` avec `try/except` — p
 Tous héritent de `base.html`. Système de thèmes via attribut `data-theme` sur `<html>` (6 thèmes terminal). Variables CSS : `var(--accent)`, `var(--mono)`, `var(--bg)`, etc. — pas de framework CSS externe.
 
 Multi-sélection dans les formulaires : `form.getlist("machines")` → jointure `, ` avant stockage.
-
-⚠️ **La dictée Whisper exige https.** `getUserMedia` n'existe que dans un
-contexte sécurisé : par `http://sessions.lan` ou l'IP Tailscale en clair, le
-micro est indisponible quel que soit l'état de Whisper. Utiliser
-`https://sessions.robotariis.com`. Les pages `/vite` et `/live` détectent le cas
-et le disent, plutôt que d'échouer en accusant le navigateur.
 
 ### Déploiement — Roblab (serveur bare metal)
 
