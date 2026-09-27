@@ -5,6 +5,34 @@
 
 ---
 
+## v3.20.0 — 2026-09-27 — Le nom se voit avant d'exister
+
+### ✨ Nouveauté
+- **Aperçu du nom de prise en direct sur `/vite`.** On clique les puces, le nom
+  s'affiche sous elles — avant d'enregistrer quoi que ce soit. C'est l'outil
+  d'aide au nommage : on compose la chaîne, on lit le nom, on le reporte sur
+  le R8.
+- **Il dit aussi ce qui manque.** Un appareil sélectionné sans code au catalogue
+  n'apparaît pas dans le nom ; l'encart le nomme (`sans code : Digitakt`)
+  plutôt que de laisser chercher. Idem quand le préfixe a été rogné à
+  8 caractères.
+- Nouvelle route `POST /api/nom-de-prise` — elle ne crée rien, elle calcule.
+
+### ⚠️ Pourquoi le calcul reste côté serveur
+Le nom dépend des codes du catalogue **et** des prises déjà enregistrées ce
+jour-là. Le recalculer en JavaScript aurait fait deux vérités pour un seul nom,
+qui divergeraient au premier changement de règle.
+
+### ⚠️ Une collision reste possible, et elle n'est pas corrigée ici
+Le manuel du R8 dit qu'un projet **ne peut pas porter le nom d'un autre
+projet**. Or le compteur repart chaque jour : `MF_1` lundi et `MF_1` mardi
+entrent en collision dès que les deux coexistent sur la carte. Trois sorties
+possibles — vider la carte entre deux jours, passer le compteur en « Nième
+usage de cette chaîne » (unique par construction), ou inscrire la date dans le
+nom. À trancher.
+
+---
+
 ## v3.19.2 — 2026-09-27 — Le R8 aurait refusé nos noms
 
 ### 🐛 Correctif

@@ -132,6 +132,19 @@ def fiches():
                            oblique=rand_oblique(db_path))
 
 
+@bp.route("/api/nom-de-prise", methods=["POST"])
+def api_take_name():
+    """Nom de prise pour une sélection de matériel, sans rien enregistrer.
+
+    Sert l'aperçu en direct de /vite : on voit le nom avant de valider, et on
+    voit surtout ce qui manque pour qu'il soit complet.
+    """
+    from datetime import date as _date
+    d = request.get_json(silent=True) or {}
+    gear = {c: (d.get(c) or "") for c in CatalogueEngine.CODE_ORDER}
+    return jsonify(_engine().take_preview(gear, d.get("date") or _date.today().isoformat()))
+
+
 @bp.route("/catalogue/fiches/print")
 def fiches_print():
     """Version papier de la vue table — A4 paysage, groupée par type.

@@ -175,6 +175,41 @@ class CatalogueEngine:
     TAKE_MAX = 8
     TAKE_SEP = "_"
 
+    def take_preview(self, gear_par_colonne: dict, date: str) -> dict:
+        """Le nom, et de quoi comprendre pourquoi c'est celui-là.
+
+        `take_name` seul laisse une question sans réponse quand on regarde
+        l'écran : pourquoi la pédale n'est-elle pas dans le nom ? Réponse
+        presque toujours la même — elle n'a pas encore de code. Autant le dire
+        plutôt que laisser chercher.
+        """
+        noms = []
+        for col in self.CODE_ORDER:
+            for n in (gear_par_colonne.get(col) or "").split(","):
+                if n.strip():
+                    noms.append(n.strip())
+        codes = self.codes_for(noms)
+        nom = self.take_name(gear_par_colonne, date)
+        prefixe = "".join(codes)
+        return {
+            "nom":       nom,
+            "prefixe":   prefixe,
+            "longueur":  len(nom),
+            "max":       self.TAKE_MAX,
+            # Rogné : le préfixe complet ne tenait pas dans les 8 caractères.
+            "tronque":   bool(nom) and not nom.startswith(prefixe),
+            # Sélectionné mais absent du nom, faute de code au catalogue.
+            "sans_code": [n for n in noms if not self._code_de(n)],
+        }
+
+    def _code_de(self, nom: str) -> str:
+        conn = self._get_db()
+        try:
+            r = conn.execute("SELECT code FROM catalogue WHERE name=?", (nom,)).fetchone()
+        finally:
+            conn.close()
+        return (r["code"] or "").strip() if r else ""
+
     def take_name(self, gear_par_colonne: dict, date: str) -> str:
         """Nom de prise du jour : codes concaténés + rang, ex. « MFMG5_1 ».
 

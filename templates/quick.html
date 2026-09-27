@@ -24,6 +24,15 @@
 .q-bar { display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap; }
 .q-hint { font-family:var(--mono);font-size:11px;color:var(--text-muted); }
 .q-chips { display:flex;flex-wrap:wrap;gap:6px; }
+.q-take { margin-top:12px;padding:9px 12px;border:1px solid var(--border);
+    border-radius:var(--radius);background:var(--bg-alt);display:flex;
+    align-items:baseline;gap:10px;flex-wrap:wrap; }
+.q-take-lbl { font-family:var(--mono);font-size:10px;text-transform:uppercase;
+    letter-spacing:.1em;color:var(--text-muted); }
+.q-take-name { font-family:var(--mono);font-size:17px;font-weight:700;
+    letter-spacing:.08em;color:var(--accent); }
+.q-take-note { font-family:var(--mono);font-size:11px;color:var(--text-muted); }
+.q-take-note.warn { color:var(--warning,#E6A700); }
 .q-chip { font-family:var(--mono);font-size:12px;padding:6px 11px;border-radius:999px;
           border:1px solid var(--border);background:var(--bg);color:var(--text-muted);
           cursor:pointer;line-height:1.2; }
@@ -64,6 +73,12 @@
                 </div>
             </details>
             {% endif %}
+
+            <div id="q-take" class="q-take" hidden>
+                <span class="q-take-lbl">Nom de prise R8</span>
+                <span id="q-take-name" class="q-take-name"></span>
+                <span id="q-take-note" class="q-take-note"></span>
+            </div>
         </div>
 
         <div class="q-row">
@@ -151,6 +166,36 @@
         });
         picked = chips.filter(c => c.classList.contains('on')).map(c => c.dataset.name);
         try { localStorage.setItem(KEY, JSON.stringify(picked)); } catch (e) {}
+        apercuNom(by);
+    }
+
+    // Le nom se calcule côté serveur : c'est lui qui connaît les codes du
+    // catalogue ET les prises déjà enregistrées aujourd'hui. Le recalculer en
+    // JS ferait deux vérités pour un seul nom.
+    function apercuNom(by) {
+        const boite = document.getElementById('q-take');
+        const sel = ['machines', 'effects', 'plugins', 'synths_ios']
+            .some(c => (by[c] || []).length);
+        if (!sel) { boite.hidden = true; return; }
+        const corps = {};
+        ['machines', 'effects', 'plugins', 'synths_ios']
+            .forEach(c => corps[c] = (by[c] || []).join(', '));
+        fetch('/api/nom-de-prise', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(corps),
+        }).then(r => r.json()).then(d => {
+            const nom = document.getElementById('q-take-name');
+            const note = document.getElementById('q-take-note');
+            boite.hidden = false;
+            nom.textContent = d.nom || '—';
+            const soucis = [];
+            if (!d.nom) soucis.push('aucun matériel choisi ne porte de code');
+            if (d.tronque) soucis.push(`rogné à ${d.max} caractères`);
+            if ((d.sans_code || []).length) soucis.push('sans code : ' + d.sans_code.join(', '));
+            note.textContent = soucis.join(' · ');
+            note.classList.toggle('warn', soucis.length > 0);
+        }).catch(() => { boite.hidden = true; });
     }
 
     chips.forEach(c => {
