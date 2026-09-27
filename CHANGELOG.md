@@ -5,6 +5,18 @@
 
 ---
 
+## v3.19.1 — 2026-09-27 — Les fiches dans le menu
+
+### ✨ Nouveauté
+- **Catalogue → ▤ Fiches matériel** dans la barre de navigation. La vue table
+  n'était atteignable que par un bouton depuis `/catalogue` — un détour pour
+  une page qu'on ouvre maintenant à chaque achat, ne serait-ce que pour coder
+  le nouveau matériel.
+
+Le bouton sur `/catalogue` reste : il sert quand on y est déjà.
+
+---
+
 ## v3.19.0 — 2026-09-27 — Le nom de prise se fabrique tout seul
 
 ### ✨ Nouveautés
