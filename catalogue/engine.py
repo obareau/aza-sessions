@@ -1,3 +1,5 @@
+import re
+
 from core.db import get_db
 from core.constants import ITEM_TYPES  # noqa: F401 — ré-exporté pour catalogue.api
 
@@ -154,7 +156,10 @@ class CatalogueEngine:
             ).fetchall()
         finally:
             conn.close()
-        par_nom = {r["name"]: r["code"].strip() for r in rows}
+        # Le R8 n'accepte que A-Z, 0-9 et « _ » : on retire le reste ici plutôt
+        # que de faire confiance à la saisie.
+        par_nom = {r["name"]: re.sub(r"[^A-Z0-9_]", "", r["code"].strip().upper())
+                   for r in rows}
         out = []
         for n in noms:
             c = par_nom.get(n)
@@ -162,12 +167,24 @@ class CatalogueEngine:
                 out.append(c)
         return out
 
+    # ⚠️ Contraintes du Zoom R8, vérifiées dans son manuel (p. 94) : un nom de
+    # PROJET fait au plus 8 caractères et n'accepte que A-Z, 0-9 et « _ ».
+    # Le tiret est INTERDIT — un « MFMG5-1 » serait refusé par la machine.
+    # (Les noms de FICHIER audio, eux, tolèrent 219 caractères et le tiret ;
+    # c'est le projet qu'on nomme ici, parce que c'est lui qu'on lit à l'écran.)
+    TAKE_MAX = 8
+    TAKE_SEP = "_"
+
     def take_name(self, gear_par_colonne: dict, date: str) -> str:
-        """Nom de prise du jour : codes concaténés + rang, ex. « MFMG5-1 ».
+        """Nom de prise du jour : codes concaténés + rang, ex. « MFMG5_1 ».
 
         Le compteur repart chaque jour — c'est le rythme d'un enregistreur de
         studio, où l'on refait la même chaîne trois fois dans l'après-midi.
-        Deux sessions du même jour avec le même matériel donnent donc -1 et -2.
+        Deux sessions du même jour avec le même matériel donnent donc _1 et _2.
+
+        Le rang est prioritaire sur les codes : si les 8 caractères ne suffisent
+        pas, c'est le préfixe qu'on rogne, jamais le numéro — deux prises du même
+        après-midi qui porteraient le même nom seraient pires qu'un nom tronqué.
         """
         noms = []
         for col in self.CODE_ORDER:
@@ -182,11 +199,13 @@ class CatalogueEngine:
         try:
             deja = conn.execute(
                 "SELECT COUNT(*) FROM sessions WHERE date LIKE ? AND audio_file LIKE ?",
-                (f"{date[:10]}%", f"{prefixe}-%")
+                (f"{date[:10]}%", f"{prefixe[:self.TAKE_MAX]}%")
             ).fetchone()[0]
         finally:
             conn.close()
-        return f"{prefixe}-{deja + 1}"
+        suffixe = f"{self.TAKE_SEP}{deja + 1}"
+        place = max(1, self.TAKE_MAX - len(suffixe))
+        return f"{prefixe[:place]}{suffixe}"
 
     def add_fiche(self, typ, name, manufacturer="", purpose="", intent="", code=""):
         """Crée une fiche complète depuis la vue table.

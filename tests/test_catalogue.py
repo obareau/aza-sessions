@@ -373,7 +373,7 @@ def test_take_name_suit_l_ordre_du_signal_pas_l_alphabet():
     _avec_code(eng, "machine", "TakeMicroFreak", "MF")
     _avec_code(eng, "effet", "TakeMS50G", "MG5")
     nom = eng.take_name({"machines": "TakeMicroFreak", "effects": "TakeMS50G"}, "2026-09-27")
-    assert nom == "MFMG5-1"
+    assert nom == "MFMG5_1"
 
 
 def test_le_compteur_repart_chaque_jour():
@@ -382,13 +382,13 @@ def test_le_compteur_repart_chaque_jour():
     conn = get_db(_DB)
     for d in ("2026-09-27", "2026-09-27", "2026-09-28"):
         conn.execute("INSERT INTO sessions (date, audio_file) VALUES (?, ?)",
-                     (d + "T10:00", "TC-1" if d == "2026-09-28" else "TC-x"))
-    conn.execute("UPDATE sessions SET audio_file='TC-1' WHERE date LIKE '2026-09-27%' LIMIT 1")
+                     (d + "T10:00", "TC_1" if d == "2026-09-28" else "TC_x"))
+    conn.execute("UPDATE sessions SET audio_file='TC_1' WHERE date LIKE '2026-09-27%' LIMIT 1")
     conn.commit(); conn.close()
     # 2026-09-28 a déjà TC-1 → la prochaine du 28 est TC-2
-    assert eng.take_name({"machines": "TakeCompteur"}, "2026-09-28") == "TC-2"
+    assert eng.take_name({"machines": "TakeCompteur"}, "2026-09-28") == "TC_2"
     # un autre jour repart de 1
-    assert eng.take_name({"machines": "TakeCompteur"}, "2026-10-01") == "TC-1"
+    assert eng.take_name({"machines": "TakeCompteur"}, "2026-10-01") == "TC_1"
 
 
 def test_matos_sans_code_est_ignore_plutot_qu_invente():
@@ -396,7 +396,7 @@ def test_matos_sans_code_est_ignore_plutot_qu_invente():
     _avec_code(eng, "machine", "TakeAvecCode", "AC")
     eng.add_fiche("effet", "TakeSansCode")          # pas de code
     nom = eng.take_name({"machines": "TakeAvecCode", "effects": "TakeSansCode"}, "2026-11-01")
-    assert nom == "AC-1", "un nom sans code ne doit pas fabriquer d'abréviation"
+    assert nom == "AC_1", "un nom sans code ne doit pas fabriquer d'abréviation"
 
 
 def test_aucun_code_du_tout_ne_donne_pas_de_nom():
@@ -411,4 +411,30 @@ def test_doublon_de_code_compte_une_fois():
     eng = CatalogueEngine(_DB)
     _avec_code(eng, "machine", "TakeJumeauA", "JX")
     _avec_code(eng, "machine", "TakeJumeauB", "JX")
-    assert eng.take_name({"machines": "TakeJumeauA, TakeJumeauB"}, "2026-11-03") == "JX-1"
+    assert eng.take_name({"machines": "TakeJumeauA, TakeJumeauB"}, "2026-11-03") == "JX_1"
+
+
+def test_le_nom_respecte_les_contraintes_du_zoom_r8():
+    """Manuel du R8 p. 94 : nom de PROJET = 8 caractères max, A-Z 0-9 et « _ ».
+
+    Le tiret est interdit ; une chaîne à trois appareils doit donc être rognée
+    plutôt que refusée par la machine à la saisie.
+    """
+    eng = CatalogueEngine(_DB)
+    _avec_code(eng, "machine", "R8Synthe", "MF")
+    _avec_code(eng, "effet", "R8Pedale", "MG5")
+    _avec_code(eng, "machine", "R8Boite", "DT")
+
+    nom = eng.take_name({"machines": "R8Synthe, R8Boite", "effects": "R8Pedale"}, "2026-12-01")
+    assert len(nom) <= 8, f"{nom} dépasse les 8 caractères du R8"
+    assert "-" not in nom, "le tiret est refusé par le R8"
+    assert all(c.isupper() or c.isdigit() or c == "_" for c in nom), nom
+    assert nom.endswith("_1"), "le rang survit au rognage, jamais l'inverse"
+
+
+def test_un_code_mal_saisi_est_nettoye_pas_transmis():
+    """Une saisie avec tiret ou minuscules ne doit pas atteindre la machine."""
+    eng = CatalogueEngine(_DB)
+    _avec_code(eng, "machine", "R8Sale", "m-f 5")
+    nom = eng.take_name({"machines": "R8Sale"}, "2026-12-02")
+    assert nom == "MF5_1", nom

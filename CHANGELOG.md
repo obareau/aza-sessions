@@ -5,6 +5,35 @@
 
 ---
 
+## v3.19.2 — 2026-09-27 — Le R8 aurait refusé nos noms
+
+### 🐛 Correctif
+Vérification faite dans le manuel du Zoom R8 (p. 94), un nom de **projet** :
+**8 caractères maximum**, et **A-Z, 0-9 et `_` uniquement**.
+
+- **Le tiret est interdit.** Le `MFMG5-1` livré en v3.19.0 aurait été refusé
+  par la machine. Le séparateur devient `_` → **`MFMG5_1`**.
+- **Plafond à 8 caractères**, appliqué. Si la chaîne déborde, **c'est le
+  préfixe qu'on rogne, jamais le rang** : deux prises du même après-midi
+  portant le même nom seraient pires qu'un nom tronqué.
+- **Les codes sont assainis à la lecture** — minuscules, espaces et tirets
+  retirés. Un `m-f 5` saisi dans les fiches devient `MF5`, plutôt que d'aller
+  jusqu'à la machine sous une forme qu'elle refuse.
+
+ℹ️ Les noms de **fichier** audio du R8, eux, tolèrent 219 caractères et le
+tiret. C'est le nom de **projet** qu'AZA fabrique, parce que c'est celui qu'on
+lit à l'écran de la machine.
+
+⚠️ **À trois appareils, le préfixe est rogné** : `MFDTMG_1` au lieu de
+`MFDTMG5_1`. Des codes de deux caractères laissent de la place ; des codes de
+trois n'en laissent plus au-delà de deux appareils.
+
+### ✅ Tests
+2 ajoutés (contraintes de la machine, assainissement d'un code mal saisi), les
+6 existants recalés sur `_`. Suite : **95 passants**.
+
+---
+
 ## v3.19.1 — 2026-09-27 — Les fiches dans le menu
 
 ### ✨ Nouveauté

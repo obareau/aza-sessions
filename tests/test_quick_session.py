@@ -151,7 +151,8 @@ def test_vite_nomme_la_prise_depuis_les_codes_catalogue(client):
         "SELECT audio_file, machines, effects FROM sessions "
         "WHERE comments='essai de nom de prise'").fetchone()
     conn.close()
-    assert row["audio_file"] == "VMF VMG-1".replace(" ", ""), row["audio_file"]
+    assert row["audio_file"] == "VMFVMG_1", row["audio_file"]
+    assert len(row["audio_file"]) <= 8, "le R8 refuse au-delà de 8 caractères"
     assert row["machines"] == "ViteMicroFreak"
 
 
