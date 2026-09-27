@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Lore — AZA{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">◈ Lore</div>
+        <div class="page-subtitle">
+            {% if dispo %}Corpus Robōtariis — lu depuis le vault, jamais copié{% else %}Source non configurée{% endif %}
+        </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="{{ url_for('lore.timeline') }}" class="btn btn-ghost btn-sm">Chronologie</a>
+        <a href="{{ url_for('lore.citations') }}" class="btn btn-ghost btn-sm">Citations</a>
+        <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
+    </div>
+</div>
+
+{% include "_lore_tete.html" %}
+
+{% if dispo %}
+<form method="GET" action="{{ url_for('lore.index') }}" style="margin-bottom:20px;">
+    <input type="text" name="q" value="{{ q }}" placeholder="Chercher un lieu, une faction, un concept…"
+           style="font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border);
+                  border-radius:var(--radius);padding:10px 14px;color:var(--text);width:100%;max-width:520px;">
+</form>
+
+{% if resultats is not none %}
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-title">∙ {{ resultats|length }} résultat{% if resultats|length > 1 %}s{% endif %} pour « {{ q }} »</div>
+</div>
+{% include "_lore_cartes.html" with context %}
+{% else %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;">
+    {% for s in sections %}
+    <a href="{{ url_for('lore.section', section=s.cle) }}" style="text-decoration:none;">
+        <div class="stat-card" style="cursor:pointer;">
+            <div class="stat-num">{{ s.nb }}</div>
+            <div class="stat-lbl">{{ s.nom }}</div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+<div class="card" style="margin-top:24px;">
+    <div class="card-title">∙ Pourquoi rien n'est stocké ici</div>
+    <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);line-height:1.8;">
+        Les entités, lieux et factions sont validés dans le vault Obsidian et publiés
+        sur robotariis.com. Les recopier dans la base du journal créerait deux
+        vérités, qui divergeraient à la première correction faite d'un seul côté.
+        AZA lit — et renvoie au texte complet.
+    </p>
+</div>
+{% endif %}
+{% endif %}
+
+{% endblock %}

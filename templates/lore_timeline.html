@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Chronologie — Lore AZA{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">◈ Chronologie</div>
+        <div class="page-subtitle">
+            {{ lignes|length }} événement{% if lignes|length > 1 %}s{% endif %} — An 0 = 2413 grégorien
+        </div>
+    </div>
+    <a href="{{ url_for('lore.index') }}" class="btn btn-secondary">← Lore</a>
+</div>
+
+{% include "_lore_tete.html" %}
+
+{% if lignes %}
+{# L'ordre du fichier EST l'ordre narratif : on regroupe par ère sans rien trier.
+   Trier des dates écrites « Pré-An 0 (−168) » ou « An 50 (1 Ordium) » demanderait
+   de les interpréter, donc d'inventer là où le canon est déjà clair. #}
+{% set ere_courante = namespace(nom='') %}
+{% for l in lignes %}
+    {% if l.ere != ere_courante.nom %}
+        {% if not loop.first %}</table></div>{% endif %}
+        {% set ere_courante.nom = l.ere %}
+<div class="card" style="margin-bottom:20px;overflow-x:auto;">
+    <div class="card-title" style="margin-bottom:12px;">∙ {{ l.ere }}</div>
+    <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;">
+    {% endif %}
+        <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px 12px 8px 0;white-space:nowrap;color:var(--accent);font-weight:600;">{{ l.date }}</td>
+            <td style="padding:8px 12px 8px 0;white-space:nowrap;color:var(--text-muted);">{{ l.gregorien }}</td>
+            <td style="padding:8px 0;color:var(--text);line-height:1.6;">{{ l.evenement }}</td>
+        </tr>
+    {% if loop.last %}</table></div>{% endif %}
+{% endfor %}
+{% elif dispo %}
+<div class="empty">
+    <p>Aucune chronologie lisible dans <code>Lore/Temps/timeline.md</code>.</p>
+</div>
+{% endif %}
+
+{% endblock %}

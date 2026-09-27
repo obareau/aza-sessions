@@ -5,6 +5,57 @@
 
 ---
 
+## v3.24.0 — 2026-09-27 — Le lore entre dans le journal sans y déménager
+
+### ✨ Nouveauté — blueprint `lore` (19ᵉ module)
+- **`/lore`** — les **190 entrées** du corpus Robōtariis par section (Personnages,
+  Factions, Entités, Institutions, Culture, Concepts, Lieux, Temps, Langages),
+  avec recherche sur titre, description et tags.
+- **`/lore/timeline`** — les **56 événements** de la chronologie, groupés par ère,
+  dans l'ordre du fichier. An 0 = 2413 grégorien.
+- **`/lore/citations`** — **208 extraits** tirés des blocs de citation du corpus.
+  Ses mots : aucune citation n'est écrite par l'app.
+- **Le champ « lien avec le lore » se complète depuis le corpus** (`<datalist>`
+  natif alimenté par `GET /api/lore/entrees`). C'est ce qui rendra la carte
+  possible : sans liens réels, elle n'aurait rien à placer.
+- Entrée `◈ Lore` dans le menu Ressources. Chemin du corpus réglable, défaut
+  `~/robotariis/PUBLICATIONS-QUARTZ`.
+
+### 📐 Décision d'architecture — **Obsidian reste la référence, AZA lit**
+- **Aucune entité de lore n'est stockée en base.** Pas de table `lore_places`, pas
+  de CRUD, pas de double saisie. Les dupliquer garantirait deux vérités qui
+  divergeraient à la première correction faite d'un seul côté.
+- **AZA ne rend pas le Markdown** et n'ajoute donc aucune dépendance : le corpus
+  est déjà lisible dans Obsidian et publié sur robotariis.com. Chaque carte porte
+  l'en-tête (titre, description, tags) et renvoie au texte complet. Le frontmatter
+  est lu à la main — le corpus n'a que des scalaires et des listes inline, PyYAML
+  aurait coûté une dépendance pour six lignes.
+- **Pas de vault, pas de page** : chaque vue le dit et propose de régler le
+  chemin, au lieu de laisser croire que le lore a disparu.
+
+### 🐛 Correctif trouvé en chemin
+- **La barre verticale d'un wikilink est le séparateur de cellule Markdown.**
+  `| An 0 | 2413 | Fondation du [[cgu|C.G.U.]] |` se découpait en quatre colonnes.
+  Les wikilinks sont désormais résolus **avant** le découpage. Trouvé par le test,
+  pas à l'œil.
+
+### ⛔ Écarté
+- **Le canvas SVG de la carte du lore.** Les sessions ne référencent aucun lieu
+  (`lore_link` vide partout) : la carte n'aurait rien à placer. L'amorce est
+  livrée, l'item rouvrira quand des sessions porteront des lieux.
+- **La demande externe du Homelab** (« section guides d'installation ») — motivée
+  par « les nouveaux contributeurs », qu'AZA n'a pas. Raison consignée sous le
+  bloc Argus du ROADMAP, case laissée décochée.
+
+### 🧪 Tests
+- `tests/test_lore.py` — 11 cas sur un **faux corpus construit par le test** :
+  dépendre du vrai vault ferait échouer la suite le jour où un fichier de fiction
+  est renommé, ce qui n'est pas une régression. Couvre l'absence de corpus, les
+  sous-dossiers (Factions/Majeures), la description de secours, l'ordre de la
+  frise et l'exclusion des définitions.
+
+---
+
 ## v3.23.0 — 2026-09-27 — L'interface se tait, et se règle
 
 ### ✨ Nouveauté

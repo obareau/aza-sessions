@@ -119,10 +119,10 @@ purement spéculative.
 | Priorité | Idée | Notes |
 |---|---|---|
 | ✅ | ~~**Générateur de noms AZA**~~ — livré en **v3.21.0** | Bouton `⟳ titre AZA` sur `/vite`, `/new`, `/edit` · `core/lore_names.py` + `GET /api/noms-aza` · vocabulaire tiré du glossaire de Robōtariis |
-| ★★☆ | **Timeline narrative** — frise chronologique *dans l'univers* (distinct de la date réelle) | Ordonner par ordre lore, pas par date d'enregistrement |
-| ★★☆ | **Carte du lore** — canvas interactif SVG/HTML, chaque session occupe un lieu | Visualisation narrative de la B.O. |
-| ★☆☆ | **Bestiaire / Glossaire** — entités, lieux, factions liables aux sessions | Enrichir le contexte narratif |
-| ★☆☆ | **Citations AZA** — base de citations affichées comme les obliques mais narratives | Ambiance de l'univers dans l'interface |
+| ✅ | ~~**Timeline narrative**~~ — livrée en **v3.24.0** | `/lore/timeline` lit `Lore/Temps/timeline.md` du vault : 56 événements, groupés par ère, **dans l'ordre du fichier**. Rien n'est trié — interpréter « Pré-An 0 (−168) » ou « An 50 (1 Ordium) » pour les ranger reviendrait à réécrire le canon |
+| ⚠️ | **Carte du lore** — *partiellement* livré en v3.24.0 | `/lore/section/Lieux` donne les 27 lieux lus dans le vault. Le **canvas SVG où chaque session occupe un lieu est écarté pour l'instant** : les sessions ne référencent aucun lieu (`lore_link` vide sur les 3 existantes), la carte n'aurait rien à placer. L'amorce est faite — le champ `lore_link` se complète maintenant depuis le corpus. À rouvrir quand des sessions porteront des lieux |
+| ✅ | ~~**Bestiaire / Glossaire**~~ — livré en **v3.24.0** | `/lore` expose les 190 entrées du corpus par section (Personnages, Factions, Entités, Institutions, Culture, Concepts, Lieux, Temps, Langages) avec recherche. **Aucune table AZA** : Obsidian reste la référence, décision du 2026-09-27 |
+| ✅ | ~~**Citations AZA**~~ — livré en **v3.24.0** | 208 extraits tirés des blocs `>` du corpus — **ses mots, pas des citations inventées**. `/lore/citations` les liste, une est tirée en tête des vues lore, `GET /api/citation` les expose. Les « Définition — » sont écartées : elles expliquent l'univers au lieu de le faire entendre. ⚠️ Le bandeau des obliques n'est **pas** touché — c'est un autre mécanisme, le remplacer n'a pas été demandé |
 
 ---
 
@@ -225,3 +225,12 @@ construction. Le quantize n'existait ici que parce que le Prompteur comptait en
 - [ ] ⇐ Homelab : Intégration d'une section dédiée aux guides d'installation dans le journal des sessions.
       _pourquoi : Cela permettrait une meilleure cohérence et facilitation de l'accès à ces informations cruciales pour les nouveaux contributeurs._
 <!-- argus:end -->
+
+**Réponse à la demande Homelab (2026-09-27) — écartée, case laissée décochée.**
+Le motif avancé est « faciliter l'accès pour les nouveaux contributeurs ». AZA
+est le journal musical personnel d'une seule personne : il n'a pas de
+contributeurs, et n'est pas un site de documentation. Les guides d'installation
+ont déjà leur domicile — le dépôt `homelab-install` — et les recopier ici
+créerait une seconde vérité à maintenir, exactement ce qu'on vient d'éviter pour
+le lore. Si le besoin réel est « retrouver les guides depuis n'importe où », il
+se règle côté Homelab ou Homepage, pas en ajoutant une section au journal.

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Citations — Lore AZA{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">◈ Citations</div>
+        <div class="page-subtitle">
+            {{ citations|length }} extrait{% if citations|length > 1 %}s{% endif %} — tirés du corpus, pas écrits ici
+        </div>
+    </div>
+    <a href="{{ url_for('lore.index') }}" class="btn btn-secondary">← Lore</a>
+</div>
+
+{% if not dispo %}{% include "_lore_tete.html" %}{% endif %}
+
+{% if citations %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;">
+    {% for c in citations %}
+    <div class="card" style="border-left:2px solid var(--accent2);">
+        <div style="font-family:var(--mono);font-size:12px;line-height:1.8;font-style:italic;color:var(--text);">
+            {{ c.texte }}
+        </div>
+        <div style="margin-top:8px;">
+            <a href="https://robotariis.com/Lore/{{ c.section }}/{{ c.slug }}" target="_blank" rel="noopener"
+               style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;
+                      color:var(--text-muted);text-decoration:none;">— {{ c.source }} ↗</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}

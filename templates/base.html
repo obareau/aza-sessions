@@ -811,6 +811,7 @@
                     <a href="{{ url_for('inspirations.manage_inspirations') }}">Idées en vrac</a>
                     <a href="{{ url_for('wishlist.manage_wishlist') }}">Wishlist</a>
                     <a href="{{ url_for('mirack.manage_mirack') }}">⬡ MiRack</a>
+                    <a href="{{ url_for('lore.index') }}">◈ Lore</a>
                 </div>
             </div>
 
@@ -1030,6 +1031,28 @@
     (function() {
         const saved = localStorage.getItem('theme') || 'beton';
         applyTheme(saved);
+    })();
+
+    // ── LIEN LORE ────────────────────────────────────────────────────────────
+    // Le champ « lien avec le lore » se complète depuis le corpus réel. Sans
+    // suggestions il restait vide sur les trois sessions existantes — et une
+    // carte ou une frise reliées aux sessions n'auraient rien eu à montrer.
+    (function() {
+        const champ = document.getElementById('lore-link-input');
+        if (!champ) return;
+        fetch('/api/lore/entrees').then(r => r.json()).then(d => {
+            if (!d.entrees || !d.entrees.length) return;
+            const dl = document.createElement('datalist');
+            dl.id = 'lore-entrees';
+            d.entrees.forEach(e => {
+                const o = document.createElement('option');
+                o.value = e.titre;
+                o.label = e.section;
+                dl.appendChild(o);
+            });
+            document.body.appendChild(dl);
+            champ.setAttribute('list', 'lore-entrees');
+        }).catch(() => {});   // pas de corpus, pas de suggestion : le champ reste libre
     })();
 
     // ── MODE FOCUS ───────────────────────────────────────────────────────────

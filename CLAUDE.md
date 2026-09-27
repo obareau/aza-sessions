@@ -8,7 +8,7 @@ App Flask + SQLite de documentation de sessions musicales pour l'univers de fict
 
 ⚠️ **Plus sur Fly.io** — déploiement bare metal sur Roblab, voir « Déploiement » plus bas. `fly.toml` et la branche `FLY_APP_NAME` de `wsgi.py` ont été retirés le 2026-08-29. Le `Dockerfile` subsiste : il ne servait qu'au build Fly et n'est plus utilisé, mais il n'a rien de nuisible.
 
-Version actuelle : voir `VERSION` dans `app.py` (**v3.23.0**).
+Version actuelle : voir `VERSION` dans `app.py` (**v3.24.0**).
 
 ⚠️ **`VERSION` a déjà pris deux releases de retard** (resté à 3.10.0 alors que le ROADMAP documentait v3.11.0 et v3.12.0), ce qui a fait attribuer un numéro déjà pris à une nouvelle feature le 2026-08-29. Avant de bumper, croiser `app.py`, `CHANGELOG.md` **et** `ROADMAP.md` — les trois divergent facilement.
 
@@ -39,7 +39,7 @@ Tests : **pytest** (smoke tests routes + DB).
 
 ### Vue d'ensemble
 
-`app.py` (144 lignes) est le point d'entrée minimal : il crée l'app Flask, enregistre les 18 blueprints et injecte les globals Jinja2 (`has_live`, `obsidian_vault`).
+`app.py` (144 lignes) est le point d'entrée minimal : il crée l'app Flask, enregistre les 19 blueprints et injecte les globals Jinja2 (`has_live`, `obsidian_vault`).
 
 `wsgi.py` est le point d'entrée Gunicorn — il appelle `init_db()` **et** `backup_db()` explicitement, car `app.py.__main__` ne tourne pas sous Gunicorn. C'est le chemin réel en production ; le bloc `__main__` ne sert qu'au lancement local.
 
@@ -61,7 +61,7 @@ def _engine():
     return XxxEngine(current_app.config["DB_PATH"])
 ```
 
-Les 18 blueprints enregistrés :
+Les 19 blueprints enregistrés :
 
 | Blueprint | Domaine |
 |---|---|
@@ -83,6 +83,7 @@ Les 18 blueprints enregistrés :
 | `mirack` | Catalogue de modules MiRack (iOS) |
 | `settings_app` | Paramètres app (backup, import, reset) |
 | `about` | Page À propos |
+| `lore` | **Lecture** du corpus Robōtariis (`/lore`, `/lore/timeline`, `/lore/citations`) — aucune table, voir « Lore » plus bas |
 
 ### Core
 
@@ -182,6 +183,32 @@ dès le deuxième appareil.
 
 ℹ️ **Des codes de deux caractères** laissent la place à trois appareils dans
 les 8 caractères ; des codes de trois s'arrêtent à deux appareils.
+
+---
+
+## Lore — Obsidian est la référence, AZA lit
+
+✅ **Décidé le 2026-09-27 : aucune entité de lore n'est stockée dans AZA.** Les
+lieux, factions, entités, personnages et la chronologie vivent dans le vault
+Obsidian (`~/robotariis/PUBLICATIONS-QUARTZ/Lore/`, chemin réglable via la clé
+`lore_path` de `config.json`), validés là-bas et publiés sur robotariis.com. Le
+blueprint `lore/` les **lit** à chaque requête.
+
+⛔ **Ne pas créer de tables `lore_places` / `lore_entities` / `lore_quotes`**, ni
+de CRUD de lore, ni d'import « pour aller plus vite ». L'alternative a été pesée
+et écartée : deux copies divergent dès la première correction faite d'un seul
+côté, et c'est le vault qui a raison.
+
+ℹ️ **AZA ne rend pas le Markdown, volontairement** — donc aucune dépendance de
+rendu à ajouter. Le corpus est déjà lisible dans Obsidian et sur le site ; ce qui
+manquait au journal, c'était de *pointer* vers le lore. Les cartes affichent
+l'en-tête et renvoient au texte publié. Le frontmatter est lu à la main : le
+corpus n'a que des scalaires et des listes inline.
+
+⚠️ **La barre verticale d'un wikilink est aussi le séparateur de cellule
+Markdown.** `[[cgu|C.G.U.]]` dans un tableau doit être résolu **avant** le
+découpage des cellules, sinon la ligne gagne une colonne fantôme
+(`lore/engine.py`, `_wikilinks()`).
 
 ---
 

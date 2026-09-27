@@ -1,0 +1,33 @@
+{# En-tête commun aux vues lore : l'état de la source, puis une citation.
+
+   Le bandeau d'indisponibilité est la première chose affichée quand le corpus
+   manque : sans lui, une page vide laisserait croire que le lore a disparu,
+   alors que c'est seulement un chemin à régler. #}
+{% if not dispo %}
+<div class="card" style="margin-bottom:20px;border-color:var(--accent);">
+    <div class="card-title" style="color:var(--accent);">∙ Corpus de lore introuvable</div>
+    <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);line-height:1.7;">
+        Aucun dossier <code>Lore/</code> sous <code>{{ racine or '—' }}</code>.<br>
+        Le lore n'est pas stocké dans AZA : il vit dans le vault Obsidian, qui en
+        reste la seule référence. Le journal ne fait que le lire.
+    </p>
+    <form method="POST" action="{{ url_for('lore.settings_lore') }}"
+          style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <input type="text" name="lore_path" value="{{ racine }}" placeholder="~/robotariis/PUBLICATIONS-QUARTZ"
+               style="font-family:var(--mono);font-size:12px;background:var(--bg);border:1px solid var(--border);
+                      border-radius:var(--radius);padding:8px 10px;color:var(--text);flex:1;min-width:240px;">
+        <button type="submit" class="btn btn-secondary btn-sm">Enregistrer le chemin</button>
+    </form>
+</div>
+{% elif citation %}
+<div class="card" style="margin-bottom:20px;border-left:2px solid var(--accent2);">
+    <div style="font-family:var(--mono);font-size:13px;line-height:1.8;color:var(--text);font-style:italic;">
+        {{ citation.texte }}
+    </div>
+    <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;
+                color:var(--text-muted);margin-top:8px;">
+        — {{ citation.source }}
+        <a href="{{ url_for('lore.citations') }}" style="color:var(--accent2);margin-left:10px;text-transform:none;letter-spacing:0;">toutes les citations →</a>
+    </div>
+</div>
+{% endif %}
