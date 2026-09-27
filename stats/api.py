@@ -32,7 +32,13 @@ def stats():
 
 @bp.route("/api/stats/summary")
 def stats_summary():
-    """Résumé JSON pour n8n Daily Digest."""
+    """Résumé JSON des statistiques.
+
+    ⚠️ Écrite pour le « Daily Digest » n8n, qui **n'existe plus** (n8n
+    décommissionné le 2026-09-27). La route est conservée parce qu'elle est
+    testée et sans effet de bord — mais elle n'a plus de consommateur connu :
+    si rien ne la lit d'ici quelque temps, la supprimer.
+    """
     data = _engine().compute()
     if data is None:
         return jsonify({"total": 0})

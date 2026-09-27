@@ -5,6 +5,22 @@
 
 ---
 
+## v3.24.1 — 2026-09-27 — Retrait de n8n
+
+### 🧹 Nettoyage
+- **`core/n8n_client.py` supprimé.** Le module postait des notifications ntfy et
+  des générations Ollama à un webhook n8n — et **n'avait aucun appelant**. Ses
+  deux fonctions avalaient les erreurs en retournant `False`, donc rien n'aurait
+  signalé qu'elles ne marchaient plus.
+- **n8n est décommissionné** (2026-09-27) : son conteneur repartait en crash-loop
+  à chaque boot depuis juin (`data/` appartenait à root, il n'a jamais rien pu
+  persister), alors qu'il était marqué « désactivé » depuis le 2026-07-14.
+- `/api/stats/summary` reste, mais sa docstring dit la vérité : elle a été écrite
+  pour le digest n8n, qui n'existe plus. Sans consommateur d'ici quelque temps,
+  la supprimer.
+
+---
+
 ## v3.24.0 — 2026-09-27 — Le lore entre dans le journal sans y déménager
 
 ### ✨ Nouveauté — blueprint `lore` (19ᵉ module)
