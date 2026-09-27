@@ -5,6 +5,38 @@
 
 ---
 
+## v3.22.0 — 2026-09-27 — Ce que les sessions disent au bout d'un an
+
+### ✨ Nouveauté
+- **Évolution par mois sur `/stats`.** Note moyenne (/5) et énergie moyenne (/3)
+  sur deux axes distincts — sur un seul, l'énergie s'écrasait en bas du graphe.
+  Un mois sans note est **absent** de la courbe, pas à zéro : zéro voudrait dire
+  « mauvais », alors que ça veut dire « pas renseigné ».
+- **Corrélations.** Nuage note × durée, et énergie moyenne par heure de la
+  journée — de quoi voir si les bonnes séances sont les longues, et à quelle
+  heure on joue vraiment.
+- **Rien ne s'affiche sous 5 sessions renseignées** (`MIN_POINTS`). Une moyenne
+  sur trois séances n'est pas une tendance, c'est trois séances ; la page est
+  plus courte plutôt que menteuse.
+
+### 🐛 Correctif
+- **`/api/stats/summary` renvoyait `top_machine: null` et `this_month: 0` depuis
+  toujours.** La route lisait `top_machine` à la racine alors qu'il vit sous
+  `records`, et `this_month` n'était jamais calculé. Le digest n8n annonçait donc
+  du vide sans se plaindre.
+
+### 📝 Note
+- **« Records & badges » était déjà livré** : `/stats` porte la carte Records et
+  les KPI de streak. L'item a été coché sans ligne de code — comme la heatmap la
+  veille. Vérifier la page avant de rouvrir un item de cette section.
+
+### 🧪 Tests
+- `tests/test_stats_evolution.py` — surtout le **seuil** : sous `MIN_POINTS`, les
+  quatre blocs doivent rester vides. Plus les cas tordus : date sans heure, durée
+  manquante, mois non noté.
+
+---
+
 ## v3.21.0 — 2026-09-27 — Nommer la séance dans l'univers
 
 ### ✨ Nouveauté

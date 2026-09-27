@@ -98,9 +98,9 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 | Priorité | Idée | Notes |
 |---|---|---|
 | ✅ ★★★ | ~~**Heatmap calendrier** — grille jour/semaine style GitHub contributions~~ | **Déjà livrée**, constaté le 2026-09-27 : `/stats` porte la grille 53 semaines avec étiquettes de mois, légende, infobulle, et `compute()` renvoie `heatmap`, `streak` et `max_streak`. La note « reste à faire » visait la heatmap *sonore* de l'index et a fait croire l'inverse — vérifier la page avant de rouvrir un item |
-| ★★☆ | **Évolution temporelle** — courbe note moyenne, énergie, mode au fil du temps | Voir si la qualité progresse |
-| ★★☆ | **Records & badges** — session la mieux notée, la plus longue, streak consécutif | Gamification légère |
-| ★★☆ | **Corrélations** — note vs durée, énergie vs heure de la journée | Comprendre ses propres patterns |
+| ✅ | ~~**Évolution temporelle**~~ — livré en **v3.22.0** | Carte « Évolution — moyennes par mois » sur `/stats` : note /5 et énergie /3 sur deux axes. Le **mode** n'y est pas — une moyenne de catégories n'a pas de sens ; sa répartition est déjà au doughnut |
+| ✅ | ~~**Records & badges**~~ — **déjà livré**, constaté le 2026-09-27 | `/stats` porte la carte « Records » (meilleure session, plus longue, heures cumulées, machine la plus utilisée) et les KPI streak / record streak. Rien à ajouter : vérifier la page avant de rouvrir l'item |
+| ✅ | ~~**Corrélations**~~ — livré en **v3.22.0** | Nuage note × durée + énergie moyenne par heure sur `/stats`. Nuage brut, **pas** de droite de régression ni de coefficient : l'échantillon ne les porterait pas. Les deux blocs restent cachés sous `MIN_POINTS = 5` |
 | ★☆☆ | **Stats par projet** — dashboard durée/évolution, enrichir project_detail | Déjà partiellement présent |
 
 ---

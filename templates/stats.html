@@ -45,7 +45,9 @@ Chart.defaults.font.family = "'IBM Plex Mono', monospace";
 Chart.defaults.font.size = 11;
 Chart.defaults.color = '#6B6560';
 
-function hBar(ctx, data, label, color) {
+// `fmt` : tout ce qui n'est pas un compte de sessions doit dire ce qu'il est —
+// « 2.5 sessions » pour une énergie moyenne serait faux.
+function hBar(ctx, data, label, color, fmt) {
     const labels = Object.keys(data);
     const values = Object.values(data);
     return new Chart(ctx, {
@@ -64,7 +66,7 @@ function hBar(ctx, data, label, color) {
         options: {
             indexAxis: 'y',
             responsive: true,
-            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw} session${ctx.raw > 1 ? 's' : ''}` } } },
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt ? fmt(ctx.raw) : ` ${ctx.raw} session${ctx.raw > 1 ? 's' : ''}` } } },
             scales: { x: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.04)' } }, y: { grid: { display: false } } }
         }
     });
@@ -116,6 +118,66 @@ function lineMonth(ctx, data) {
             scales: {
                 x: { grid: { color: 'rgba(0,0,0,0.04)' } },
                 y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.04)' } }
+            }
+        }
+    });
+}
+
+// Deux moyennes sur deux échelles différentes (note /5, énergie /3) : deux axes,
+// sinon l'énergie s'écrase en bas du graphe et ne dit plus rien.
+function lineEvolution(ctx, notes, energies) {
+    const mois = [...new Set([...Object.keys(notes), ...Object.keys(energies)])].sort();
+    const jeux = [];
+    if (Object.keys(notes).length) jeux.push({
+        label: 'Note moyenne', yAxisID: 'y',
+        data: mois.map(m => notes[m] ?? null),
+        borderColor: COLORS.warn, backgroundColor: COLORS.warnSoft,
+        tension: 0.3, pointRadius: 4, spanGaps: true,
+    });
+    if (Object.keys(energies).length) jeux.push({
+        label: 'Énergie moyenne', yAxisID: 'y1',
+        data: mois.map(m => energies[m] ?? null),
+        borderColor: COLORS.green, backgroundColor: COLORS.greenSoft,
+        borderDash: [4, 3], tension: 0.3, pointRadius: 3, spanGaps: true,
+    });
+    return new Chart(ctx, {
+        type: 'line',
+        data: { labels: mois, datasets: jeux },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } } },
+            scales: {
+                x:  { grid: { color: 'rgba(0,0,0,0.04)' } },
+                y:  { min: 1, max: 5, title: { display: true, text: 'Note /5' },
+                      grid: { color: 'rgba(0,0,0,0.04)' } },
+                y1: { min: 1, max: 3, position: 'right',
+                      title: { display: true, text: 'Énergie /3' }, grid: { display: false } },
+            }
+        }
+    });
+}
+
+// Nuage note × durée. On affiche les points, pas une droite de régression :
+// avec quelques dizaines de sessions, la droite inventerait une loi.
+function scatterNoteDuree(ctx, points) {
+    return new Chart(ctx, {
+        type: 'scatter',
+        data: { datasets: [{
+            data: points,
+            backgroundColor: COLORS.redSoft, borderColor: COLORS.red,
+            borderWidth: 1, pointRadius: 6,
+        }] },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: c => ` ${c.raw.x} min · ${'★'.repeat(c.raw.y)}` } }
+            },
+            scales: {
+                x: { beginAtZero: true, title: { display: true, text: 'Durée (min)' },
+                     grid: { color: 'rgba(0,0,0,0.04)' } },
+                y: { min: 0, max: 5, ticks: { stepSize: 1 },
+                     title: { display: true, text: 'Note' }, grid: { color: 'rgba(0,0,0,0.04)' } },
             }
         }
     });
@@ -253,6 +315,13 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
     if (Object.keys(S.monthly).length > 1) lineMonth(document.getElementById('cMonthly'), S.monthly);
+    if (Object.keys(S.monthly_rating).length || Object.keys(S.monthly_energy).length)
+        lineEvolution(document.getElementById('cEvolution'), S.monthly_rating, S.monthly_energy);
+    if (S.duration_rating.length)
+        scatterNoteDuree(document.getElementById('cNoteDuree'), S.duration_rating);
+    if (Object.keys(S.energy_by_hour).length)
+        hBar(document.getElementById('cEnergieHeure'), S.energy_by_hour, 'Énergie',
+             COLORS.greenSoft, v => ` énergie moyenne ${v} / 3`);
 });
 </script>
 
@@ -361,6 +430,32 @@ window.addEventListener('DOMContentLoaded', () => {
 <div class="card" style="margin-bottom:20px;">
     <div class="card-title">∙ Sessions par mois</div>
     <canvas id="cMonthly" height="80"></canvas>
+</div>
+{% endif %}
+
+<!-- ÉVOLUTION -->
+{% if stats.monthly_rating or stats.monthly_energy %}
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-title">∙ Évolution — moyennes par mois</div>
+    <canvas id="cEvolution" height="110"></canvas>
+</div>
+{% endif %}
+
+<!-- CORRÉLATIONS -->
+{% if stats.duration_rating or stats.energy_by_hour %}
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;margin-bottom:20px;">
+    {% if stats.duration_rating %}
+    <div class="card">
+        <div class="card-title">∙ Note × durée</div>
+        <canvas id="cNoteDuree" height="220"></canvas>
+    </div>
+    {% endif %}
+    {% if stats.energy_by_hour %}
+    <div class="card">
+        <div class="card-title">∙ Énergie moyenne par heure</div>
+        <canvas id="cEnergieHeure" height="{{ [stats.energy_by_hour|length * 28, 120]|max }}"></canvas>
+    </div>
+    {% endif %}
 </div>
 {% endif %}
 

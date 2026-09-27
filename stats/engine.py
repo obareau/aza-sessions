@@ -4,6 +4,12 @@ from datetime import date as _date, timedelta
 from core.db import get_db
 
 
+# Une moyenne sur trois sessions n'est pas une tendance, c'est trois sessions.
+# En dessous de ce seuil les blocs d'évolution et de corrélation ne s'affichent
+# pas du tout : mieux vaut une page plus courte qu'une courbe qui mentirait.
+MIN_POINTS = 5
+
+
 class StatsEngine:
     def __init__(self, db_path):
         self.db_path = db_path
@@ -47,6 +53,7 @@ class StatsEngine:
             if s["date"]:
                 monthly[s["date"][:7]] += 1
         monthly_sorted = dict(sorted(monthly.items()))
+        this_month = monthly.get(_date.today().isoformat()[:7], 0)
 
         modes      = Counter(s["mode"]      for s in sessions if s["mode"])
         intentions = Counter(s["intention"] for s in sessions if s["intention"])
@@ -81,6 +88,40 @@ class StatsEngine:
             d -= timedelta(days=1)
         max_streak = max(max_streak, cur)
 
+        # ── Évolution temporelle ──
+        # Moyennes par mois : la note dit si ça progresse, l'énergie dit dans
+        # quel état on joue. Un mois sans donnée est absent, pas à zéro — zéro
+        # voudrait dire « mauvais », alors que ça veut dire « pas renseigné ».
+        def moyenne_par_mois(field):
+            par_mois = {}
+            for s in sessions:
+                if s["date"] and s[field]:
+                    par_mois.setdefault(s["date"][:7], []).append(s[field])
+            return {m: round(sum(v) / len(v), 2)
+                    for m, v in sorted(par_mois.items())}
+
+        notees   = [s for s in sessions if s["rating"]]
+        energees = [s for s in sessions if s["energy_level"]]
+        monthly_rating = moyenne_par_mois("rating")   if len(notees)   >= MIN_POINTS else {}
+        monthly_energy = moyenne_par_mois("energy_level") if len(energees) >= MIN_POINTS else {}
+
+        # ── Corrélations ──
+        # Nuage brut plutôt qu'un coefficient : sur cette taille d'échantillon
+        # un r de Pearson donnerait une précision qu'on n'a pas. L'œil voit le
+        # groupe, ou voit qu'il n'y a rien à voir.
+        nuage = [{"x": s["duration_min"], "y": s["rating"]}
+                 for s in sessions if s["duration_min"] and s["rating"]]
+        duration_rating = nuage if len(nuage) >= MIN_POINTS else []
+
+        par_heure = {}
+        for s in sessions:
+            # 'YYYY-MM-DDTHH:MM' — pas d'heure, pas de point.
+            if s["energy_level"] and s["date"] and len(s["date"]) >= 13:
+                par_heure.setdefault(int(s["date"][11:13]), []).append(s["energy_level"])
+        energy_by_hour = ({f"{h:02d}h": round(sum(v) / len(v), 2)
+                           for h, v in sorted(par_heure.items())}
+                          if len(energees) >= MIN_POINTS else {})
+
         machines = count_items("machines")
         best    = max(sessions, key=lambda s: (s["rating"] or 0, s["duration_min"] or 0))
         longest = max(sessions, key=lambda s: s["duration_min"] or 0)
@@ -108,6 +149,12 @@ class StatsEngine:
             "streak":         streak,
             "max_streak":     max_streak,
             "total_min":      sum(durations),
+            "monthly_rating":  monthly_rating,
+            "monthly_energy":  monthly_energy,
+            "duration_rating": duration_rating,
+            "energy_by_hour":  energy_by_hour,
+            "min_points":      MIN_POINTS,
+            "this_month":      this_month,
             "records": {
                 "best_id":          best["id"],
                 "best_date":        best["date"][:10],

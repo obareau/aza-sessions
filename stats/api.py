@@ -42,7 +42,9 @@ def stats_summary():
         "release_count": data["release_count"],
         "rework_count":  data["rework_count"],
         "streak":        data.get("streak", 0),
-        "top_machine":   data.get("top_machine"),
+        # Le record vit sous "records" — le lire à la racine renvoyait null
+        # depuis toujours, sans que le digest s'en plaigne.
+        "top_machine":   data["records"]["top_machine"],
         "top_mode":      max(data["modes"], key=data["modes"].get) if data.get("modes") else None,
         "this_month":    data.get("this_month", 0),
     })
