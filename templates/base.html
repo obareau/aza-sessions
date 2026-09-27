@@ -1136,6 +1136,29 @@
         // Effacer au submit
         form.addEventListener('submit', () => localStorage.removeItem(KEY));
     })();
+
+    // ── TITRE AZA ──
+    // Un bouton [data-nom-aza="<name du champ>"] remplit ce champ d'un titre
+    // dans l'esthétique de l'univers. Un clic = une proposition : si elle ne va
+    // pas, on reclique. Le champ reste éditable, la proposition n'est qu'un
+    // point de départ.
+    document.addEventListener('click', e => {
+        const btn = e.target.closest('[data-nom-aza]');
+        if (!btn) return;
+        const champ = btn.form ? btn.form.elements[btn.dataset.nomAza]
+                               : document.getElementsByName(btn.dataset.nomAza)[0];
+        if (!champ) return;
+        btn.disabled = true;
+        fetch('/api/noms-aza')
+            .then(r => r.json())
+            .then(d => {
+                if (d.noms && d.noms.length) {
+                    champ.value = d.noms[0];
+                    champ.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            })
+            .finally(() => { btn.disabled = false; });
+    });
     </script>
 </body>
 </html>

@@ -5,6 +5,26 @@
 
 ---
 
+## v3.21.0 — 2026-09-27 — Nommer la séance dans l'univers
+
+### ✨ Nouveauté
+- **Générateur de titres AZA.** Un bouton `⟳ titre AZA` à côté du champ *Titre*
+  sur `/vite`, `/new` et l'édition : un clic remplit le champ d'un titre dans
+  l'esthétique de l'univers (`MÉMOIRE RÉSIDUELLE`, `NODE KERGLAZ-7`,
+  `CDX-34 / BALISE SOUTERRAINE`, `A.99 — FRACTURE`). Le champ reste éditable —
+  la proposition amorce, elle n'impose rien.
+- Le vocabulaire vient du **glossaire de Robōtariis** (le codex, le C.G.U., le
+  calendrier `CAL_RECT` qui démarre à l'an 0, Scaër), pas d'une banque de mots
+  de science-fiction générique.
+- Nouvelle route `GET /api/noms-aza` et module `core/lore_names.py` — pur, sans
+  état, sans base : rien n'est enregistré.
+
+### 🧪 Tests
+- `tests/test_lore_names.py` — le contrat (nombre, unicité, registre, route),
+  pas le tirage : le hasard est la fonctionnalité.
+
+---
+
 ## v3.20.0 — 2026-09-27 — Le nom se voit avant d'exister
 
 ### ✨ Nouveauté

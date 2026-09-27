@@ -118,7 +118,7 @@ purement spéculative.
 
 | Priorité | Idée | Notes |
 |---|---|---|
-| ★★☆ | **Générateur de noms AZA** — titres dans l'esthétique de l'univers | Ex : "SÉQUENCE-09 / MÉMOIRE RÉSIDUELLE / NODE SCAER-7" |
+| ✅ | ~~**Générateur de noms AZA**~~ — livré en **v3.21.0** | Bouton `⟳ titre AZA` sur `/vite`, `/new`, `/edit` · `core/lore_names.py` + `GET /api/noms-aza` · vocabulaire tiré du glossaire de Robōtariis |
 | ★★☆ | **Timeline narrative** — frise chronologique *dans l'univers* (distinct de la date réelle) | Ordonner par ordre lore, pas par date d'enregistrement |
 | ★★☆ | **Carte du lore** — canvas interactif SVG/HTML, chaque session occupe un lieu | Visualisation narrative de la B.O. |
 | ★☆☆ | **Bestiaire / Glossaire** — entités, lieux, factions liables aux sessions | Enrichir le contexte narratif |

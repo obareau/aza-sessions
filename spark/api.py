@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, current_app, session as flask_session
+from flask import Blueprint, render_template, current_app, request, jsonify, session as flask_session
+from core.lore_names import propose
 from .engine import SparkEngine
 
 bp = Blueprint("spark", __name__)
@@ -32,3 +33,13 @@ def spark_focus():
 
     return render_template("spark_focus.html", focus=focus,
                            version=current_app.config.get("VERSION", ""))
+
+
+@bp.route("/api/noms-aza")
+def api_noms_aza():
+    """Des titres dans l'esthétique d'AZA, pour débloquer le champ Titre.
+
+    Rien n'est enregistré et rien n'est imposé : la proposition sert à amorcer,
+    elle se réécrit toujours à la main.
+    """
+    return jsonify(noms=propose(request.args.get("n", 1, type=int)))
