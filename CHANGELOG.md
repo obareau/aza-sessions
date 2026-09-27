@@ -20,8 +20,13 @@
   état, sans base : rien n'est enregistré.
 
 ### 🧪 Tests
-- `tests/test_lore_names.py` — le contrat (nombre, unicité, registre, route),
-  pas le tirage : le hasard est la fonctionnalité.
+- `tests/test_lore_names.py` — le contrat (nombre, unicité, registre, accord du
+  genre, route), pas le tirage : le hasard est la fonctionnalité.
+
+### 📝 Note
+- Les noms sont **séparés par genre** : le premier tirage sortait
+  « SIGNAL RÉSIDUELLE ». L'accord ne se dérive pas depuis le mot
+  (BASSE/BAS, ANCIENNE/ANCIEN), il est écrit dans deux listes parallèles.
 
 ---
 

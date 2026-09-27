@@ -14,21 +14,37 @@ l'univers, pas de la science-fiction générique.
 """
 import random
 
-# Objets et états — ce que la Rectitude produit, use ou oublie.
-NOMS = [
-    "MÉMOIRE", "FRAGMENT", "SÉQUENCE", "VEILLE", "CORROSION", "RÉSIDU",
-    "SIGNAL", "PROTOCOLE", "CONSIGNE", "ARCHIVE", "STRATE", "LATENCE",
-    "DÉRIVE", "RELIQUE", "SILENCE", "CIRCUIT", "CENDRE", "BALISE",
-    "INVENTAIRE", "SOMMEIL", "RUMEUR", "POUSSIÈRE", "FRACTURE", "ORNIÈRE",
+# Objets et états — ce que la Rectitude produit, use ou oublie. Séparés par
+# genre : « SIGNAL RÉSIDUELLE » sonne comme une faute de frappe, pas comme un
+# titre. L'accord ne se devine pas depuis le mot (une règle de dérivation
+# buterait sur BASSE/BAS, ANCIENNE/ANCIEN), on l'écrit.
+NOMS_F = [
+    "MÉMOIRE", "SÉQUENCE", "VEILLE", "CORROSION", "CONSIGNE", "ARCHIVE",
+    "STRATE", "LATENCE", "DÉRIVE", "RELIQUE", "CENDRE", "BALISE", "RUMEUR",
+    "POUSSIÈRE", "FRACTURE", "ORNIÈRE",
 ]
+NOMS_M = [
+    "FRAGMENT", "RÉSIDU", "SIGNAL", "PROTOCOLE", "SILENCE", "CIRCUIT",
+    "INVENTAIRE", "SOMMEIL",
+]
+# Les motifs qui ne qualifient pas (numérotation, calendrier) tirent dans tout.
+NOMS = NOMS_F + NOMS_M
 
-# Qualités — l'usure, la lenteur, l'administratif.
-ADJECTIFS = [
+# Qualités — l'usure, la lenteur, l'administratif. Même index dans les deux
+# listes : c'est le même adjectif, accordé.
+ADJECTIFS_F = [
     "RÉSIDUELLE", "LENTE", "MÉCANIQUE", "OUBLIÉE", "CONTINUE", "BASSE",
     "PROVISOIRE", "SOUTERRAINE", "CONFORME", "DIFFÉRÉE", "MUETTE",
     "ANCIENNE", "SATURÉE", "ADMINISTRATIVE", "INTERDITE", "TARDIVE",
     "RÉTIVE", "SCELLÉE", "NOCTURNE", "MINÉRALE",
 ]
+ADJECTIFS_M = [
+    "RÉSIDUEL", "LENT", "MÉCANIQUE", "OUBLIÉ", "CONTINU", "BAS",
+    "PROVISOIRE", "SOUTERRAIN", "CONFORME", "DIFFÉRÉ", "MUET",
+    "ANCIEN", "SATURÉ", "ADMINISTRATIF", "INTERDIT", "TARDIF",
+    "RÉTIF", "SCELLÉ", "NOCTURNE", "MINÉRAL",
+]
+assert len(ADJECTIFS_F) == len(ADJECTIFS_M)
 
 # Lieux — le réel et l'univers se recouvrent : Scaër est les deux à la fois.
 LIEUX = [
@@ -42,7 +58,13 @@ CODES = ["CDX", "CGU", "RBT", "CAL", "A0", "CLU", "ARX", "OBS"]
 # Chaque motif est une façon différente de nommer : par objet, par lieu, par
 # référence administrative. Mélanger les registres évite qu'une série de
 # propositions se ressemble toutes.
-def _objet(r):    return f"{r.choice(NOMS)} {r.choice(ADJECTIFS)}"
+def _objet(r):
+    """Nom + adjectif accordé — on tire le genre, puis le même index des deux."""
+    feminin = r.random() < len(NOMS_F) / len(NOMS)
+    nom = r.choice(NOMS_F if feminin else NOMS_M)
+    adj = (ADJECTIFS_F if feminin else ADJECTIFS_M)[r.randrange(len(ADJECTIFS_F))]
+    return f"{nom} {adj}"
+
 def _numerote(r): return f"{r.choice(NOMS)}-{r.randrange(1, 100):02d}"
 def _lieu(r):     return f"NODE {r.choice(LIEUX)}-{r.randrange(1, 20)}"
 def _codex(r):    return f"{r.choice(CODES)}-{r.randrange(1, 100):02d} / {_objet(r)}"

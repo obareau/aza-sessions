@@ -36,3 +36,12 @@ def test_route(client):
     r = client.get("/api/noms-aza?n=3")
     assert r.status_code == 200
     assert len(r.get_json()["noms"]) == 3
+
+
+def test_accord_du_genre():
+    """Un nom masculin ne prend jamais l'adjectif féminin (« SIGNAL RÉSIDUELLE »)."""
+    from core.lore_names import NOMS_M, ADJECTIFS_F
+    for titre in propose(20, seed=5):
+        for nom in NOMS_M:
+            if titre.startswith(nom + " "):
+                assert titre.split(" ", 1)[1] not in ADJECTIFS_F, titre
