@@ -111,7 +111,7 @@ fonctionnalité marche » — vérifier par le chemin que l'usager emprunte.**
 19 tables SQLite, toutes créées dans `init_db()`. Tables principales :
 
 - `sessions` — 31 champs dont `recap_claude` (résumé IA généré par Ollama), `project_id` (FK), `title`
-- `live_session` — session en cours (0 ou 1 ligne) — supporte dictée vocale Whisper via `/live/transcribe`
+- `live_session` — session en cours (0 ou 1 ligne)
 - `patch_layouts` / `patch_nodes` / `patch_connections` — module Patcher
 - `sysex_banks` — banks SysEx (BLOB SQLite)
 - `catalogue`, `influences`, `obliques`, `projects`, `sample_banks`, `inspiring_tracks`, `gear_wishlist`, `inspirations`, `mirack_modules`
