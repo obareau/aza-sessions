@@ -94,7 +94,27 @@ Les 19 blueprints enregistrés :
 - `core/ollama_client.py` — génération du `recap_claude` via **`qwen3.5:cloud`** (`OLLAMA_MODEL`) sur `192.168.1.100` ; second modèle `qwen2.5-coder:7b` (`CODER_MODEL`) ; appelé depuis `/new?from_live=1` ; **silencieux si indisponible**
   ⚠️ Ce silence a déjà coûté : le recap est resté mort sans que personne le voie, parce que le modèle configuré (`qwen3.5:latest`) n'existait pas. Corrigé le 2026-07-31. Réflexe — un appel LLM qui échoue sans bruit ne se verra jamais depuis l'interface : vérifier le **modèle** avant de chercher un bug dans le code.
 - `core/whisper_client.py` — transcription audio via Whisper GPU local (`192.168.1.100:9000`, modèle `small`) ; appelé depuis `/live/transcribe` (POST multipart), utilisé par `/live` **seulement** — la dictée a été retirée de `/vite` le 2026-08-29, le clavier étant préféré ; silencieux si indisponible
-  ℹ️ Le service est le conteneur Docker `whisper` (`onerahmet/openai-whisper-asr-webservice:latest-gpu`, `--restart unless-stopped`, ~1,6 Go de VRAM), **installé le 2026-08-29** : il était absent de la machine jusque-là, donc la dictée n'avait jamais pu fonctionner, https ou non. Chaîne vérifiée de bout en bout (navigateur → https → `/live/transcribe` → Whisper → JSON) en ~6 s. Sa définition vit dans `~/homelab-install/install.sh`, section 24.
+  ⛔ **La dictée n'a jamais fonctionné en usage réel** — dit par Olivier le
+  2026-09-27 : « ça n'a jamais marché whisper dans aza ». Ne pas la présenter
+  comme un acquis, ne pas la « réparer » sans lui demander d'abord.
+
+  ⚠️ **La note précédente affirmait le contraire et se trompait.** Elle disait la
+  chaîne « vérifiée de bout en bout (navigateur → https → `/live/transcribe` →
+  Whisper → JSON) en ~6 s » le 2026-08-29. Ce qui avait été vérifié, c'est le
+  chemin *serveur* → Whisper ; le chemin *navigateur* ne l'a jamais été dans les
+  conditions d'usage. Caddy ne sert `sessions.lan` qu'en **HTTP**
+  (`sessions.lan:80` dans `/etc/caddy/Caddyfile`), et `live.html` désactive le
+  bouton hors contexte sécurisé : sur le LAN — donc au studio — le micro est
+  toujours grisé. Seul `https://sessions.robotariis.com` pouvait y donner accès.
+  Réflexe : « le service répond » ne veut pas dire « la fonctionnalité marche » ;
+  la vérification doit passer par le chemin que l'usager emprunte.
+
+  ℹ️ Le conteneur Docker `whisper` (`onerahmet/openai-whisper-asr-webservice:latest-gpu`,
+  ~1,6 Go de VRAM) **n'existe plus** sur la machine, constaté le 2026-09-27 — pas
+  même arrêté, absent de `docker ps -a`. Sa définition reste dans
+  `~/homelab-install/install.sh`, section 24. Le client Python étant silencieux en
+  cas d'indisponibilité, rien ne le signale à l'écran : le bouton enregistre puis
+  affiche « ✗ Whisper indisponible ».
 
 ### Base de données
 
