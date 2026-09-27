@@ -1,7 +1,7 @@
 # ROADMAP — Journal de Sessions AZA
 
 > Carte des possibles — pas un backlog, pas de deadlines.
-> Mis à jour : 2026-09-08 (après release **v3.18.2**)
+> Mis à jour : 2026-09-27 (après release **v3.20.0**)
 
 ---
 
@@ -29,7 +29,7 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 
 ---
 
-## ✅ Déjà livré (v1.x → v3.18.2)
+## ✅ Déjà livré (v1.x → v3.20.0)
 
 | Version | Fonctionnalité |
 |---|---|
@@ -68,6 +68,11 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 | v3.18.0 | **Fiches matériel** (`/catalogue/fiches`) — vue table éditable : fabricant, à quoi ça sert, comment je compte m'en servir. Deux colonnes ajoutées au catalogue (`purpose`, `intent`), relues sur le carnet d'instrument |
 | v3.18.1 | **Impression des fiches** (`/catalogue/fiches/print`) — A4 paysage, groupé par type, suit les filtres de l'écran ; les cases vides sortent réglées pour être remplies au stylo |
 | v3.18.2 | **Ajout de matériel depuis la vue table** — type, fabricant, nom et les deux champs de la fiche d'un coup, sans repasser par `/catalogue` ; doublon (type, nom) refusé |
+| v3.18.3 | **Deux échecs, deux messages** — `add_fiche` renvoyait `None` pour trois causes (type manquant, nom manquant, doublon) ; la saisie incomplète lève désormais `ValueError`, le doublon garde `None` |
+| v3.19.0 | **Nom de prise Zoom R8 généré** — colonne `code` au catalogue, `/vite` fabrique `MFMG5_1` depuis le matériel coché. Ordre du signal et non alphabétique ; compteur quotidien |
+| v3.19.1 | **Fiches matériel dans le menu** Catalogue — la vue table n'était atteignable que par un bouton |
+| v3.19.2 | **Contraintes réelles du R8 appliquées** (manuel p. 94) — 8 caractères max, `A-Z 0-9 _` seulement, tiret refusé. Le préfixe est rogné, jamais le rang ; les codes sont assainis à la lecture |
+| v3.20.0 | **Aperçu du nom de prise en direct** sur `/vite` — et il nomme ce qui manque : matériel sans code, préfixe rogné. Route `POST /api/nom-de-prise` |
 
 ---
 
@@ -197,6 +202,7 @@ construction. Le quantize n'existait ici que parce que le Prompteur comptait en
 | ★☆☆ | **Compilation binaire M4** — `.app` macOS natif Apple Silicon via PyInstaller | Lancement sans terminal |
 | ★☆☆ | **Mode multi-machines** — sync `sessions.db` réseau local (rsync ou SQLite over LAN) | Mac + iPad dans le même studio |
 | ★☆☆ | **QR code vers session** — pointe vers `localhost:5001/session/<id>` | Scanner depuis iPhone en studio |
+| ⛔ ★☆☆ | ~~**Factoriser les 16 `_get_db()` identiques**~~ — une classe de base pour les 15 moteurs | **Écarté le 2026-09-27.** Trouvé par graphify (degré 26 sur `._get_db()`). Trois lignes triviales dupliquées quinze fois ne valent pas une hiérarchie de classes — le gain n'existera que le jour où le mode de connexion changera |
 
 ---
 
@@ -210,7 +216,7 @@ construction. Le quantize n'existait ici que parce que le Prompteur comptait en
 
 ---
 
-*Dernière mise à jour : 2026-09-08 — v3.18.2*
+*Dernière mise à jour : 2026-09-27 — v3.20.0*
 *Ce fichier évolue librement — ce n'est pas un backlog, c'est une carte des possibles.*
 
 ## Demandes externes (Argus)
