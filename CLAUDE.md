@@ -8,7 +8,7 @@ App Flask + SQLite de documentation de sessions musicales pour l'univers de fict
 
 ⚠️ **Plus sur Fly.io** — déploiement bare metal sur Roblab, voir « Déploiement » plus bas. `fly.toml` et la branche `FLY_APP_NAME` de `wsgi.py` ont été retirés le 2026-08-29. Le `Dockerfile` subsiste : il ne servait qu'au build Fly et n'est plus utilisé, mais il n'a rien de nuisible.
 
-Version actuelle : voir `VERSION` dans `app.py` (**v3.28.0**).
+Version actuelle : voir `VERSION` dans `app.py` (**v3.29.0**).
 
 ⚠️ **`VERSION` a déjà pris deux releases de retard** (resté à 3.10.0 alors que le ROADMAP documentait v3.11.0 et v3.12.0), ce qui a fait attribuer un numéro déjà pris à une nouvelle feature le 2026-08-29. Avant de bumper, croiser `app.py`, `CHANGELOG.md` **et** `ROADMAP.md` — les trois divergent facilement.
 
@@ -83,7 +83,7 @@ Les 20 blueprints enregistrés :
 | `mirack` | Catalogue de modules MiRack (iOS) |
 | `settings_app` | Paramètres app (backup, import, reset) |
 | `about` | Page À propos |
-| `takes` | **Lecture** du dossier de vidage de la carte SD du R8 (`/prises`) — rapproche fichiers et séances, n'écrit jamais |
+| `takes` | Registre des noms de prise saisis (`/prises`) — groupe les `audio_file` des séances et signale les noms réutilisés. **Ne lit aucun fichier** |
 | `lore` | **Lecture** du corpus Robōtariis (`/lore`, `/lore/timeline`, `/lore/citations`) — aucune table, voir « Lore » plus bas |
 
 ### Core
@@ -217,6 +217,22 @@ corpus n'a que des scalaires et des listes inline.
 Markdown.** `[[cgu|C.G.U.]]` dans un tableau doit être résolu **avant** le
 découpage des cellules, sinon la ligne gagne une colonne fantôme
 (`lore/engine.py`, `_wikilinks()`).
+
+---
+
+## Prises audio — saisie manuelle, pas de scan
+
+⛔ **Ne pas proposer de scan de dossier, d'import de carte SD ni d'upload de
+fichier audio.** Olivier saisit ses noms de prise **à la main** dans le champ
+`audio_file` d'une séance (dit le 2026-09-28 : « je les rentre à la main »).
+
+Une version qui dépouillait un dossier de vidage de carte a été livrée puis
+retirée le jour même (v3.28.0 → v3.29.0) : elle attendait un dossier qui
+n'existerait jamais. `/prises` ne fait donc que **relire les noms saisis** et
+signaler ceux qui reviennent.
+
+ℹ️ Le générateur de nom du catalogue (`take_name`) reste la bonne aide : il
+*propose* le nom, c'est la frappe qui l'inscrit.
 
 ---
 

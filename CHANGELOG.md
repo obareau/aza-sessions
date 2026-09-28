@@ -5,6 +5,36 @@
 
 ---
 
+## v3.29.0 — 2026-09-28 — `/prises` ne fouille plus rien
+
+### ⛔ Demi-tour assumé
+- **Le dépouillement d'un dossier de prises est retiré**, livré le jour même en
+  v3.28.0. Il supposait un dossier où la carte SD serait vidée ; Olivier saisit
+  ses noms de prise **à la main** — ce dossier n'existerait donc jamais, et la
+  page aurait passé sa vie à ne rien trouver.
+- Partent avec : la lecture disque, la route d'écoute des fichiers, le réglage
+  `takes_path`, et le dossier `~/R8-DUMP` créé pour l'occasion.
+- **La leçon vaut d'être écrite** : j'avais proposé cette fonctionnalité, elle a
+  été retenue, et elle s'est révélée fausse dès qu'on a demandé *comment les
+  fichiers arriveraient*. La question du geste réel aurait dû venir avant le code.
+
+### ✨ Ce que `/prises` devient
+- Le **registre des noms de prise saisis** — rien d'autre que les `audio_file`
+  des séances, relus ensemble.
+- **Les noms réutilisés sont signalés.** Le compteur du R8 est quotidien, donc
+  `MF_1` revient chaque jour : la collision est assumée, mais la voir vaut mieux
+  que la subir — si deux de ces séances cohabitent sur la carte, le R8 en refuse
+  une. Le groupement ignore la casse et les espaces, sinon « mf_1 » et « MF_1 »
+  passeraient pour deux prises distinctes et masqueraient le doublon.
+- Les **séances sans prise** sont listées à part : ni erreur ni manque, juste ce
+  qu'on cherche quand on se demande où était passé un son.
+
+### 🧪 Tests
+- `tests/test_takes.py` réécrit — 8 cas sur le groupement, la casse, et un
+  garde-fou vérifiant qu'aucune route ne sert plus de fichier du disque.
+
+---
+
 ## v3.28.0 — 2026-09-28 — Boucler la chaîne du R8
 
 ### ✨ Nouveauté — blueprint `takes` (20ᵉ module)

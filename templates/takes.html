@@ -3,77 +3,81 @@
 {% block content %}
 
 <style>
-.tk-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.tk-row { display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; }
 .tk-row:last-child { border-bottom:none; }
-.tk-nom { font-family:var(--mono); font-size:12px; font-weight:600; color:var(--text); min-width:0; }
+.tk-nom { font-family:var(--mono); font-size:13px; font-weight:600; color:var(--text); min-width:96px; }
 .tk-meta { font-family:var(--mono); font-size:10px; color:var(--text-muted); }
-.tk-audio { height:32px; max-width:230px; flex:1; min-width:170px; }
 </style>
 
 <div class="page-header">
     <div>
         <div class="page-title">▪ Prises</div>
         <div class="page-subtitle">
-            {% if dispo %}{{ nb_fichiers }} fichier{{ 's' if nb_fichiers > 1 }} lu{{ 's' if nb_fichiers > 1 }} dans {{ racine }}{% else %}Dossier non configuré{% endif %}
+            {{ registre|length }} nom{{ 's' if registre|length > 1 }} de prise — saisis à la main
         </div>
     </div>
     <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
 </div>
 
-{% if not dispo %}
-<div class="card" style="border-color:var(--accent);margin-bottom:20px;">
-    <div class="card-title" style="color:var(--accent);">∙ Dossier de prises introuvable</div>
-    <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);line-height:1.7;">
-        Rien à lire sous <code>{{ racine or '—' }}</code>. C'est le dossier où tu
-        vides la carte SD du R8 : AZA n'y écrit jamais, il ne fait que le lire.
+{% set doublons = registre | selectattr('doublon') | list %}
+{% if doublons %}
+<div class="card" style="margin-bottom:20px;border-left:2px solid var(--warning);">
+    <div class="card-title" style="margin-bottom:6px;">⚠ Noms réutilisés — {{ doublons|length }}</div>
+    <p class="tk-meta" style="margin-bottom:10px;line-height:1.7;">
+        Le compteur du R8 est quotidien : le même nom revient d'un jour à l'autre.
+        C'est assumé — la carte se vide entre-temps — mais si deux de ces séances
+        cohabitent encore sur la carte, le R8 en refusera une.
     </p>
-    <form method="POST" action="{{ url_for('takes.settings_takes') }}" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <input type="text" name="takes_path" value="{{ racine }}" placeholder="~/R8-DUMP"
-               style="font-family:var(--mono);font-size:12px;background:var(--bg);border:1px solid var(--border);
-                      border-radius:var(--radius);padding:8px 10px;color:var(--text);flex:1;min-width:240px;">
-        <button type="submit" class="btn btn-secondary btn-sm">Enregistrer le chemin</button>
-    </form>
-</div>
-{% else %}
-
-<!-- ORPHELINES — d'abord : c'est ce qui demande une action -->
-<div class="card" style="margin-bottom:20px;{% if orphelines %}border-left:2px solid var(--warning);{% endif %}">
-    <div class="card-title" style="margin-bottom:6px;">
-        ⚠ Jouées, jamais notées — {{ orphelines|length }}
+    {% for g in doublons %}
+    <div class="tk-row">
+        <div class="tk-nom" style="color:var(--warning);">{{ g.nom }}</div>
+        <div style="flex:1;min-width:200px;">
+            {% for s in g.seances %}
+            <a href="{{ url_for('sessions.recall_session', sid=s.id) }}" class="tk-meta"
+               style="color:var(--accent2);display:block;">
+                {{ s.date[:10] }}{% if s.title %} · {{ s.title }}{% endif %}
+            </a>
+            {% endfor %}
+        </div>
     </div>
-    {% if orphelines %}
-    <p class="tk-meta" style="margin-bottom:8px;">
-        Ces fichiers ne correspondent à aucune séance du journal. Une prise sans
-        séance, c'est une chose jouée dont il ne reste que le son.
-    </p>
-        {% for f in orphelines %}
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-title" style="margin-bottom:6px;">∙ Toutes les prises</div>
+    {% if registre %}
+        {% for g in registre %}
         <div class="tk-row">
-            <div style="flex:1;min-width:160px;">
-                <div class="tk-nom">{{ f.nom }}</div>
-                <div class="tk-meta">
-                    {% if f.dossier %}{{ f.dossier }} · {% endif %}{% if f.duree %}{{ f.duree }} · {% endif %}{{ f.taille_mo }} Mo
-                </div>
+            <div class="tk-nom">{{ g.nom }}</div>
+            <div style="flex:1;min-width:200px;">
+                {% for s in g.seances %}
+                <a href="{{ url_for('sessions.recall_session', sid=s.id) }}" class="tk-meta"
+                   style="color:var(--accent);display:block;text-decoration:none;">
+                    ⟲ {{ s.date[:10] }}{% if s.title %} · {{ s.title }}{% endif %}
+                </a>
+                {% endfor %}
             </div>
-            <audio class="tk-audio" controls preload="none" src="{{ url_for('takes.listen', f=f.rel) }}"></audio>
-            <a href="{{ url_for('sessions.new_session', audio=f.cles|list|first) }}" class="btn btn-ghost btn-sm">+ créer la séance</a>
         </div>
         {% endfor %}
     {% else %}
-    <div class="tk-meta">Aucune. Tout ce qui a été enregistré est noté.</div>
+    <div class="tk-meta" style="line-height:1.7;">
+        Aucune prise nommée. Le nom se remplit dans le champ <em>fichier audio</em>
+        d'une séance — <a href="{{ url_for('sessions.quick_session') }}" style="color:var(--accent);">/vite</a>
+        en propose un depuis le matériel choisi.
+    </div>
     {% endif %}
 </div>
 
-<!-- RÉCLAMÉES MAIS ABSENTES -->
-{% if manquantes %}
-<div class="card" style="margin-bottom:20px;border-left:2px solid var(--accent);">
-    <div class="card-title" style="margin-bottom:6px;">✗ Réclamées, absentes du disque — {{ manquantes|length }}</div>
+{% if sans_prise %}
+<div class="card">
+    <div class="card-title" style="margin-bottom:6px;">∙ Séances sans prise — {{ sans_prise|length }}</div>
     <p class="tk-meta" style="margin-bottom:8px;">
-        Ces séances nomment une prise qu'on ne trouve pas : carte SD pas encore
-        vidée, fichier renommé, ou effacé.
+        Toutes les séances ne sont pas enregistrées : ce n'est pas un manque, juste
+        ce qu'on cherche quand on se demande où était passé un son.
     </p>
-    {% for s in manquantes %}
+    {% for s in sans_prise %}
     <div class="tk-row">
-        <div class="tk-nom">{{ s.audio_file }}</div>
         <div style="flex:1;">
             <a href="{{ url_for('sessions.view_session', sid=s.id) }}" class="tk-meta" style="color:var(--accent2);">
                 {{ s.date[:10] }}{% if s.title %} · {{ s.title }}{% endif %}
@@ -81,36 +85,6 @@
         </div>
     </div>
     {% endfor %}
-</div>
-{% endif %}
-
-<!-- RATTACHÉES -->
-<div class="card">
-    <div class="card-title" style="margin-bottom:6px;">✓ Rattachées — {{ rattachees|length }}</div>
-    {% if rattachees %}
-        {% for f in rattachees %}
-        <div class="tk-row">
-            <div style="flex:1;min-width:160px;">
-                <div class="tk-nom">{{ f.nom }}</div>
-                <div class="tk-meta">
-                    {% if f.dossier %}{{ f.dossier }} · {% endif %}{% if f.duree %}{{ f.duree }} · {% endif %}{{ f.taille_mo }} Mo
-                </div>
-            </div>
-            <audio class="tk-audio" controls preload="none" src="{{ url_for('takes.listen', f=f.rel) }}"></audio>
-            <div style="min-width:150px;">
-                {% for s in f.seances %}
-                <div>
-                    <a href="{{ url_for('sessions.recall_session', sid=s.id) }}" class="tk-meta" style="color:var(--accent);">
-                        ⟲ {{ s.title or s.date[:10] }}
-                    </a>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endfor %}
-    {% else %}
-    <div class="tk-meta">Aucune correspondance pour l'instant.</div>
-    {% endif %}
 </div>
 {% endif %}
 
