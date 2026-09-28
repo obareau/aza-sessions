@@ -1,5 +1,27 @@
 {% extends "base.html" %}
-{% block title %}{{ gear.name }} — Carnet — AZA{% endblock %}
+{% block title %}{{ gear.name }} — Carnet — AZA<script>
+// Un curseur HTML a toujours une valeur, même sans être touché — il vaudrait 0,
+// ce qui voudrait dire « potard à fond à gauche » au lieu de « pas relevé ».
+// On le neutralise tant qu'il n'a pas bougé, et on affiche la valeur à côté.
+document.querySelectorAll('.knob-range').forEach(r => {
+    const out = r.parentNode.querySelector('output');
+    const nom = r.name;
+    r.value = 5;               // point de départ visuel, au milieu
+    r.disabled = false;
+    r.dataset.touche = '0';
+    r.removeAttribute('name'); // pas de name = pas envoyé = pas relevé
+    const maj = () => {
+        r.dataset.touche = '1';
+        r.name = nom;
+        out.textContent = r.value;
+        out.style.color = 'var(--text)';
+    };
+    r.addEventListener('input', maj);
+    r.addEventListener('change', maj);
+});
+</script>
+
+{% endblock %}
 {% block content %}
 
 <div class="page-header">
@@ -179,6 +201,130 @@
             {% endfor %}
         {% else %}
             <div class="nb-note">Le carnet est vide. Il se remplit à l'usage.</div>
+        {% endif %}
+    </div>
+
+    <div class="card" style="grid-column:1 / -1;">
+        <div class="section-title">◉ Positions de potards</div>
+
+        {% if not controls %}
+        <div class="nb-note" style="margin-bottom:12px;">
+            Un instrument sans mémoire — un analo, une pédale — perd son réglage
+            dès qu'on l'éteint : la façade est le seul endroit où le son existe.
+            Déclare ses commandes une fois, puis relève-les à chaque son gardé.
+        </div>
+        {% endif %}
+
+        <details {% if not controls %}open{% endif %} style="margin-bottom:16px;">
+            <summary style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);cursor:pointer;">
+                Déclarer les commandes {% if controls %}({{ controls|selectattr('kind','ne','section')|list|length }}){% endif %}
+            </summary>
+            <form method="POST" style="margin-top:10px;">
+                <input type="hidden" name="action" value="set_controls">
+                <textarea name="controls" class="nb-input" rows="10" spellcheck="false"
+                          style="font-family:var(--mono);font-size:12px;line-height:1.7;"
+                          placeholder="-- OSCILLATEURS&#10;Osc 1 Freq&#10;Forme 1: Saw | Pulse | Sine&#10;&#10;-- FILTRE&#10;Cutoff&#10;Mode: LP | BP | HP">{{ gear.controls or '' }}</textarea>
+                <div class="nb-note" style="margin-top:8px;font-size:11px;">
+                    Une commande par ligne. <code>Nom</code> = potard de 0 à 10 ·
+                    <code>Nom: A | B | C</code> = sélecteur ·
+                    <code>-- TITRE</code> = section · <code>#</code> = ligne ignorée.
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm" style="margin-top:10px;">Enregistrer les commandes</button>
+            </form>
+        </details>
+
+        {% if controls %}
+        <form method="POST" style="margin-bottom:18px;">
+            <input type="hidden" name="action" value="add_sheet">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px 18px;align-items:end;">
+                {% for c in controls %}
+                    {% if c.kind == 'section' %}
+                    <div style="grid-column:1 / -1;font-family:var(--mono);font-size:10px;text-transform:uppercase;
+                                letter-spacing:.12em;color:var(--accent2);border-bottom:1px solid var(--border);
+                                padding-bottom:4px;margin-top:8px;">{{ c.name }}</div>
+                    {% elif c.kind == 'switch' %}
+                    <div>
+                        <label class="nb-lbl" for="k-{{ loop.index }}">{{ c.name }}</label>
+                        <select id="k-{{ loop.index }}" name="k_{{ c.name }}" class="nb-input">
+                            <option value="">—</option>
+                            {% for o in c.options %}<option value="{{ o }}">{{ o }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    {% else %}
+                    {# Curseur natif : on règle un potard en le glissant, pas en tapant
+                       un nombre. La valeur reste lisible à côté, et « — » signifie
+                       « pas relevé » — distinct de zéro. #}
+                    <div>
+                        <label class="nb-lbl" for="k-{{ loop.index }}">{{ c.name }}</label>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <input type="range" id="k-{{ loop.index }}" name="k_{{ c.name }}"
+                                   min="0" max="10" step="0.5" value=""
+                                   class="knob-range" style="flex:1;accent-color:var(--accent);">
+                            <output style="font-family:var(--mono);font-size:12px;color:var(--text-muted);min-width:26px;text-align:right;">—</output>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <div style="display:flex;gap:10px;align-items:flex-end;margin-top:14px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:200px;">
+                    <label class="nb-lbl">Nom du son <span style="text-transform:none;">— facultatif</span></label>
+                    <input type="text" name="label" class="nb-input" placeholder="ex : nappe corrodée, basse de Scaër…">
+                </div>
+                <div style="flex:2;min-width:220px;">
+                    <label class="nb-lbl">Remarque</label>
+                    <input type="text" name="sheet_notes" class="nb-input" placeholder="ex : tenir la résonance juste sous l'auto-oscillation">
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">+ Relever</button>
+            </div>
+        </form>
+
+        {% if sheets %}
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">
+            {% for sh in sheets %}
+            <div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px;background:var(--bg);">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                    <div style="min-width:0;">
+                        <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);">
+                            {{ sh.label or 'Sans nom' }}
+                        </div>
+                        <div class="nb-date">{{ sh.created_at[:10] }}</div>
+                    </div>
+                    <form method="POST" onsubmit="return confirm('Supprimer ce relevé ?');">
+                        <input type="hidden" name="action" value="delete_sheet">
+                        <input type="hidden" name="sheet_id" value="{{ sh.id }}">
+                        <button type="submit" class="nb-del">✕</button>
+                    </form>
+                </div>
+
+                <div style="margin-top:10px;display:flex;flex-direction:column;gap:3px;">
+                    {% for c in sh.controls %}
+                    <div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;">
+                        <span style="color:var(--text-muted);min-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ c.name }}</span>
+                        {% if c.kind == 'switch' %}
+                        <span style="color:{{ 'var(--text)' if c.value else 'var(--text-muted)' }};">{{ c.value or '—' }}</span>
+                        {% elif c.value not in ('', none) %}
+                        <span style="flex:1;height:5px;background:var(--bg-alt);border:1px solid var(--border);border-radius:3px;overflow:hidden;">
+                            <span style="display:block;height:100%;width:{{ (c.value|float / 10 * 100)|round }}%;background:var(--accent);"></span>
+                        </span>
+                        <span style="min-width:20px;text-align:right;color:var(--text);">{{ c.value }}</span>
+                        {% else %}
+                        <span style="flex:1;color:var(--text-muted);opacity:.5;">— pas relevé</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if sh.notes %}
+                <div class="nb-note" style="margin-top:10px;font-size:11px;">{{ sh.notes }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="nb-note">Aucun relevé. Le premier son gardé mérite le sien.</div>
+        {% endif %}
         {% endif %}
     </div>
 

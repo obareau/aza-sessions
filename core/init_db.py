@@ -342,6 +342,29 @@ def init_db(db_path):
         )
     """)
 
+    # Relevés de potards — un instantané des positions d'un instrument.
+    #
+    # Un analo sans mémoire (Behringer Wasp, Moog, la plupart des pédales) perd
+    # son son quand on l'éteint : le patch n'existe nulle part ailleurs que sur
+    # la façade. C'est la seule donnée du studio qu'aucun fichier ne rattrape.
+    #
+    # `values` est du JSON {nom_de_commande: valeur} plutôt qu'une table de
+    # lignes : on relit toujours une fiche entière, jamais un potard isolé, et
+    # les commandes d'un instrument changent (on en déclare une oubliée) sans
+    # qu'il faille migrer les relevés déjà pris.
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS knob_sheets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            gear_id INTEGER NOT NULL,
+            session_id INTEGER,
+            label TEXT DEFAULT '',
+            values_json TEXT NOT NULL DEFAULT '{}',
+            notes TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_knob_gear ON knob_sheets(gear_id)")
+
     for migration in [
         "ALTER TABLE sessions ADD COLUMN recap_claude TEXT",
         "ALTER TABLE sessions ADD COLUMN project_id INTEGER",
@@ -356,6 +379,9 @@ def init_db(db_path):
         "ALTER TABLE sessions ADD COLUMN session_type TEXT DEFAULT 'music'",
         "ALTER TABLE sessions ADD COLUMN ipad TEXT",
         "ALTER TABLE sessions ADD COLUMN zynthian TEXT",
+        # Déclaration des commandes de l'instrument, une par ligne (voir
+        # `GearControlsEngine.parse_controls`).
+        "ALTER TABLE catalogue ADD COLUMN controls TEXT DEFAULT ''",
     ]:
         try:
             conn.execute(migration)

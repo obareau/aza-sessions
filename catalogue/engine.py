@@ -1,3 +1,4 @@
+import json
 import re
 
 from core.db import get_db
@@ -552,3 +553,143 @@ class GearNotebookEngine:
         ).fetchall()
         conn.close()
         return [dict(r) for r in rows]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# RELEVÉS DE POTARDS
+# ══════════════════════════════════════════════════════════════════════════════
+
+DIAL_MIN, DIAL_MAX = 0, 10
+
+
+def parse_controls(texte: str) -> list[dict]:
+    """Lit la déclaration des commandes d'un instrument, une par ligne.
+
+        -- OSCILLATEUR          → un titre de section
+        Cutoff                  → un potentiomètre, de 0 à 10
+        Filtre: LP | BP | HP    → un sélecteur, avec ses positions
+        # ceci est ignoré
+
+    Du texte libre plutôt qu'un éditeur de façade : déclarer vingt commandes se
+    fait en vingt lignes tapées d'un trait, alors qu'un constructeur visuel
+    demanderait vingt glissers-déposers — et ne servirait qu'une fois par
+    machine. Les sections ne sont là que pour la lecture d'une fiche imprimée.
+    """
+    out = []
+    for ligne in (texte or "").splitlines():
+        ligne = ligne.strip()
+        if not ligne or ligne.startswith("#"):
+            continue
+        if ligne.startswith("--"):
+            titre = ligne.lstrip("-").strip()
+            if titre:
+                out.append({"kind": "section", "name": titre, "options": []})
+            continue
+        if ":" in ligne:
+            nom, _, reste = ligne.partition(":")
+            options = [o.strip() for o in reste.split("|") if o.strip()]
+            if nom.strip() and options:
+                out.append({"kind": "switch", "name": nom.strip(), "options": options})
+                continue
+        out.append({"kind": "dial", "name": ligne, "options": []})
+    return out
+
+
+def controls_names(texte: str) -> list[str]:
+    """Les seuls noms relevables — les sections n'ont pas de valeur."""
+    return [c["name"] for c in parse_controls(texte) if c["kind"] != "section"]
+
+
+class KnobSheetEngine:
+    """Relevés de positions de potards, par instrument.
+
+    Existe pour ce que rien d'autre ne rattrape : un synthé analo sans mémoire
+    (le Behringer Wasp, une pédale) perd son réglage dès qu'on l'éteint. Le
+    relevé est la seule trace qui permette de retrouver un son.
+    """
+
+    def __init__(self, db_path):
+        self.db_path = db_path
+
+    def _get_db(self):
+        return get_db(self.db_path)
+
+    def controls(self, gear_id) -> list[dict]:
+        conn = self._get_db()
+        row = conn.execute("SELECT controls FROM catalogue WHERE id=?", (gear_id,)).fetchone()
+        conn.close()
+        return parse_controls(row["controls"] if row else "")
+
+    def set_controls(self, gear_id, texte):
+        conn = self._get_db()
+        conn.execute("UPDATE catalogue SET controls=? WHERE id=?", (texte or "", gear_id))
+        conn.commit()
+        conn.close()
+
+    def sheets(self, gear_id, session_id=None) -> list[dict]:
+        """Les relevés d'un instrument, le plus récent d'abord.
+
+        Chaque relevé est rendu **contre la déclaration courante** : une commande
+        déclarée après coup apparaît vide au lieu de manquer, et une commande
+        retirée de la déclaration ne traîne plus dans l'affichage — la valeur
+        reste en base, elle, au cas où elle reviendrait.
+        """
+        conn = self._get_db()
+        sql = "SELECT * FROM knob_sheets WHERE gear_id=?"
+        args = [gear_id]
+        if session_id is not None:
+            sql += " AND session_id=?"
+            args.append(session_id)
+        rows = conn.execute(sql + " ORDER BY datetime(created_at) DESC, id DESC", args).fetchall()
+        conn.close()
+        modele = self.controls(gear_id)
+        out = []
+        for r in rows:
+            d = dict(r)
+            try:
+                valeurs = json.loads(d.pop("values_json") or "{}")
+            except ValueError:
+                valeurs = {}
+            d["controls"] = [
+                {**c, "value": valeurs.get(c["name"], "")}
+                for c in modele if c["kind"] != "section"
+            ] if modele else [
+                # Aucune déclaration : on montre quand même ce qui a été relevé,
+                # sinon un relevé pris avant la déclaration deviendrait invisible.
+                {"kind": "dial", "name": k, "options": [], "value": v}
+                for k, v in valeurs.items()
+            ]
+            d["sections"] = modele
+            d["valeurs"] = valeurs
+            out.append(d)
+        return out
+
+    def save(self, gear_id, valeurs: dict, label="", session_id=None, notes="") -> int:
+        """Enregistre un relevé. Les commandes non renseignées ne sont pas stockées.
+
+        Un potard laissé vide veut dire « pas noté », pas « à zéro » — écrire 0
+        inventerait un réglage qu'on n'a pas lu sur la façade.
+        """
+        propres = {}
+        for nom, val in (valeurs or {}).items():
+            val = (str(val) if val is not None else "").strip()
+            if val == "":
+                continue
+            propres[nom] = val
+        conn = self._get_db()
+        cur = conn.execute(
+            "INSERT INTO knob_sheets (gear_id, session_id, label, values_json, notes) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (gear_id, session_id, (label or "").strip(),
+             json.dumps(propres, ensure_ascii=False), (notes or "").strip()),
+        )
+        conn.commit()
+        sheet_id = cur.lastrowid
+        conn.close()
+        return sheet_id
+
+    def delete(self, sheet_id):
+        conn = self._get_db()
+        conn.execute("DELETE FROM knob_sheets WHERE id=?", (sheet_id,))
+        conn.commit()
+        conn.close()

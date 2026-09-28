@@ -8,7 +8,7 @@ App Flask + SQLite de documentation de sessions musicales pour l'univers de fict
 
 ⚠️ **Plus sur Fly.io** — déploiement bare metal sur Roblab, voir « Déploiement » plus bas. `fly.toml` et la branche `FLY_APP_NAME` de `wsgi.py` ont été retirés le 2026-08-29. Le `Dockerfile` subsiste : il ne servait qu'au build Fly et n'est plus utilisé, mais il n'a rien de nuisible.
 
-Version actuelle : voir `VERSION` dans `app.py` (**v3.25.0**).
+Version actuelle : voir `VERSION` dans `app.py` (**v3.26.0**).
 
 ⚠️ **`VERSION` a déjà pris deux releases de retard** (resté à 3.10.0 alors que le ROADMAP documentait v3.11.0 et v3.12.0), ce qui a fait attribuer un numéro déjà pris à une nouvelle feature le 2026-08-29. Avant de bumper, croiser `app.py`, `CHANGELOG.md` **et** `ROADMAP.md` — les trois divergent facilement.
 
@@ -117,6 +117,9 @@ fonctionnalité marche » — vérifier par le chemin que l'usager emprunte.**
 - `catalogue`, `influences`, `obliques`, `projects`, `sample_banks`, `inspiring_tracks`, `gear_wishlist`, `inspirations`, `mirack_modules`
 - `preset_notes` — carnet de presets (module `presets`)
 - `gear_pairings` / `gear_notes` — carnet d'instrument. Une association est stockée **une fois** mais lue des deux côtés (`UNION` dans `GearNotebookEngine.pairings`) : la noter depuis une fiche l'affiche aussi sur l'autre.
+
+- `knob_sheets` — relevés de positions de potards, par instrument. `values_json` est un objet JSON `{commande: valeur}`, et la déclaration des commandes vit dans `catalogue.controls` (texte, une par ligne).
+  ⚠️ **« Pas relevé » n'est pas « à zéro ».** Une commande absente du JSON n'a pas été lue sur la façade ; un `0` stocké est un vrai réglage. Le curseur HTML perd son attribut `name` tant qu'on n'y a pas touché — sans quoi il enverrait 0 et inventerait un réglage. Ne pas « corriger » ça en mettant une valeur par défaut.
 
 ⚠️ `prompter_scripts` **n'existe plus** — partie chez D.I.M en v3.12.0, avec le blueprint `dim/` (dossier résiduel supprimé le 2026-08-29).
 

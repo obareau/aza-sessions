@@ -5,6 +5,41 @@
 
 ---
 
+## v3.26.0 — 2026-09-28 — Ce que la machine ne retient pas
+
+### ✨ Nouveauté — relevés de potards
+- **Une fiche matériel peut déclarer ses commandes**, une par ligne :
+  `Cutoff` = potard 0–10, `Mode: LP | BP | HP` = sélecteur, `-- FILTRE` = section,
+  `#` = ligne ignorée. Du texte libre plutôt qu'un constructeur de façade :
+  vingt commandes se tapent d'un trait, et ça ne sert qu'une fois par machine.
+- **Chaque son gardé se relève** — curseurs natifs, nom du son, remarque. Les
+  relevés s'affichent en barres, le plus récent d'abord, et s'impriment avec la
+  fiche.
+- **Pourquoi maintenant :** le Behringer WASP Deluxe est arrivé, et un analo sans
+  mémoire perd son réglage dès qu'on l'éteint. La façade est le seul endroit où
+  le son existe — c'est la dernière donnée du studio qu'aucun fichier ne
+  rattrapait.
+
+### 🎛 La distinction qui porte tout
+- **« Pas relevé » n'est pas « à zéro ».** Un curseur HTML a toujours une valeur ;
+  laissé tel quel il vaudrait 0, soit « potard à fond à gauche » — un réglage
+  inventé. Tant qu'on n'y touche pas, le curseur n'a pas de `name`, donc rien
+  n'est envoyé, donc rien n'est stocké. Un `0` tapé à la main, lui, est conservé.
+- Une commande déclarée après coup apparaît **vide** sur les anciens relevés au
+  lieu de manquer ; une commande retirée de la déclaration disparaît de
+  l'affichage mais **reste en base**, au cas où elle revienne.
+
+### 🗄 Base
+- Table `knob_sheets` (`gear_id`, `session_id`, `label`, `values_json`, `notes`)
+  et colonne `catalogue.controls`. Les valeurs sont un objet JSON plutôt qu'une
+  table de lignes : on relit toujours une fiche entière, jamais un potard isolé.
+
+### 🧪 Tests
+- `tests/test_knob_sheets.py` — 13 cas, centrés sur le vide vs le zéro, la
+  déclaration modifiée après coup, et le relevé antérieur à toute déclaration.
+
+---
+
 ## v3.25.0 — 2026-09-27 — Retrait de la dictée vocale
 
 ### ⛔ Suppression

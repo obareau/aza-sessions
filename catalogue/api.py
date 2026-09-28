@@ -1,7 +1,7 @@
 from datetime import date
 from flask import Blueprint, render_template, request, redirect, url_for, current_app, jsonify, flash
 from core.oblique import rand_oblique
-from .engine import CatalogueEngine, GearNotebookEngine, ITEM_TYPES
+from .engine import CatalogueEngine, GearNotebookEngine, KnobSheetEngine, ITEM_TYPES
 
 bp = Blueprint("catalogue", __name__)
 
@@ -12,6 +12,10 @@ def _engine():
 
 def _notebook():
     return GearNotebookEngine(current_app.config["DB_PATH"])
+
+
+def _knobs():
+    return KnobSheetEngine(current_app.config["DB_PATH"])
 
 
 @bp.route("/catalogue", methods=["GET", "POST"])
@@ -237,6 +241,26 @@ def gear_notebook(gear_id):
                 flash("Remarque vide — rien enregistré.", "error")
         elif action == "delete_note":
             nb.delete_note(request.form.get("note_id"))
+        elif action == "set_controls":
+            _knobs().set_controls(gear_id, request.form.get("controls", ""))
+            flash("Commandes déclarées.", "success")
+        elif action == "add_sheet":
+            knobs = _knobs()
+            noms = [c["name"] for c in knobs.controls(gear_id) if c["kind"] != "section"]
+            if not noms:
+                flash("Déclare d'abord les commandes de cet instrument.", "error")
+            else:
+                valeurs = {n: request.form.get("k_" + n, "") for n in noms}
+                if not any(v.strip() for v in valeurs.values()):
+                    flash("Relevé vide — rien enregistré.", "error")
+                else:
+                    knobs.save(gear_id, valeurs,
+                               label=request.form.get("label", ""),
+                               session_id=request.form.get("session_id") or None,
+                               notes=request.form.get("sheet_notes", ""))
+                    flash("Relevé enregistré.", "success")
+        elif action == "delete_sheet":
+            _knobs().delete(request.form.get("sheet_id"))
         return redirect(url_for("catalogue.gear_notebook", gear_id=gear_id))
 
     db_path = current_app.config["DB_PATH"]
@@ -247,6 +271,8 @@ def gear_notebook(gear_id):
                            notes=nb.notes(gear_id),
                            sessions=nb.sessions(gear_id),
                            candidates=nb.candidates(gear_id),
+                           controls=_knobs().controls(gear_id),
+                           sheets=_knobs().sheets(gear_id),
                            today=date.today().isoformat(),
                            version=current_app.config.get("VERSION", ""),
                            oblique=rand_oblique(db_path))
