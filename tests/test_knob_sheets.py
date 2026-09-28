@@ -121,19 +121,48 @@ def test_suppression():
 # ── Route ────────────────────────────────────────────────────────────────────
 
 def test_parcours_complet(client):
+    """Tout se passe sur la page de façade, pas sur la fiche matériel."""
     gid = _gear("Analo G")
-    r = client.post(f"/catalogue/{gid}", data={"action": "set_controls", "controls": DECL},
-                    follow_redirects=True)
+    r = client.post(f"/catalogue/{gid}/facade",
+                    data={"action": "set_controls", "controls": DECL}, follow_redirects=True)
     assert r.status_code == 200
-    r = client.post(f"/catalogue/{gid}", data={
+    r = client.post(f"/catalogue/{gid}/facade", data={
         "action": "add_sheet", "label": "nappe corrodée",
         "k_Cutoff": "6.5", "k_Mode": "LP"}, follow_redirects=True)
     assert "nappe corrodée" in r.get_data(as_text=True)
 
 
+def test_le_nom_et_la_remarque_precedent_les_potards(client):
+    """Placés après un panneau de douze potards, ils étaient invisibles.
+
+    L'ordre des champs dans le formulaire est donc une garantie d'usage, pas un
+    détail de mise en page.
+    """
+    import re
+    gid = _gear("Analo Ordre")
+    client.post(f"/catalogue/{gid}/facade", data={"action": "set_controls", "controls": DECL})
+    h = client.get(f"/catalogue/{gid}/facade").get_data(as_text=True)
+    bloc = h[h.index('id="form-facade"'):h.index("</form>", h.index('id="form-facade"'))]
+    noms = [m.group(2) for m in re.finditer(r'<(input|select|textarea)[^>]*name="([^"]+)"', bloc)]
+    assert noms.index("label") < noms.index("k_Cutoff")
+    assert noms.index("sheet_notes") < noms.index("k_Cutoff")
+
+
+def test_acces_direct_depuis_le_menu(client):
+    """La façade a son entrée : sans elle il fallait passer par la fiche."""
+    assert "/facades" in client.get("/").get_data(as_text=True)
+    assert client.get("/facades").status_code == 200
+
+
+def test_fiche_materiel_renvoie_vers_la_facade(client):
+    gid = _gear("Analo Lien")
+    h = client.get(f"/catalogue/{gid}").get_data(as_text=True)
+    assert f"/catalogue/{gid}/facade" in h
+
+
 def test_releve_vide_refuse(client):
     gid = _gear("Analo H")
-    client.post(f"/catalogue/{gid}", data={"action": "set_controls", "controls": DECL})
-    client.post(f"/catalogue/{gid}", data={"action": "add_sheet", "k_Cutoff": "", "k_Mode": ""},
+    client.post(f"/catalogue/{gid}/facade", data={"action": "set_controls", "controls": DECL})
+    client.post(f"/catalogue/{gid}/facade", data={"action": "add_sheet", "k_Cutoff": "", "k_Mode": ""},
                 follow_redirects=True)
     assert KnobSheetEngine(_DB).sheets(gid) == []

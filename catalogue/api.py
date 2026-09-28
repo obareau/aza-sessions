@@ -241,27 +241,6 @@ def gear_notebook(gear_id):
                 flash("Remarque vide — rien enregistré.", "error")
         elif action == "delete_note":
             nb.delete_note(request.form.get("note_id"))
-        elif action == "set_controls":
-            _knobs().set_controls(gear_id, request.form.get("controls", ""))
-            flash("Commandes déclarées.", "success")
-        elif action == "add_sheet":
-            knobs = _knobs()
-            noms = [c["name"] for c in knobs.controls(gear_id) if c["kind"] != "section"]
-            if not noms:
-                flash("Déclare d'abord les commandes de cet instrument.", "error")
-            else:
-                valeurs = {n: request.form.get("k_" + n, "") for n in noms}
-                if not any(v.strip() for v in valeurs.values()):
-                    flash("Relevé vide — rien enregistré.", "error")
-                else:
-                    knobs.save(gear_id, valeurs,
-                               label=request.form.get("label", ""),
-                               session_id=request.form.get("session_id") or None,
-                               preset_id=request.form.get("preset_id") or None,
-                               notes=request.form.get("sheet_notes", ""))
-                    flash("Relevé enregistré.", "success")
-        elif action == "delete_sheet":
-            _knobs().delete(request.form.get("sheet_id"))
         return redirect(url_for("catalogue.gear_notebook", gear_id=gear_id))
 
     db_path = current_app.config["DB_PATH"]
@@ -277,3 +256,66 @@ def gear_notebook(gear_id):
                            today=date.today().isoformat(),
                            version=current_app.config.get("VERSION", ""),
                            oblique=rand_oblique(db_path))
+
+
+@bp.route("/facades")
+def facades():
+    """Point d'entrée des façades — la liste des instruments.
+
+    La façade avait sa carte en bas de la fiche matériel, après six autres
+    blocs : le nom du son et la remarque se trouvaient derrière un panneau de
+    douze potards, donc invisibles. Elle a sa page et son entrée de menu.
+    """
+    return render_template("facades.html",
+                           instruments=_knobs().instruments(),
+                           version=current_app.config.get("VERSION", ""),
+                           oblique=rand_oblique(current_app.config["DB_PATH"]))
+
+
+@bp.route("/catalogue/<int:gear_id>/facade", methods=["GET", "POST"])
+def facade(gear_id):
+    """La façade d'un instrument, seule sur sa page.
+
+    Un seul geste par page : nommer, tourner les potards, enregistrer. Le
+    formulaire commence par le nom et la remarque — ce qui se saisit au clavier
+    avant de toucher aux potards, et surtout ce qui ne doit pas se retrouver
+    derrière eux.
+    """
+    nb = _notebook()
+    gear = nb.get(gear_id)
+    if gear is None:
+        flash("Cette fiche n'existe pas ou plus.", "error")
+        return redirect(url_for("catalogue.facades"))
+
+    knobs = _knobs()
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "set_controls":
+            knobs.set_controls(gear_id, request.form.get("controls", ""))
+            flash("Commandes déclarées.", "success")
+        elif action == "add_sheet":
+            noms = [c["name"] for c in knobs.controls(gear_id) if c["kind"] != "section"]
+            valeurs = {n: request.form.get("k_" + n, "") for n in noms}
+            if not noms:
+                flash("Déclare d'abord les commandes de cet instrument.", "error")
+            elif not any(v.strip() for v in valeurs.values()):
+                flash("Aucun potard relevé — rien enregistré.", "error")
+            else:
+                knobs.save(gear_id, valeurs,
+                           label=request.form.get("label", ""),
+                           session_id=request.form.get("session_id") or None,
+                           preset_id=request.form.get("preset_id") or None,
+                           notes=request.form.get("sheet_notes", ""))
+                flash("Façade relevée.", "success")
+        elif action == "delete_sheet":
+            knobs.delete(request.form.get("sheet_id"))
+        return redirect(url_for("catalogue.facade", gear_id=gear_id))
+
+    return render_template("facade.html",
+                           gear=gear,
+                           controls=knobs.controls(gear_id),
+                           sheets=knobs.sheets(gear_id),
+                           presets=nb.presets(gear_id),
+                           sessions=nb.sessions(gear_id),
+                           version=current_app.config.get("VERSION", ""),
+                           oblique=rand_oblique(current_app.config["DB_PATH"]))

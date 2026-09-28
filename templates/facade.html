@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+{% block title %}Façade — {{ gear.name }} — AZA{% endblock %}
+{% block content %}
+
+<style>
+/* ── FAÇADE ──────────────────────────────────────────────────────────────────
+   Des potards ronds plutôt que des curseurs : on lit une façade d'un coup d'œil
+   à l'inclinaison des aiguilles, pas en déchiffrant huit barres horizontales.
+   Les sections deviennent des blocs encadrés — l'approximation honnête d'un
+   layout d'appareil, sans inventer un système de coordonnées que la déclaration
+   ne porte pas. */
+.fa-panneau { display:flex; flex-wrap:wrap; gap:14px; }
+.fa-bloc { border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px 12px;
+           background:var(--bg); flex:1 1 auto; min-width:0; }
+.fa-bloc-titre { font-family:var(--mono); font-size:9px; text-transform:uppercase;
+                 letter-spacing:.14em; color:var(--accent2); margin-bottom:10px; }
+.fa-rangee { display:flex; flex-wrap:wrap; gap:14px 16px; }
+.fa-ctrl { display:flex; flex-direction:column; align-items:center; gap:3px; width:62px; }
+.fa-nom { font-family:var(--mono); font-size:9px; color:var(--text-muted); text-align:center;
+          line-height:1.25; word-break:break-word; }
+.fa-knob { cursor:ns-resize; user-select:none; touch-action:none; position:relative;
+           display:flex; flex-direction:column; align-items:center; outline:none; }
+.fa-knob:focus-visible svg { filter:drop-shadow(0 0 3px var(--accent)); }
+.fa-knob.fa-lecture { cursor:default; }
+.fa-fond { fill:var(--bg-alt); stroke:var(--border); stroke-width:2; }
+.fa-arc  { fill:none; stroke:var(--accent); stroke-width:4; stroke-linecap:round; }
+.fa-aig  { stroke:var(--text-muted); stroke-width:3; stroke-linecap:round;
+           transform-origin:32px 32px; transform:rotate(-135deg); }
+.fa-knob.fa-pose .fa-aig { stroke:var(--text); }
+.fa-axe  { fill:var(--border); }
+.fa-val  { font-family:var(--mono); font-size:10px; color:var(--text-muted); margin-top:2px; }
+.fa-knob.fa-pose .fa-val { color:var(--text); font-weight:600; }
+.fa-select { font-family:var(--mono); font-size:10px; background:var(--bg-alt);
+             border:1px solid var(--border); border-radius:var(--radius);
+             padding:4px 2px; color:var(--text); width:62px; }
+.fa-select-lu { font-family:var(--mono); font-size:10px; color:var(--text);
+                border:1px solid var(--border); border-radius:var(--radius);
+                padding:5px 4px; width:62px; text-align:center; background:var(--bg-alt); }
+.fa-lbl { font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;
+          color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px; }
+.fa-input { font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border);
+            border-radius:var(--radius);padding:9px 12px;color:var(--text);width:100%;box-sizing:border-box; }
+@media print {
+    header, nav, footer, .oblique-banner, .page-header .btn, .pomo,
+    #kbd-overlay, #focus-exit, .no-print, form#form-facade, details { display:none !important; }
+    body { background:#fff; color:#000; }
+    .card { border:1px solid #999 !important; break-inside:avoid; box-shadow:none !important; }
+}
+</style>
+
+<div class="page-header">
+    <div>
+        <div class="page-title">◉ {{ gear.name }}</div>
+        <div class="page-subtitle">
+            Façade{% if gear.manufacturer %} · {{ gear.manufacturer }}{% endif %}
+            {% if sheets %} · {{ sheets|length }} relevé{{ 's' if sheets|length > 1 }}{% endif %}
+        </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="{{ url_for('catalogue.gear_notebook', gear_id=gear.id) }}" class="btn btn-ghost btn-sm">◧ Carnet</a>
+        <a href="{{ url_for('catalogue.facades') }}" class="btn btn-secondary">← Façades</a>
+    </div>
+</div>
+
+{% if not controls %}
+<div class="card" style="margin-bottom:20px;border-left:2px solid var(--accent);">
+    <div class="card-title">∙ Commandes non déclarées</div>
+    <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);line-height:1.7;">
+        Déclare les commandes de cet instrument une fois, en suivant sa façade de
+        gauche à droite : c'est cet ordre qui sera affiché et imprimé.
+    </p>
+</div>
+{% endif %}
+
+<form method="POST" id="form-facade">
+    <input type="hidden" name="action" value="add_sheet">
+
+    {# Le nom et la remarque viennent AVANT les potards. Placés après, ils se
+       retrouvaient derrière un panneau de douze boutons — donc invisibles. #}
+    <div class="card" style="margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:14px;">① Ce qu'on relève</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;">
+            <div>
+                <label class="fa-lbl" for="fa-label">Nom du son</label>
+                <input type="text" id="fa-label" name="label" class="fa-input"
+                       placeholder="ex : nappe corrodée" autocomplete="off">
+            </div>
+            <div>
+                <label class="fa-lbl" for="fa-notes">Remarque</label>
+                <input type="text" id="fa-notes" name="sheet_notes" class="fa-input"
+                       placeholder="ex : juste sous l'auto-oscillation" autocomplete="off">
+            </div>
+            <div>
+                <label class="fa-lbl" for="fa-preset">Patch du carnet</label>
+                <select id="fa-preset" name="preset_id" class="fa-input">
+                    <option value="">— aucun —</option>
+                    {% for p in presets %}<option value="{{ p.id }}">{{ p.preset_name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="fa-lbl" for="fa-session">Pendant quelle séance</label>
+                <select id="fa-session" name="session_id" class="fa-input">
+                    <option value="">— aucune —</option>
+                    {% for s in sessions %}
+                    <option value="{{ s.id }}">{{ s.date[:10] }}{% if s.title %} · {{ s.title }}{% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    {% if controls %}
+    <div class="card" style="margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:14px;">② La façade</div>
+        <div class="fa-panneau">
+            {% set ns = namespace(ouvert=false) %}
+            {% for c in controls %}
+                {% if c.kind == 'section' %}
+                    {% if ns.ouvert %}</div></div>{% endif %}
+                    {% set ns.ouvert = true %}
+                    <div class="fa-bloc"><div class="fa-bloc-titre">{{ c.name }}</div><div class="fa-rangee">
+                {% else %}
+                    {% if not ns.ouvert %}
+                        {% set ns.ouvert = true %}
+                        <div class="fa-bloc"><div class="fa-bloc-titre">Façade</div><div class="fa-rangee">
+                    {% endif %}
+                    {% if c.kind == 'switch' %}
+                    <div class="fa-ctrl">
+                        <select name="k_{{ c.name }}" class="fa-select">
+                            <option value="">—</option>
+                            {% for o in c.options %}<option value="{{ o }}">{{ o }}</option>{% endfor %}
+                        </select>
+                        <div class="fa-nom">{{ c.name }}</div>
+                    </div>
+                    {% else %}
+                    <div class="fa-ctrl">
+                        <div class="fa-knob" data-nom="{{ c.name }}" tabindex="0" role="slider"
+                             aria-valuemin="0" aria-valuemax="10" aria-label="{{ c.name }}"
+                             title="{{ c.name }} — glisser, molette, flèches · Échap pour effacer">
+                            <svg viewBox="0 0 64 64" width="52" height="52">
+                                <circle cx="32" cy="32" r="25" class="fa-fond"></circle>
+                                <path class="fa-arc" d=""></path>
+                                <line class="fa-aig" x1="32" y1="32" x2="32" y2="12"></line>
+                                <circle cx="32" cy="32" r="3" class="fa-axe"></circle>
+                            </svg>
+                            <div class="fa-val">—</div>
+                        </div>
+                        <input type="hidden" name="k_{{ c.name }}" value="">
+                        <div class="fa-nom">{{ c.name }}</div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            {% if ns.ouvert %}</div></div>{% endif %}
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap;">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);">
+                Glisser · molette · flèches — <strong>Échap</strong> ou double-clic pour
+                remettre un potard à « pas relevé ».
+            </div>
+            <button type="submit" class="btn btn-primary">+ Enregistrer cette façade</button>
+        </div>
+    </div>
+    {% endif %}
+</form>
+
+<details {% if not controls %}open{% endif %} style="margin-bottom:20px;">
+    <summary class="fa-lbl" style="cursor:pointer;">
+        Déclarer les commandes{% if controls %} ({{ controls|rejectattr('kind','equalto','section')|list|length }}){% endif %}
+    </summary>
+    <form method="POST" class="card" style="margin-top:10px;">
+        <input type="hidden" name="action" value="set_controls">
+        <textarea name="controls" class="fa-input" rows="14" spellcheck="false"
+                  style="font-size:12px;line-height:1.7;">{{ gear.controls or '' }}</textarea>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.7;">
+            Une commande par ligne, <strong>dans l'ordre de la façade</strong>.<br>
+            <code>Nom</code> = potard rotatif 0–10 · <code>Nom: A | B | C</code> = sélecteur ·
+            <code>-- TITRE</code> = bloc · <code>#</code> = ignoré.
+        </div>
+        <button type="submit" class="btn btn-secondary btn-sm" style="margin-top:12px;">Enregistrer les commandes</button>
+    </form>
+</details>
+
+<div class="card">
+    <div class="card-title" style="margin-bottom:14px;">
+        ③ Façades relevées{% if sheets %} — {{ sheets|length }}{% endif %}
+    </div>
+    {% if sheets %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">
+        {% for sh in sheets %}
+        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px;background:var(--bg);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                <div style="min-width:0;">
+                    <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);">
+                        {{ sh.preset_name or sh.label or 'Sans nom' }}
+                    </div>
+                    <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);">
+                        {{ sh.created_at[:10] }}{% if sh.preset_name %} · patch du carnet{% endif %}
+                    </div>
+                </div>
+                <form method="POST" onsubmit="return confirm('Supprimer ce relevé ?');">
+                    <input type="hidden" name="action" value="delete_sheet">
+                    <input type="hidden" name="sheet_id" value="{{ sh.id }}">
+                    <button type="submit" style="background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--text-muted);cursor:pointer;padding:3px 8px;font-family:var(--mono);font-size:12px;">✕</button>
+                </form>
+            </div>
+            <div class="fa-rangee" style="margin-top:12px;">
+                {% for c in sh.controls %}
+                    {% if c.kind == 'switch' %}
+                    <div class="fa-ctrl">
+                        <div class="fa-select-lu">{{ c.value or '—' }}</div>
+                        <div class="fa-nom">{{ c.name }}</div>
+                    </div>
+                    {% else %}
+                    <div class="fa-ctrl">
+                        <div class="fa-knob fa-lecture" data-valeur="{{ c.value }}">
+                            <svg viewBox="0 0 64 64" width="44" height="44">
+                                <circle cx="32" cy="32" r="25" class="fa-fond"></circle>
+                                <path class="fa-arc" d=""></path>
+                                <line class="fa-aig" x1="32" y1="32" x2="32" y2="12"></line>
+                                <circle cx="32" cy="32" r="3" class="fa-axe"></circle>
+                            </svg>
+                            <div class="fa-val">—</div>
+                        </div>
+                        <div class="fa-nom">{{ c.name }}</div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% if sh.notes %}
+            <div style="font-size:12px;color:var(--text-muted);margin-top:10px;">{{ sh.notes }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="font-family:var(--mono);font-size:12px;color:var(--text-muted);">
+        Aucune façade relevée. Le premier patch gardé mérite la sienne.
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// ── POTARDS ROTATIFS ─────────────────────────────────────────────────────────
+// Un potard va de 0 à 10 sur 270°, comme sur un appareil : sept heures et demie
+// à gauche, quatre heures et demie à droite.
+//
+// « Pas relevé » n'est pas « à zéro » : tant qu'on n'a pas touché un potard, son
+// champ reste vide et le serveur ne le stocke pas. L'aiguille est alors grise et
+// posée au milieu — une position d'attente, pas une valeur.
+(function () {
+    const DEBUT = -135, COURSE = 270, R = 25;
+
+    function pointArc(angleDeg) {
+        const a = (angleDeg - 90) * Math.PI / 180;
+        return [32 + R * Math.cos(a), 32 + R * Math.sin(a)];
+    }
+
+    function dessine(knob, valeur) {
+        const pose = valeur !== "" && valeur !== null && valeur !== undefined;
+        const v = pose ? Math.max(0, Math.min(10, parseFloat(valeur))) : 5;
+        const angle = DEBUT + (v / 10) * COURSE;
+        knob.classList.toggle("fa-pose", pose);
+        knob.querySelector(".fa-aig").style.transform = `rotate(${angle}deg)`;
+        knob.querySelector(".fa-val").textContent = pose ? v : "—";
+
+        const arc = knob.querySelector(".fa-arc");
+        if (!pose) { arc.setAttribute("d", ""); return; }
+        const [x0, y0] = pointArc(DEBUT);
+        const [x1, y1] = pointArc(angle);
+        const grand = (angle - DEBUT) > 180 ? 1 : 0;
+        arc.setAttribute("d", `M ${x0} ${y0} A ${R} ${R} 0 ${grand} 1 ${x1} ${y1}`);
+    }
+
+    // Affichage seul — les relevés déjà enregistrés.
+    document.querySelectorAll(".fa-knob.fa-lecture").forEach(k => dessine(k, k.dataset.valeur));
+
+    // Saisie.
+    document.querySelectorAll(".fa-knob:not(.fa-lecture)").forEach(knob => {
+        const champ = knob.parentNode.querySelector('input[type=hidden]');
+        const lis = () => champ.value === "" ? null : parseFloat(champ.value);
+        const pose = v => {
+            // Demi-pas : plus fin qu'un cran entier, assez grossier pour être
+            // reproductible à la main sur une vraie façade.
+            const borne = Math.max(0, Math.min(10, Math.round(v * 2) / 2));
+            champ.value = borne;
+            knob.setAttribute("aria-valuenow", borne);
+            dessine(knob, borne);
+        };
+        const efface = () => {
+            champ.value = "";
+            knob.removeAttribute("aria-valuenow");
+            dessine(knob, "");
+        };
+
+        dessine(knob, "");
+
+        let depart = null;
+        knob.addEventListener("pointerdown", e => {
+            knob.setPointerCapture(e.pointerId);
+            depart = { y: e.clientY, v: lis() === null ? 5 : lis() };
+            if (lis() === null) pose(5);   // toucher = relever, même sans bouger
+            e.preventDefault();
+        });
+        knob.addEventListener("pointermove", e => {
+            if (!depart) return;
+            // 100 px de course verticale pour la plage entière : assez long pour
+            // viser, assez court pour ne pas traverser l'écran.
+            pose(depart.v + (depart.y - e.clientY) / 10);
+        });
+        const relache = () => { depart = null; };
+        knob.addEventListener("pointerup", relache);
+        knob.addEventListener("pointercancel", relache);
+
+        knob.addEventListener("wheel", e => {
+            e.preventDefault();
+            pose((lis() === null ? 5 : lis()) + (e.deltaY < 0 ? 0.5 : -0.5));
+        }, { passive: false });
+
+        knob.addEventListener("keydown", e => {
+            const pas = e.shiftKey ? 1 : 0.5;
+            const actuel = lis() === null ? 5 : lis();
+            if (["ArrowUp", "ArrowRight"].includes(e.key)) { pose(actuel + pas); }
+            else if (["ArrowDown", "ArrowLeft"].includes(e.key)) { pose(actuel - pas); }
+            else if (["Escape", "Delete", "Backspace"].includes(e.key)) { efface(); }
+            else return;
+            e.preventDefault();
+            e.stopPropagation();   // Échap ne doit pas fermer autre chose
+        });
+
+        // Double-clic : revenir à « pas relevé », sans passer par le clavier.
+        knob.addEventListener("dblclick", e => { efface(); e.preventDefault(); });
+    });
+})();
+</script>
+
+{% endblock %}

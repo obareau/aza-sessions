@@ -26,7 +26,7 @@ def test_potard(client, tmp_path):
     gid = cur.lastrowid
     conn.close()
 
-    html = client.get(f"/catalogue/{gid}").get_data(as_text=True)
+    html = client.get(f"/catalogue/{gid}/facade").get_data(as_text=True)
     # Uniquement le script de la façade : la page porte aussi ceux de base.html
     # (thème, pomodoro…), qui demandent tout un navigateur pour démarrer.
     inline = [b for b in re.findall(r"<script(?![^>]*src=)[^>]*>(.*?)</script>", html, re.S)

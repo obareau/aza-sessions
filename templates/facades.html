@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Façades — AZA{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">◉ Façades</div>
+        <div class="page-subtitle">
+            Les positions de potards, pour les machines qui ne retiennent rien
+        </div>
+    </div>
+    <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary">← Catalogue</a>
+</div>
+
+{% set declarees = instruments | selectattr('nb_commandes') | list %}
+{% set vierges   = instruments | rejectattr('nb_commandes') | list %}
+
+{% if declarees %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-bottom:24px;">
+    {% for i in declarees %}
+    <a href="{{ url_for('catalogue.facade', gear_id=i.id) }}" style="text-decoration:none;">
+        <div class="card" style="height:100%;">
+            <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);">{{ i.name }}</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:4px;">
+                {% if i.manufacturer %}{{ i.manufacturer }} · {% endif %}{{ i.nb_commandes }} commande{{ 's' if i.nb_commandes > 1 }}
+            </div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--text);margin-top:10px;">
+                {% if i.nb_releves %}
+                {{ i.nb_releves }} façade{{ 's' if i.nb_releves > 1 }} relevée{{ 's' if i.nb_releves > 1 }}
+                {% else %}
+                <span style="color:var(--text-muted);">aucune façade relevée</span>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card" style="margin-bottom:24px;">
+    <div class="card-title">∙ Aucune façade déclarée</div>
+    <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);line-height:1.8;">
+        Un instrument sans mémoire — un analo, une pédale — perd son réglage dès
+        qu'on l'éteint : la façade est le seul endroit où le son existe. Choisis
+        une machine ci-dessous pour déclarer ses commandes.
+    </p>
+</div>
+{% endif %}
+
+{% if vierges %}
+<div class="card">
+    <div class="card-title" style="margin-bottom:12px;">∙ Sans façade déclarée</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        {% for i in vierges %}
+        <a href="{{ url_for('catalogue.facade', gear_id=i.id) }}"
+           style="font-family:var(--mono);font-size:11px;padding:5px 10px;border:1px solid var(--border);
+                  border-radius:var(--radius);color:var(--text-muted);text-decoration:none;">
+            {{ i.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

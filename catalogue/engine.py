@@ -614,6 +614,29 @@ class KnobSheetEngine:
     def _get_db(self):
         return get_db(self.db_path)
 
+    def instruments(self) -> list[dict]:
+        """Les fiches actives, celles qui ont une façade déclarée en tête.
+
+        Une machine sans déclaration reste dans la liste : c'est justement d'ici
+        qu'on va la déclarer, et la masquer obligerait à repasser par le
+        catalogue pour commencer.
+        """
+        conn = self._get_db()
+        rows = conn.execute("""
+            SELECT c.id, c.name, c.type, c.manufacturer, c.controls,
+                   (SELECT COUNT(*) FROM knob_sheets k WHERE k.gear_id = c.id) AS nb_releves
+            FROM catalogue c WHERE c.active = 1 ORDER BY c.name
+        """).fetchall()
+        conn.close()
+        out = []
+        for r in rows:
+            d = dict(r)
+            d["nb_commandes"] = len([c for c in parse_controls(d["controls"])
+                                     if c["kind"] != "section"])
+            out.append(d)
+        return sorted(out, key=lambda d: (-d["nb_commandes"], -d["nb_releves"],
+                                          d["name"].lower()))
+
     def controls(self, gear_id) -> list[dict]:
         conn = self._get_db()
         row = conn.execute("SELECT controls FROM catalogue WHERE id=?", (gear_id,)).fetchone()

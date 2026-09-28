@@ -5,6 +5,28 @@
 
 ---
 
+## v3.31.0 — 2026-09-28 — La façade a sa page
+
+### 🧭 Workflow
+- **`/facades` dans le menu Catalogue** — la liste des instruments, ceux qui ont
+  une façade déclarée en tête. Il fallait jusqu'ici passer par le catalogue, puis
+  la fiche, puis dérouler jusqu'en bas.
+- **`/catalogue/<id>/facade`** — une page qui ne fait qu'une chose, en trois
+  temps numérotés : ① ce qu'on relève, ② la façade, ③ les relevés.
+- **Le nom du son et la remarque passent AVANT les potards.** Ils existaient déjà,
+  mais placés après un panneau de douze boutons, en fin d'une page qui portait
+  six autres cartes — donc invisibles. Un test vérifie désormais cet ordre : ce
+  n'est pas de la mise en page, c'est la condition pour qu'ils servent.
+- La fiche matériel n'en garde qu'un **renvoi compact**, et plus aucun potard :
+  elle redevient un carnet, pas un tableau de bord.
+
+### 🧹 Un seul chemin par geste
+- Les actions de façade ne répondent plus que sur `/catalogue/<id>/facade`. Les
+  laisser aussi sur la fiche aurait fait deux routes pour un même geste, dont une
+  que plus rien n'appelait.
+
+---
+
 ## v3.30.0 — 2026-09-28 — Une façade, pas un formulaire
 
 ### 🎛 Potards rotatifs
