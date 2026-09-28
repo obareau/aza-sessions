@@ -635,12 +635,13 @@ class KnobSheetEngine:
         reste en base, elle, au cas où elle reviendrait.
         """
         conn = self._get_db()
-        sql = "SELECT * FROM knob_sheets WHERE gear_id=?"
+        sql = ("SELECT k.*, p.preset_name FROM knob_sheets k "
+               "LEFT JOIN preset_notes p ON p.id = k.preset_id WHERE k.gear_id=?")
         args = [gear_id]
         if session_id is not None:
-            sql += " AND session_id=?"
+            sql += " AND k.session_id=?"
             args.append(session_id)
-        rows = conn.execute(sql + " ORDER BY datetime(created_at) DESC, id DESC", args).fetchall()
+        rows = conn.execute(sql + " ORDER BY datetime(k.created_at) DESC, k.id DESC", args).fetchall()
         conn.close()
         modele = self.controls(gear_id)
         out = []
@@ -684,7 +685,8 @@ class KnobSheetEngine:
                             "manufacturer": r["manufacturer"]})
         return out
 
-    def save(self, gear_id, valeurs: dict, label="", session_id=None, notes="") -> int:
+    def save(self, gear_id, valeurs: dict, label="", session_id=None, notes="",
+             preset_id=None) -> int:
         """Enregistre un relevé. Les commandes non renseignées ne sont pas stockées.
 
         Un potard laissé vide veut dire « pas noté », pas « à zéro » — écrire 0
@@ -698,9 +700,9 @@ class KnobSheetEngine:
             propres[nom] = val
         conn = self._get_db()
         cur = conn.execute(
-            "INSERT INTO knob_sheets (gear_id, session_id, label, values_json, notes) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (gear_id, session_id, (label or "").strip(),
+            "INSERT INTO knob_sheets (gear_id, session_id, preset_id, label, values_json, notes) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (gear_id, session_id, preset_id or None, (label or "").strip(),
              json.dumps(propres, ensure_ascii=False), (notes or "").strip()),
         )
         conn.commit()

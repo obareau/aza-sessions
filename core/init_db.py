@@ -382,6 +382,10 @@ def init_db(db_path):
         # Déclaration des commandes de l'instrument, une par ligne (voir
         # `GearControlsEngine.parse_controls`).
         "ALTER TABLE catalogue ADD COLUMN controls TEXT DEFAULT ''",
+        # Un relevé de façade EST un patch sur une machine sans mémoire : il se
+        # rattache au carnet de patches (`preset_notes`) au lieu d'en tenir une
+        # seconde liste.
+        "ALTER TABLE knob_sheets ADD COLUMN preset_id INTEGER",
     ]:
         try:
             conn.execute(migration)

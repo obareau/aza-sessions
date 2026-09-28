@@ -5,6 +5,41 @@
 
 ---
 
+## v3.30.0 — 2026-09-28 — Une façade, pas un formulaire
+
+### 🎛 Potards rotatifs
+- Les curseurs horizontaux deviennent de **vrais potards ronds** : 0 à 10 sur
+  270°, aiguille, arc de valeur. On lit une façade d'un coup d'œil à
+  l'inclinaison des aiguilles, pas en déchiffrant huit barres.
+- Se règlent au **glisser vertical**, à la **molette**, ou aux **flèches**
+  (Maj = cran entier). `Échap`, `Suppr` ou un **double-clic** ramènent à
+  « pas relevé » — l'état reste distinct de zéro, aiguille grise au repos.
+
+### ▭ Le layout de l'appareil
+- Chaque section `-- TITRE` devient un **bloc encadré**, les potards dans l'ordre
+  déclaré. C'est l'approximation honnête d'une façade : suivre la machine de
+  gauche à droite en déclarant suffit à s'y retrouver, sans inventer un système
+  de coordonnées que la déclaration ne porte pas.
+
+### ★ Un relevé, c'est un patch
+- Un relevé se **rattache à un patch du carnet** (`preset_notes`) au lieu de
+  tenir une seconde liste à côté. Sur une machine sans mémoire, la façade *est*
+  le patch. Le champ « nom du son » reste pour ce qui n'est pas encore noté.
+
+### 🐛 Correctif — un script qui n'a jamais tourné
+- **Le `<script>` des potards s'était logé dans `{% block title %}`**, donc dans
+  le `<title>` de la page : il n'a jamais été exécuté. Les curseurs non touchés
+  envoyaient donc 0 — exactement ce que le code était censé empêcher.
+- **Mon test de bout en bout ne pouvait pas le voir** : il postait le formulaire
+  directement, sans exécuter une ligne de page. D'où
+  `tests/js/facade_knobs.mjs` + `tests/test_facade_js.py`, qui exécutent sous
+  Node le script **réellement servi** contre un faux DOM — 16 vérifications, dont
+  la borne 0/10, le vide qui n'est pas zéro, et le glisser.
+- Le faux DOM convertit `input.value` en chaîne comme un navigateur : sans ça il
+  comparait `5` à `'5'` et aurait validé un code faux.
+
+---
+
 ## v3.29.0 — 2026-09-28 — `/prises` ne fouille plus rien
 
 ### ⛔ Demi-tour assumé

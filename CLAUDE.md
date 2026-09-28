@@ -8,7 +8,7 @@ App Flask + SQLite de documentation de sessions musicales pour l'univers de fict
 
 ⚠️ **Plus sur Fly.io** — déploiement bare metal sur Roblab, voir « Déploiement » plus bas. `fly.toml` et la branche `FLY_APP_NAME` de `wsgi.py` ont été retirés le 2026-08-29. Le `Dockerfile` subsiste : il ne servait qu'au build Fly et n'est plus utilisé, mais il n'a rien de nuisible.
 
-Version actuelle : voir `VERSION` dans `app.py` (**v3.29.0**).
+Version actuelle : voir `VERSION` dans `app.py` (**v3.30.0**).
 
 ⚠️ **`VERSION` a déjà pris deux releases de retard** (resté à 3.10.0 alors que le ROADMAP documentait v3.11.0 et v3.12.0), ce qui a fait attribuer un numéro déjà pris à une nouvelle feature le 2026-08-29. Avant de bumper, croiser `app.py`, `CHANGELOG.md` **et** `ROADMAP.md` — les trois divergent facilement.
 
@@ -120,6 +120,9 @@ fonctionnalité marche » — vérifier par le chemin que l'usager emprunte.**
 - `gear_pairings` / `gear_notes` — carnet d'instrument. Une association est stockée **une fois** mais lue des deux côtés (`UNION` dans `GearNotebookEngine.pairings`) : la noter depuis une fiche l'affiche aussi sur l'autre.
 
 - `knob_sheets` — relevés de positions de potards, par instrument. `values_json` est un objet JSON `{commande: valeur}`, et la déclaration des commandes vit dans `catalogue.controls` (texte, une par ligne).
+  ℹ️ Un relevé se rattache à un patch du carnet (`preset_notes.id` dans
+  `knob_sheets.preset_id`) : sur une machine sans mémoire, la façade **est** le
+  patch — ne pas en faire une seconde liste parallèle.
   ⚠️ **« Pas relevé » n'est pas « à zéro ».** Une commande absente du JSON n'a pas été lue sur la façade ; un `0` stocké est un vrai réglage. Le curseur HTML perd son attribut `name` tant qu'on n'y a pas touché — sans quoi il enverrait 0 et inventerait un réglage. Ne pas « corriger » ça en mettant une valeur par défaut.
 
 ⚠️ `prompter_scripts` **n'existe plus** — partie chez D.I.M en v3.12.0, avec le blueprint `dim/` (dossier résiduel supprimé le 2026-08-29).
@@ -152,6 +155,13 @@ cd /home/olivier/DEV/aza-sessions && git pull && sudo systemctl restart aza-sess
 # Logs
 journalctl -u aza-sessions -f
 ```
+
+⚠️ **Un `<script>` posé dans `{% block title %}` ne tourne jamais** — il finit
+dans le `<title>`. Arrivé le 2026-09-28 sur `catalogue_detail.html` : le JS des
+potards n'a jamais été exécuté, et les tests Python ne l'ont pas vu parce qu'ils
+postent le formulaire sans exécuter la page. Réflexe : **du JS non trivial laisse
+un harnais Node derrière lui** (`tests/js/`, branché sur pytest), qui exécute le
+script réellement servi par la page.
 
 ⚠️ **Éditer un template suffit à casser le site en production, avant même le
 `git pull`.** Jinja relit les templates depuis le disque à chaque requête,

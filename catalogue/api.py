@@ -257,6 +257,7 @@ def gear_notebook(gear_id):
                     knobs.save(gear_id, valeurs,
                                label=request.form.get("label", ""),
                                session_id=request.form.get("session_id") or None,
+                               preset_id=request.form.get("preset_id") or None,
                                notes=request.form.get("sheet_notes", ""))
                     flash("Relevé enregistré.", "success")
         elif action == "delete_sheet":
