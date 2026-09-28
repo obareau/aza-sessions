@@ -305,7 +305,8 @@
     <div class="form-grid">
         <div class="form-group">
             <label>Fichier audio</label>
-            <input type="text" name="audio_file" placeholder="ex: session_20260419.wav">
+            <input type="text" name="audio_file" placeholder="ex: session_20260419.wav"
+                   value="{{ prefill.audio_file if (prefill is mapping and prefill and prefill.get('audio_file')) else '' }}">
         </div>
         <div class="form-group">
             <label>Session liée</label>

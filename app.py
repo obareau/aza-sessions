@@ -12,7 +12,7 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.jinja_env.filters['fromjson'] = json.loads
 app.secret_key = os.environ.get("SECRET_KEY", "aza-sessions-local-dev")
 
-VERSION     = "3.27.0"
+VERSION     = "3.28.0"
 DB_PATH     = os.environ.get("DB_PATH",     os.path.join(os.path.dirname(__file__), "sessions.db"))
 CONFIG_PATH = os.environ.get("CONFIG_PATH", os.path.join(os.path.dirname(__file__), "config.json"))
 BACKUPS_DIR = os.environ.get("BACKUPS_DIR", os.path.join(os.path.dirname(__file__), "backups"))
@@ -38,6 +38,7 @@ from patcher      import bp as patcher_bp;      app.register_blueprint(patcher_b
 from sysex        import bp as sysex_bp;        app.register_blueprint(sysex_bp)
 from presets      import bp as presets_bp;      app.register_blueprint(presets_bp)
 from lore         import bp as lore_bp;         app.register_blueprint(lore_bp)
+from takes        import bp as takes_bp;        app.register_blueprint(takes_bp)
 
 
 # ── CONTEXT PROCESSOR ────────────────────────────────────────────────────────

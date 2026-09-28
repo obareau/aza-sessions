@@ -118,6 +118,16 @@ def new_session():
     from_id = request.args.get("from")
     if from_id and not prefill:
         prefill = engine.get_plain(from_id)
+        if prefill:
+            # Copier le setup, pas l'enregistrement : deux séances qui
+            # revendiquent la même prise rendraient le dépouillement faux.
+            prefill["audio_file"] = ""
+
+    # Depuis une prise orpheline : la séance naît avec le nom du fichier déjà
+    # inscrit, c'est tout ce qu'on sait d'elle à cet instant.
+    audio = request.args.get("audio")
+    if audio and not prefill:
+        prefill = {"audio_file": audio}
 
     if request.args.get("from_patch") and not prefill:
         from flask import session as flask_session

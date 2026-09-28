@@ -8,7 +8,7 @@ App Flask + SQLite de documentation de sessions musicales pour l'univers de fict
 
 ⚠️ **Plus sur Fly.io** — déploiement bare metal sur Roblab, voir « Déploiement » plus bas. `fly.toml` et la branche `FLY_APP_NAME` de `wsgi.py` ont été retirés le 2026-08-29. Le `Dockerfile` subsiste : il ne servait qu'au build Fly et n'est plus utilisé, mais il n'a rien de nuisible.
 
-Version actuelle : voir `VERSION` dans `app.py` (**v3.27.0**).
+Version actuelle : voir `VERSION` dans `app.py` (**v3.28.0**).
 
 ⚠️ **`VERSION` a déjà pris deux releases de retard** (resté à 3.10.0 alors que le ROADMAP documentait v3.11.0 et v3.12.0), ce qui a fait attribuer un numéro déjà pris à une nouvelle feature le 2026-08-29. Avant de bumper, croiser `app.py`, `CHANGELOG.md` **et** `ROADMAP.md` — les trois divergent facilement.
 
@@ -39,7 +39,7 @@ Tests : **pytest** (smoke tests routes + DB).
 
 ### Vue d'ensemble
 
-`app.py` (144 lignes) est le point d'entrée minimal : il crée l'app Flask, enregistre les 19 blueprints et injecte les globals Jinja2 (`has_live`, `obsidian_vault`).
+`app.py` (144 lignes) est le point d'entrée minimal : il crée l'app Flask, enregistre les 20 blueprints et injecte les globals Jinja2 (`has_live`, `obsidian_vault`).
 
 `wsgi.py` est le point d'entrée Gunicorn — il appelle `init_db()` **et** `backup_db()` explicitement, car `app.py.__main__` ne tourne pas sous Gunicorn. C'est le chemin réel en production ; le bloc `__main__` ne sert qu'au lancement local.
 
@@ -61,7 +61,7 @@ def _engine():
     return XxxEngine(current_app.config["DB_PATH"])
 ```
 
-Les 19 blueprints enregistrés :
+Les 20 blueprints enregistrés :
 
 | Blueprint | Domaine |
 |---|---|
@@ -83,6 +83,7 @@ Les 19 blueprints enregistrés :
 | `mirack` | Catalogue de modules MiRack (iOS) |
 | `settings_app` | Paramètres app (backup, import, reset) |
 | `about` | Page À propos |
+| `takes` | **Lecture** du dossier de vidage de la carte SD du R8 (`/prises`) — rapproche fichiers et séances, n'écrit jamais |
 | `lore` | **Lecture** du corpus Robōtariis (`/lore`, `/lore/timeline`, `/lore/citations`) — aucune table, voir « Lore » plus bas |
 
 ### Core

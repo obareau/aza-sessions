@@ -5,6 +5,41 @@
 
 ---
 
+## v3.28.0 — 2026-09-28 — Boucler la chaîne du R8
+
+### ✨ Nouveauté — blueprint `takes` (20ᵉ module)
+- **`/prises`** dépouille le dossier où tu vides la carte SD et le rapproche du
+  journal, dans les deux sens :
+  - **⚠ Jouées, jamais notées** — les fichiers qui ne correspondent à aucune
+    séance, en tête parce que ce sont les seuls qui demandent une action.
+    Écoute sur place, et un bouton qui crée la séance avec le nom déjà inscrit.
+  - **✗ Réclamées, absentes du disque** — les séances qui nomment une prise
+    introuvable : carte pas encore vidée, fichier renommé, ou effacé.
+  - **✓ Rattachées** — avec un lien direct vers la fiche de rappel.
+- **Le R8 range ses enregistrements en dossiers de projet** (`WPMG_1/TRACK01.WAV`) :
+  le rapprochement regarde donc le **nom du dossier** autant que celui du fichier,
+  sans quoi il ne trouverait jamais rien.
+- Durée lue dans l'en-tête WAV (module `wave`, bibliothèque standard), écoute par
+  `<audio>` natif. **Aucune dépendance ajoutée**, et rien n'est copié, déplacé ni
+  écrit : le dossier de prises reste la référence.
+
+### 🔒 Sécurité
+- La route d'écoute résout les **chemins réels** et refuse tout ce qui sort de la
+  racine configurée — `../`, chemin absolu, et lien symbolique sortant compris.
+  Sans ce garde-fou, elle servirait n'importe quel fichier du disque.
+
+### 🧹 Au passage
+- **`/new?from=<id>` ne recopie plus le nom de prise.** Copier un setup, ce n'est
+  pas copier l'enregistrement : deux séances revendiquant la même prise auraient
+  faussé le dépouillement. Le champ n'avait jusqu'ici aucune valeur affichée, le
+  défaut ne s'était donc jamais vu.
+
+### 🧪 Tests
+- `tests/test_takes.py` — 15 cas sur un faux dossier construit par le test, dont
+  les dossiers de projet du R8, la casse, et surtout la traversée de chemin.
+
+---
+
 ## v3.27.0 — 2026-09-28 — La fiche de rappel
 
 ### ✨ Nouveauté
