@@ -188,6 +188,50 @@ def print_session(sid):
     return render_template("print.html", session=session, version=_version())
 
 
+@bp.route("/session/<int:sid>/rappel")
+def recall_session(sid):
+    """Fiche de rappel — de quoi reconstruire la chaîne exacte d'une séance.
+
+    En dawless, une séance n'existe que le temps où les machines restent
+    allumées : le son vit dans un enchaînement d'appareils et de réglages que
+    rien ne sauvegarde ensemble. Les données étaient déjà là, éparpillées dans
+    le formulaire ; il leur manquait une page qui les remette dans l'ordre du
+    signal et qui tienne sur une feuille, à côté du clavier.
+    """
+    from catalogue.engine import CatalogueEngine, KnobSheetEngine
+
+    engine = _engine()
+    session, _ = engine.get(sid)
+    if not session:
+        flash("Cette séance n'existe pas ou plus.", "error")
+        return redirect(url_for("sessions.index"))
+
+    db_path = current_app.config["DB_PATH"]
+    cat = CatalogueEngine(db_path)
+    fiches = {f["name"]: f for f in cat.fiches()}
+
+    # L'ordre du signal, tel qu'il est saisi : instruments, puis traitements,
+    # puis ce qui tourne sur machine. Pas de tri — l'ordre de frappe est celui
+    # de la chaîne, et le deviner serait pire que le respecter.
+    chaine = []
+    for colonne, role in (("machines", "instrument"), ("synths_ios", "instrument"),
+                          ("effects", "traitement"), ("plugins", "traitement"),
+                          ("daws", "hôte")):
+        for nom in [x.strip() for x in (session.get(colonne) or "").split(",") if x.strip()]:
+            f = fiches.get(nom, {})
+            chaine.append({"nom": nom, "role": role,
+                           "fabricant": f.get("manufacturer", ""),
+                           "code": f.get("code", ""),
+                           "gear_id": f.get("id")})
+
+    return render_template("recall.html",
+                           session=session,
+                           chaine=chaine,
+                           sheets=KnobSheetEngine(db_path).by_session(sid),
+                           version=_version(),
+                           oblique=_oblique())
+
+
 @bp.route("/session/<int:sid>/edit", methods=["GET", "POST"])
 def edit_session(sid):
     engine = _engine()

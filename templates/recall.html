@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Rappel — {{ session.title or session.date[:10] }} — AZA{% endblock %}
+{% block content %}
+
+<style>
+/* La fiche doit tenir sur une feuille, posée à côté du clavier : à l'impression
+   on ne garde que la chaîne et les façades — ni nav, ni bandeau, ni boutons. */
+@media print {
+    header, nav, footer, .oblique-banner, .page-header .btn,
+    .pomo, #kbd-overlay, #focus-exit, .no-print { display: none !important; }
+    body { background: #fff; color: #000; }
+    .card { border: 1px solid #999 !important; break-inside: avoid; box-shadow: none !important; }
+    main { padding: 0 !important; }
+    a { text-decoration: none; color: #000; }
+}
+.rc-step { display: flex; gap: 14px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.rc-step:last-child { border-bottom: none; }
+.rc-num { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--bg);
+          background: var(--accent); width: 22px; height: 22px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.rc-role { font-family: var(--mono); font-size: 9px; text-transform: uppercase;
+           letter-spacing: .12em; color: var(--text-muted); }
+.rc-fact { display: grid; grid-template-columns: 130px 1fr; gap: 6px 14px;
+           font-family: var(--mono); font-size: 12px; }
+.rc-fact dt { color: var(--text-muted); }
+.rc-fact dd { margin: 0; color: var(--text); }
+</style>
+
+<div class="page-header">
+    <div>
+        <div class="page-title">⟲ Fiche de rappel</div>
+        <div class="page-subtitle">
+            {{ session.title or 'Séance sans titre' }} — {{ session.date[:10] }}
+        </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="{{ url_for('sessions.new_session', **{'from': session.id}) }}" class="btn btn-primary btn-sm">⟲ Rejouer cette séance</a>
+        <button type="button" onclick="window.print()" class="btn btn-ghost btn-sm">Imprimer</button>
+        <a href="{{ url_for('sessions.view_session', sid=session.id) }}" class="btn btn-secondary">← Séance</a>
+    </div>
+</div>
+
+<!-- LA CHAÎNE -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-title" style="margin-bottom:6px;">∙ La chaîne, dans l'ordre du signal</div>
+    {% if chaine %}
+        {% for e in chaine %}
+        <div class="rc-step">
+            <div class="rc-num">{{ loop.index }}</div>
+            <div style="min-width:0;flex:1;">
+                <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);">
+                    {% if e.gear_id %}<a href="{{ url_for('catalogue.gear_notebook', gear_id=e.gear_id) }}"
+                        style="color:var(--accent);text-decoration:none;">{{ e.nom }}</a>{% else %}{{ e.nom }}{% endif %}
+                    {% if e.code %}<span style="font-size:10px;color:var(--text-muted);"> · {{ e.code }}</span>{% endif %}
+                </div>
+                <div class="rc-role">{{ e.role }}{% if e.fabricant %} · {{ e.fabricant }}{% endif %}</div>
+            </div>
+        </div>
+        {% endfor %}
+        {% if session.audio_file %}
+        <div class="rc-step">
+            <div class="rc-num" style="background:var(--accent2);">▪</div>
+            <div>
+                <div style="font-family:var(--mono);font-size:13px;font-weight:600;">{{ session.audio_file }}</div>
+                <div class="rc-role">prise Zoom R8</div>
+            </div>
+        </div>
+        {% endif %}
+    {% else %}
+        <div style="font-family:var(--mono);font-size:12px;color:var(--text-muted);padding:10px 0;">
+            Aucun matériel noté sur cette séance — il n'y a rien à rappeler.
+        </div>
+    {% endif %}
+</div>
+
+<!-- RÉGLAGES -->
+{% set a_des_reglages = session.patches or session.signal_routing or session.tempo
+                        or session.tonality or session.microfreak_algo %}
+{% if a_des_reglages %}
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-title" style="margin-bottom:12px;">∙ Réglages notés</div>
+    <dl class="rc-fact">
+        {% if session.tempo %}<dt>Tempo</dt><dd>{{ session.tempo }} BPM</dd>{% endif %}
+        {% if session.tonality %}<dt>Tonalité</dt><dd>{{ session.tonality }}</dd>{% endif %}
+        {% if session.microfreak_algo %}<dt>Algo MicroFreak</dt><dd>{{ session.microfreak_algo }}</dd>{% endif %}
+        {% if session.patches %}<dt>Patches</dt><dd style="white-space:pre-wrap;">{{ session.patches }}</dd>{% endif %}
+        {% if session.signal_routing %}<dt>Routing</dt><dd style="white-space:pre-wrap;">{{ session.signal_routing }}</dd>{% endif %}
+    </dl>
+</div>
+{% endif %}
+
+<!-- FAÇADES -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-title" style="margin-bottom:12px;">◉ Façades relevées</div>
+    {% if sheets %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;">
+        {% for sh in sheets %}
+        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px;">
+            <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);">{{ sh.gear_name }}</div>
+            <div class="rc-role" style="margin-bottom:8px;">{{ sh.label or 'sans nom' }}</div>
+            {% for c in sh.controls %}
+            <div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;margin-bottom:3px;">
+                <span style="color:var(--text-muted);min-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ c.name }}</span>
+                {% if c.kind == 'switch' %}
+                <span>{{ c.value or '—' }}</span>
+                {% elif c.value not in ('', none) %}
+                <span style="flex:1;height:5px;background:var(--bg-alt);border:1px solid var(--border);border-radius:3px;overflow:hidden;">
+                    <span style="display:block;height:100%;width:{{ (c.value|float / 10 * 100)|round }}%;background:var(--accent);"></span>
+                </span>
+                <span style="min-width:20px;text-align:right;">{{ c.value }}</span>
+                {% else %}
+                <span style="flex:1;opacity:.45;">— pas relevé</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% if sh.notes %}
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:8px;">{{ sh.notes }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="font-family:var(--mono);font-size:12px;color:var(--text-muted);line-height:1.7;">
+        Aucune façade relevée pour cette séance.
+        {% if chaine %}
+        Sur un instrument sans mémoire — un analo, une pédale — c'est la seule
+        chose qui permettra de retrouver le son : le relevé se prend depuis la
+        fiche de l'appareil, en choisissant cette séance.
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+{% if session.comments %}
+<div class="card">
+    <div class="card-title" style="margin-bottom:10px;">∙ Ce qui s'est passé</div>
+    <div style="font-size:13px;line-height:1.8;white-space:pre-wrap;">{{ session.comments }}</div>
+</div>
+{% endif %}
+
+{% endblock %}

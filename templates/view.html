@@ -16,6 +16,7 @@
 }
 </style>
     <div class="view-actions">
+        <a href="{{ url_for('sessions.recall_session', sid=session.id) }}" class="btn btn-ghost" title="La chaîne et les façades, pour rejouer cette séance">⟲ Rappel</a>
         <a href="{{ url_for('sessions.print_session', sid=session.id) }}" class="btn btn-ghost" target="_blank">↓ PDF</a>
         <a href="{{ url_for('sessions.export_one', sid=session.id) }}" class="btn btn-ghost">↓ MD</a>
         <button type="button" class="btn btn-ghost" onclick="pushToVault()" id="vault-btn" title="Exporter vers le vault Obsidian configuré">⬡ Vault</button>

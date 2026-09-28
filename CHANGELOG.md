@@ -5,6 +5,34 @@
 
 ---
 
+## v3.27.0 — 2026-09-28 — La fiche de rappel
+
+### ✨ Nouveauté
+- **`/session/<id>/rappel`** — une page pour reconstruire une séance : la chaîne
+  **dans l'ordre du signal** (instruments, traitements, hôte, puis la prise R8),
+  les réglages notés (tempo, tonalité, patches, routing) et les **façades
+  relevées** rattachées à cette séance.
+- Conçue pour être **imprimée et posée à côté du clavier** : à l'impression, ni
+  nav, ni bandeau, ni boutons.
+- Lien `⟲ Rappel` depuis la vue d'une séance.
+
+### 🎛 Les relevés se rattachent à une séance
+- Le formulaire de relevé porte un sélecteur « pendant quelle séance ». Sans ce
+  lien, la fiche de rappel n'aurait jamais de façade à montrer.
+
+### 📝 Ce qui n'a pas été refait
+- **Pas de second bouton « rejouer ».** La vue séance porte déjà `⎘ Copier setup`,
+  qui pointe sur `/new?from=<id>` — c'est le même geste sous un autre nom. La
+  fiche de rappel réutilise ce lien au lieu d'en créer un doublon.
+- L'ordre de la chaîne est **celui de la saisie**, jamais trié : l'ordre de frappe
+  est celui du signal, et le deviner serait pire que le respecter.
+
+### 🧪 Tests
+- `tests/test_recall.py` — 8 cas, dont l'ordre du signal et l'étanchéité entre
+  séances : un relevé pris ailleurs ne doit pas fuir sur cette fiche.
+
+---
+
 ## v3.26.0 — 2026-09-28 — Ce que la machine ne retient pas
 
 ### ✨ Nouveauté — relevés de potards

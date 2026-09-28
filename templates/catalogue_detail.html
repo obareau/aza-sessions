@@ -272,9 +272,20 @@ document.querySelectorAll('.knob-range').forEach(r => {
                     <label class="nb-lbl">Nom du son <span style="text-transform:none;">— facultatif</span></label>
                     <input type="text" name="label" class="nb-input" placeholder="ex : nappe corrodée, basse de Scaër…">
                 </div>
-                <div style="flex:2;min-width:220px;">
+                <div style="flex:2;min-width:200px;">
                     <label class="nb-lbl">Remarque</label>
                     <input type="text" name="sheet_notes" class="nb-input" placeholder="ex : tenir la résonance juste sous l'auto-oscillation">
+                </div>
+                {# Rattacher le relevé à une séance, c'est ce qui le fait
+                   apparaître sur sa fiche de rappel. #}
+                <div style="min-width:180px;">
+                    <label class="nb-lbl">Pendant quelle séance</label>
+                    <select name="session_id" class="nb-input">
+                        <option value="">— aucune —</option>
+                        {% for s in sessions %}
+                        <option value="{{ s.id }}">{{ s.date[:10] }}{% if s.title %} · {{ s.title }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <button type="submit" class="btn btn-primary btn-sm">+ Relever</button>
             </div>

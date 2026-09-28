@@ -88,8 +88,9 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 | ✅ ★★★ | ~~**Backup automatique** — copie horodatée `sessions.db` au démarrage, garder 5 derniers~~ | **Livré** (v3.7.2, migré dans `wsgi.py` pour Gunicorn) |
 | ✅ ★★☆ | ~~**Recherche full-text étendue** — couvrir comments, patches, recap_claude, lore_link~~ | **Livré** — FTS5 (v3.6.0) puis revert vers recherche Python couvrant 15 champs (FTS5 corrompait la DB via triggers) |
 | ✅ ★★☆ | ~~**Vue liste compacte vs cartes** — toggle dense (50 lignes visibles) / détail~~ | **Livré** (v3.7.1, `compact.html`) |
+| ✅ | ~~**Fiche de rappel**~~ — livrée en **v3.27.0** | N'était pas sur la carte. `/session/<id>/rappel` : la chaîne dans l'ordre du signal, les réglages, les façades relevées. Imprimable pour être posée à côté du clavier |
 | ✅ | ~~**Relevés de potards**~~ — livré en **v3.26.0** | N'était pas sur la carte. Déclarer les commandes d'un instrument, relever leurs positions par son gardé. Motivé par le Behringer WASP Deluxe : un analo sans mémoire ne se retrouve que par sa façade. « Pas relevé » reste distinct de « à zéro » |
-| ★★☆ | **Duplication complète d'une session** — tout copier sauf date/audio | Documenter des variations d'un même morceau (NB : seule la duplication de *layout Patcher* existe à ce jour) |
+| ✅ | ~~**Duplication complète d'une session**~~ — **existait déjà**, constaté le 2026-09-28 | `/new?from=<id>` pré-remplit toute la séance, et la vue séance porte le bouton `⎘ Copier setup` depuis longtemps. La note « seule la duplication de layout Patcher existe » était fausse. Vérifier la page avant de rouvrir un item |
 | ~~★☆☆~~ | ~~**Import métadonnées audio** — lire date/durée via `mutagen`~~ | Abandonné (retiré de la roadmap, commit `7eb79d6`) |
 
 ---

@@ -664,6 +664,26 @@ class KnobSheetEngine:
             out.append(d)
         return out
 
+    def by_session(self, session_id) -> list[dict]:
+        """Tous les relevés rattachés à une séance, quel que soit l'instrument.
+
+        C'est ce que lit la fiche de rappel : pour rejouer, il faut les façades
+        de toute la chaîne, pas celle d'une machine à la fois.
+        """
+        conn = self._get_db()
+        rows = conn.execute(
+            "SELECT k.gear_id, c.name AS gear_name, c.manufacturer "
+            "FROM knob_sheets k JOIN catalogue c ON c.id = k.gear_id "
+            "WHERE k.session_id = ? GROUP BY k.gear_id ORDER BY c.name",
+            (session_id,)).fetchall()
+        conn.close()
+        out = []
+        for r in rows:
+            for sh in self.sheets(r["gear_id"], session_id=session_id):
+                out.append({**sh, "gear_name": r["gear_name"],
+                            "manufacturer": r["manufacturer"]})
+        return out
+
     def save(self, gear_id, valeurs: dict, label="", session_id=None, notes="") -> int:
         """Enregistre un relevé. Les commandes non renseignées ne sont pas stockées.
 
