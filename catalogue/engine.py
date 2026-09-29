@@ -1,5 +1,6 @@
 import json
 import re
+import unicodedata
 
 from core.db import get_db
 from core.constants import ITEM_TYPES  # noqa: F401 — ré-exporté pour catalogue.api
@@ -140,6 +141,98 @@ class CatalogueEngine:
     # Ordre des colonnes = ordre du signal : la machine d'abord, l'effet
     # ensuite. Alphabétiser les codes aurait mis la pédale avant le synthé.
     CODE_ORDER = ("machines", "effects", "synths_ios", "plugins")
+
+    # ── Proposition de codes ─────────────────────────────────────────────────
+    # Le générateur de nom de prise R8 n'existe que si le catalogue porte des
+    # codes. En saisir quarante à la main est une corvée que personne ne fait —
+    # et la fonctionnalité reste inerte. On les propose donc, à relire.
+    #
+    # Deux caractères par défaut : au-delà, il ne tient plus que deux appareils
+    # dans les 8 caractères d'un nom de projet R8 (voir CLAUDE.md).
+
+    @staticmethod
+    def _mots(nom: str) -> list[str]:
+        """Découpe un nom en unités lisibles, accents et ponctuation retirés.
+
+        « MicroFreak » compte pour deux mots (MICRO, FREAK) : les majuscules
+        internes portent le sens, c'est d'elles qu'on tire MF plutôt que MI.
+        """
+        brut = unicodedata.normalize("NFKD", nom or "")
+        brut = "".join(c for c in brut if not unicodedata.combining(c))
+        # Couper aussi sur les majuscules internes et les frontières lettre/chiffre
+        brut = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", brut)
+        brut = re.sub(r"(?<=[A-Za-z])(?=\d)", " ", brut)
+        return [m for m in re.split(r"[^A-Za-z0-9]+", brut.upper()) if m]
+
+    @classmethod
+    def _candidats(cls, nom: str) -> list[str]:
+        """Les codes possibles pour un nom, du plus parlant au plus arbitraire."""
+        mots = cls._mots(nom)
+        if not mots:
+            return []
+        out = []
+        if len(mots) >= 2:
+            out.append(mots[0][0] + mots[1][0])          # Volca Drum → VD
+        premier = mots[0]
+        if len(premier) >= 2:
+            out.append(premier[:2])                       # Peach → PE
+            # Première consonne suivante : PCH → PC, plus distinctif que PE
+            for lettre in premier[1:]:
+                if lettre not in "AEIOUY":
+                    out.append(premier[0] + lettre)
+                    break
+        # Un chiffre du nom est très discriminant : NTS-1 → N1, ID4 → I4
+        for mot in mots:
+            for car in mot:
+                if car.isdigit():
+                    out.append(premier[0] + car)
+                    break
+        if len(mots) >= 3:
+            out.append(mots[0][0] + mots[2][0])
+        # Repli : première lettre + une lettre de la suite, puis + un chiffre
+        for mot in mots[1:]:
+            out.append(premier[0] + mot[0])
+        for lettre in premier[1:]:
+            out.append(premier[0] + lettre)
+        for chiffre in "23456789":
+            out.append(premier[0] + chiffre)
+        vus, propres = set(), []
+        for c in out:
+            c = re.sub(r"[^A-Z0-9]", "", c)
+            if len(c) == 2 and c not in vus:
+                vus.add(c)
+                propres.append(c)
+        return propres
+
+    def propose_codes(self) -> dict:
+        """Un code par fiche active qui n'en a pas. Les codes existants sont
+        intouchables : ils sont peut-être déjà inscrits sur des prises.
+
+        Rend `{id: code}` — rien n'est écrit, c'est une proposition à relire.
+        """
+        conn = self._get_db()
+        rows = conn.execute(
+            "SELECT id, name, type, code FROM catalogue WHERE active=1"
+        ).fetchall()
+        conn.close()
+
+        # Les machines servent en premier : sans cet ordre, un doublon de
+        # catalogue comme « Zoom R8 (effets) » raflait ZR et laissait ZM à
+        # l'appareil lui-même. Le code le plus parlant va à l'entrée principale.
+        priorite = {"machine": 0, "effet": 1, "synth_ios": 2, "plugin": 3}
+        rows = sorted(rows, key=lambda r: (priorite.get(r["type"], 9), r["name"].lower()))
+
+        pris = {(r["code"] or "").strip().upper() for r in rows if (r["code"] or "").strip()}
+        propositions = {}
+        for r in rows:
+            if (r["code"] or "").strip():
+                continue
+            for candidat in self._candidats(r["name"]):
+                if candidat not in pris:
+                    pris.add(candidat)
+                    propositions[r["id"]] = candidat
+                    break
+        return propositions
 
     def codes_for(self, noms) -> list[str]:
         """Codes catalogue des noms donnés, dans l'ordre reçu, sans doublon.

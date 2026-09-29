@@ -5,6 +5,32 @@
 
 ---
 
+## v3.32.0 — 2026-09-29 — Les codes qu'on ne saisira jamais à la main
+
+### ✨ Nouveauté
+- **`⚡ Proposer les codes manquants`** dans la vue fiches. Un code à deux
+  caractères est dérivé de chaque nom : majuscules internes (`MicroFreak` → `MF`),
+  initiales (`Volca Drum` → `VD`), chiffre discriminant (`NTS-1` → `N1`), avec
+  repli jusqu'à trouver un code libre.
+- **Rien n'est écrit.** Le bouton remplit les cases vides et les surligne ; c'est
+  l'enregistrement du formulaire qui décide. Un code déjà posé n'est **jamais**
+  touché — il est peut-être déjà inscrit sur des prises.
+- **Les machines passent avant leurs alias.** Sans cet ordre, `Zoom R8 (effets)`
+  raflait `ZR` et l'appareil héritait de `ZM`.
+
+### 🔎 Pourquoi maintenant
+- Le générateur de nom de prise R8 est livré depuis le 2026-09-27 et **restait
+  inerte : 1 code sur 42**. La fonctionnalité n'attendait pas du code, elle
+  attendait quarante saisies — c'est-à-dire qu'elle n'arriverait jamais. Sur les
+  41 fiches non codées, la proposition sort 41 codes sans un seul doublon.
+
+### 🧪 Tests
+- `tests/test_codes_proposes.py` — 11 cas, dont la non-collision avec un code
+  existant, la priorité machine/alias, et la garantie que la route ne touche pas
+  la base.
+
+---
+
 ## v3.31.0 — 2026-09-28 — La façade a sa page
 
 ### 🧭 Workflow

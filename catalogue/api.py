@@ -319,3 +319,14 @@ def facade(gear_id):
                            sessions=nb.sessions(gear_id),
                            version=current_app.config.get("VERSION", ""),
                            oblique=rand_oblique(current_app.config["DB_PATH"]))
+
+
+@bp.route("/api/codes-proposes")
+def api_codes_proposes():
+    """Un code par fiche qui n'en a pas. **N'écrit rien** : la vue fiches
+    remplit les cases et c'est l'enregistrement du formulaire qui décide.
+
+    Sans codes, le générateur de nom de prise R8 ne produit rien — et personne
+    ne saisit quarante codes à la main pour découvrir ce que ça donne.
+    """
+    return jsonify(codes=_engine().propose_codes())

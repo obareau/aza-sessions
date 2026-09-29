@@ -151,6 +151,11 @@ tr[hidden] { display:none; }
 
 <div class="fi-bar">
     <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <button type="button" id="btn-codes" class="btn btn-ghost btn-sm"
+            title="Remplit les codes vides — rien n'est enregistré avant que tu cliques Enregistrer">
+        ⚡ Proposer les codes manquants
+    </button>
+    <span id="codes-note" style="font-family:var(--mono);font-size:11px;color:var(--text-muted);"></span>
     <span class="fi-count" id="fi-dirty">Aucune modification</span>
     <span class="fi-count" style="margin-left:auto;" id="fi-shown"></span>
 </div>
@@ -242,6 +247,40 @@ tr[hidden] { display:none; }
         if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); form.submit(); }
     });
 })();
+</script>
+
+<script>
+// ── PROPOSITION DE CODES ─────────────────────────────────────────────────────
+// Les codes alimentent le nom de prise R8. En saisir quarante à la main est une
+// corvée qui ne se fait jamais : on les propose, on ne les impose pas. Rien
+// n'est enregistré avant que le formulaire soit soumis — d'où le remplissage
+// des cases plutôt qu'une écriture directe en base.
+document.getElementById("btn-codes")?.addEventListener("click", async (e) => {
+    const bouton = e.currentTarget;
+    const note = document.getElementById("codes-note");
+    bouton.disabled = true;
+    try {
+        const d = await (await fetch("/api/codes-proposes")).json();
+        let remplis = 0;
+        document.querySelectorAll("#fi-form tbody tr").forEach(tr => {
+            const id = tr.querySelector('input[name="id"]')?.value;
+            const champ = tr.querySelector('input[name="code"]');
+            // On ne touche jamais un code déjà posé : il est peut-être déjà
+            // inscrit sur des prises enregistrées.
+            if (!id || !champ || champ.value.trim() || !d.codes[id]) return;
+            champ.value = d.codes[id];
+            champ.style.background = "var(--accent-soft)";
+            remplis++;
+        });
+        note.textContent = remplis
+            ? `${remplis} code(s) proposé(s) — relis, corrige, puis Enregistrer.`
+            : "Rien à proposer : tout est déjà codé.";
+    } catch (err) {
+        note.textContent = "Échec : " + err.message;
+    } finally {
+        bouton.disabled = false;
+    }
+});
 </script>
 
 {% endblock %}

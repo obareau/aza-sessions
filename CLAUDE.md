@@ -8,7 +8,7 @@ App Flask + SQLite de documentation de sessions musicales pour l'univers de fict
 
 ⚠️ **Plus sur Fly.io** — déploiement bare metal sur Roblab, voir « Déploiement » plus bas. `fly.toml` et la branche `FLY_APP_NAME` de `wsgi.py` ont été retirés le 2026-08-29. Le `Dockerfile` subsiste : il ne servait qu'au build Fly et n'est plus utilisé, mais il n'a rien de nuisible.
 
-Version actuelle : voir `VERSION` dans `app.py` (**v3.31.0**).
+Version actuelle : voir `VERSION` dans `app.py` (**v3.32.0**).
 
 ⚠️ **`VERSION` a déjà pris deux releases de retard** (resté à 3.10.0 alors que le ROADMAP documentait v3.11.0 et v3.12.0), ce qui a fait attribuer un numéro déjà pris à une nouvelle feature le 2026-08-29. Avant de bumper, croiser `app.py`, `CHANGELOG.md` **et** `ROADMAP.md` — les trois divergent facilement.
 
@@ -198,6 +198,10 @@ torde le nommage pour elle.
 écartées : compter les usages d'une chaîne (`MFMG5_7`) ajoute un chiffre sans
 service rendu ici, et inscrire la date (`MF0927_1`) mange l'espace des codes
 dès le deuxième appareil.
+
+ℹ️ `⚡ Proposer les codes manquants` (vue fiches, `/api/codes-proposes`) dérive
+un code de chaque nom. La route **ne touche pas la base** : elle remplit les
+cases, l'enregistrement du formulaire tranche. Un code déjà posé est intouchable.
 
 ℹ️ **Des codes de deux caractères** laissent la place à trois appareils dans
 les 8 caractères ; des codes de trois s'arrêtent à deux appareils.
