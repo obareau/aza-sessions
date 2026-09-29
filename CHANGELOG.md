@@ -5,6 +5,26 @@
 
 ---
 
+## v3.34.0 — 2026-09-29 — Le nom de prise sort de `/vite`
+
+### ✨ Nouveauté
+- **Bouton `⚡ nom de prise`** à côté du champ *Fichier audio*, sur `/new` **et**
+  sur l'édition d'une séance. Il lit le matériel **coché dans le formulaire** et
+  remplit le champ.
+- Il dit aussi ce qui cloche : appareil sans code, préfixe rogné à 8 caractères,
+  ou aucun matériel codé — la même franchise que l'aperçu de `/vite`.
+
+### 🔎 Pourquoi
+- Le nom n'était calculé **que sur `/vite`**. Le formulaire complet — celui où
+  l'on note patches, tempo, routing, bref celui d'une vraie séance documentée —
+  laissait le champ vide et libre. Les 42 codes venant d'être posés, c'était le
+  manque le plus net.
+- Le calcul reste **côté serveur** : lui seul connaît les codes du catalogue *et*
+  les prises déjà enregistrées aujourd'hui. Le refaire en JS donnerait deux
+  vérités pour un seul nom. Même route que `/vite` (`POST /api/nom-de-prise`).
+
+---
+
 ## v3.33.0 — 2026-09-29 — Des codes qui se relisent
 
 ### 🔤 Trois lettres par défaut

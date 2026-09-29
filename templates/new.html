@@ -307,6 +307,9 @@
             <label>Fichier audio</label>
             <input type="text" name="audio_file" placeholder="ex: session_20260419.wav"
                    value="{{ prefill.audio_file if (prefill is mapping and prefill and prefill.get('audio_file')) else '' }}">
+            <button type="button" class="btn btn-ghost btn-sm" data-nom-prise
+                    title="Nom de prise R8 depuis le matériel coché — 8 caractères, A-Z 0-9 _">⚡ nom de prise</button>
+            <div data-nom-prise-note style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:4px;"></div>
         </div>
         <div class="form-group">
             <label>Session liée</label>

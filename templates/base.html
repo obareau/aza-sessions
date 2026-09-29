@@ -1035,6 +1035,45 @@
         applyTheme(saved);
     })();
 
+    // ── NOM DE PRISE R8 ──────────────────────────────────────────────────────
+    // Le nom se calcule côté serveur : lui seul connaît les codes du catalogue
+    // ET les prises déjà enregistrées aujourd'hui. Le refaire en JS donnerait
+    // deux vérités pour un seul nom. Même route que l'aperçu de /vite.
+    document.addEventListener('click', e => {
+        const btn = e.target.closest('[data-nom-prise]');
+        if (!btn) return;
+        const form = btn.form || btn.closest('form');
+        const champ = form && form.elements['audio_file'];
+        if (!champ) return;
+        const note = btn.parentNode.querySelector('[data-nom-prise-note]');
+
+        // Le matériel est coché dans le formulaire : on lit les cases, pas un
+        // état JS parallèle qui pourrait diverger de ce qui sera envoyé.
+        const corps = {};
+        ['machines', 'effects', 'plugins', 'synths_ios'].forEach(col => {
+            corps[col] = [...form.querySelectorAll(`input[name="${col}"]:checked`)]
+                .map(i => i.value).join(', ');
+        });
+
+        btn.disabled = true;
+        fetch('/api/nom-de-prise', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(corps),
+        }).then(r => r.json()).then(d => {
+            if (d.nom) champ.value = d.nom;
+            if (!note) return;
+            const soucis = [];
+            if (!d.nom) soucis.push('aucun matériel coché ne porte de code');
+            if (d.tronque) soucis.push(`rogné à ${d.max} caractères`);
+            if ((d.sans_code || []).length) soucis.push('sans code : ' + d.sans_code.join(', '));
+            note.textContent = soucis.join(' · ');
+            note.style.color = soucis.length ? 'var(--accent)' : 'var(--text-muted)';
+        }).catch(() => {
+            if (note) note.textContent = 'calcul impossible';
+        }).finally(() => { btn.disabled = false; });
+    });
+
     // ── LIEN LORE ────────────────────────────────────────────────────────────
     // Le champ « lien avec le lore » se complète depuis le corpus réel. Sans
     // suggestions il restait vide sur les trois sessions existantes — et une

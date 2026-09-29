@@ -438,3 +438,37 @@ def test_un_code_mal_saisi_est_nettoye_pas_transmis():
     _avec_code(eng, "machine", "R8Sale", "m-f 5")
     nom = eng.take_name({"machines": "R8Sale"}, "2026-12-02")
     assert nom == "MF5_1", nom
+
+
+# ── Nom de prise proposé dans les formulaires ────────────────────────────────
+
+def test_bouton_nom_de_prise_sur_les_deux_formulaires(client):
+    """Le nom n'était proposé que sur /vite. Le formulaire complet — celui où
+    l'on note patches, tempo et routing — laissait le champ vide et libre."""
+    from core.db import get_db
+    conn = get_db(os.environ["DB_PATH"])
+    cur = conn.execute("INSERT INTO sessions (date, title) VALUES ('2026-09-29T20:00', 'Pour le bouton')")
+    conn.commit()
+    sid = cur.lastrowid
+    conn.close()
+
+    for url in ("/new", f"/session/{sid}/edit"):
+        h = client.get(url).get_data(as_text=True)
+        assert "data-nom-prise" in h, url
+        # Le gestionnaire est délégué depuis base.html : s'il glissait hors du
+        # bloc de contenu, le bouton serait décoratif (déjà arrivé en v3.30).
+        assert "NOM DE PRISE R8" in h, url
+
+
+def test_api_nom_de_prise_sur_materiel_code(client):
+    from core.db import get_db
+    conn = get_db(os.environ["DB_PATH"])
+    conn.execute("INSERT INTO catalogue (type,name,active,code) VALUES ('machine','Btn Synthe',1,'BSY')")
+    conn.execute("INSERT INTO catalogue (type,name,active,code) VALUES ('effet','Btn Pedale',1,'BPD')")
+    conn.commit()
+    conn.close()
+    d = client.post("/api/nom-de-prise",
+                    json={"machines": "Btn Synthe", "effects": "Btn Pedale"}).get_json()
+    assert d["prefixe"] == "BSYBPD"
+    assert d["nom"].startswith("BSYBPD_")
+    assert len(d["nom"]) <= 8
