@@ -5,6 +5,25 @@
 
 ---
 
+## v3.33.0 — 2026-09-29 — Des codes qui se relisent
+
+### 🔤 Trois lettres par défaut
+- « MFR » se relit six mois plus tard, « MF » se devine. Les propositions
+  passent à **3 lettres**, avec un sélecteur pour 2 ou 4.
+- **La consonne se prend dans le dernier mot**, celui qui distingue :
+  `Volca Drum` → `VDR` (et non `VDL`), `MicroFreak` → `MFR` (et non `MFC`).
+- **Un chiffre va en fin de code** — c'est ce qu'il y a de plus discriminant
+  dans ces noms : `NTS-1` → `NT1`, `Zoom R8` → `ZR8`, `Launchpad Pro mk3` → `LP3`.
+- Sur les 41 fiches non codées : 41 codes sans doublon, aux trois tailles.
+
+### ⚠️ Ce que ça coûte sur le R8
+- Le nom de projet fait 8 caractères, dont 2 pris par le suffixe `_1` : il reste
+  **6 pour les codes**. Deux codes de 3 tiennent **exactement** ; trois appareils
+  n'entrent pas, et à 4 lettres un nom à deux appareils est **rogné**. C'est un
+  choix assumé — l'aperçu de `/vite` signale déjà la troncature.
+
+---
+
 ## v3.32.0 — 2026-09-29 — Les codes qu'on ne saisira jamais à la main
 
 ### ✨ Nouveauté

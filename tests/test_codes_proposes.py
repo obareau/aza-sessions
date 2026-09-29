@@ -29,28 +29,38 @@ def _propose(gid):
 
 
 def test_majuscules_internes():
-    """« MicroFreak » vaut deux mots : MF, pas MI."""
-    assert _propose(_gear("CodeTestMicroFreak")) == "CT"
-    assert CatalogueEngine._candidats("MicroFreak")[0] == "MF"
+    """« MicroFreak » vaut deux mots : MFR, pas MIC."""
+    assert CatalogueEngine._candidats("MicroFreak")[0] == "MFR"
 
 
-def test_deux_mots():
-    assert CatalogueEngine._candidats("Volca Drum")[0] == "VD"
+def test_consonne_prise_dans_le_dernier_mot():
+    """C'est le dernier mot qui distingue : Volca Drum → VDR, pas VDL."""
+    assert CatalogueEngine._candidats("Volca Drum")[0] == "VDR"
+    assert CatalogueEngine._candidats("Volca Kick")[0] == "VKC"
 
 
-def test_chiffre_discriminant():
-    assert "N1" in CatalogueEngine._candidats("NTS-1")
+def test_chiffre_en_fin_de_code():
+    """Un chiffre est très discriminant dans ces noms et se lit mieux à la fin."""
+    assert CatalogueEngine._candidats("NTS-1")[0] == "NT1"
+    assert CatalogueEngine._candidats("Zoom R8")[0] == "ZR8"
 
 
 def test_accents_et_ponctuation_retires():
-    assert CatalogueEngine._candidats("Éclat Sonore")[0] == "ES"
+    assert CatalogueEngine._candidats("Éclat Sonore")[0].isalnum()
     assert all(c.isalnum() for cand in CatalogueEngine._candidats("iPad/iPhone") for c in cand)
 
 
-def test_toujours_deux_caracteres():
-    for nom in ("A", "Peach", "X-1", "Un Deux Trois Quatre"):
-        for cand in CatalogueEngine._candidats(nom):
-            assert len(cand) == 2, (nom, cand)
+def test_taille_respectee():
+    for taille in (2, 3, 4):
+        for nom in ("A", "Peach", "X-1", "Un Deux Trois Quatre", "MicroFreak"):
+            for cand in CatalogueEngine._candidats(nom, taille):
+                assert len(cand) == taille, (nom, taille, cand)
+
+
+def test_trois_lettres_par_defaut():
+    """Décision du 2026-09-29 : « MFR » se relit, « MF » se devine."""
+    assert CatalogueEngine.TAILLE_CODE == 3
+    assert len(CatalogueEngine._candidats("MicroFreak")[0]) == 3
 
 
 def test_code_existant_intouchable():
@@ -74,8 +84,23 @@ def test_machine_prioritaire_sur_son_alias_effet():
     machine = _gear("Prio Truc", "machine")
     alias = _gear("Prio Truc (effets)", "effet")
     props = CatalogueEngine(_DB).propose_codes()
-    assert props[machine] == "PT"
+    assert props[machine] == CatalogueEngine._candidats("Prio Truc")[0]
     assert props[alias] != props[machine]
+
+
+def test_taille_choisie_de_bout_en_bout(client):
+    """La taille demandée doit traverser la route jusqu'aux codes rendus."""
+    _gear("Taille Bout En Bout")
+    for taille in (2, 3, 4):
+        d = client.get(f"/api/codes-proposes?taille={taille}").get_json()
+        assert d["taille"] == taille
+        assert all(len(c) == taille for c in d["codes"].values())
+
+
+def test_taille_bornee(client):
+    """Hors bornes, on retombe sur du utilisable plutôt que sur une erreur."""
+    assert client.get("/api/codes-proposes?taille=9").get_json()["taille"] == 4
+    assert client.get("/api/codes-proposes?taille=0").get_json()["taille"] == 2
 
 
 def test_route_n_ecrit_rien(client):

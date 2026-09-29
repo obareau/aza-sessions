@@ -155,6 +155,12 @@ tr[hidden] { display:none; }
             title="Remplit les codes vides — rien n'est enregistré avant que tu cliques Enregistrer">
         ⚡ Proposer les codes manquants
     </button>
+    <select id="codes-taille" class="fi-in" style="width:auto;display:inline-block;"
+            title="Le R8 laisse 6 caractères aux codes : deux codes de 3 tiennent pile, deux de 4 sont rognés">
+        <option value="3" selected>3 lettres</option>
+        <option value="4">4 lettres</option>
+        <option value="2">2 lettres</option>
+    </select>
     <span id="codes-note" style="font-family:var(--mono);font-size:11px;color:var(--text-muted);"></span>
     <span class="fi-count" id="fi-dirty">Aucune modification</span>
     <span class="fi-count" style="margin-left:auto;" id="fi-shown"></span>
@@ -260,7 +266,8 @@ document.getElementById("btn-codes")?.addEventListener("click", async (e) => {
     const note = document.getElementById("codes-note");
     bouton.disabled = true;
     try {
-        const d = await (await fetch("/api/codes-proposes")).json();
+        const taille = document.getElementById("codes-taille").value;
+        const d = await (await fetch(`/api/codes-proposes?taille=${taille}`)).json();
         let remplis = 0;
         document.querySelectorAll("#fi-form tbody tr").forEach(tr => {
             const id = tr.querySelector('input[name="id"]')?.value;
@@ -273,7 +280,9 @@ document.getElementById("btn-codes")?.addEventListener("click", async (e) => {
             remplis++;
         });
         note.textContent = remplis
-            ? `${remplis} code(s) proposé(s) — relis, corrige, puis Enregistrer.`
+            ? `${remplis} code(s) de ${d.taille} — relis, corrige, puis Enregistrer.`
+              + (d.taille > 3 ? " ⚠ À 4 lettres, un nom à deux appareils sera rogné par le R8."
+                              : "")
             : "Rien à proposer : tout est déjà codé.";
     } catch (err) {
         note.textContent = "Échec : " + err.message;

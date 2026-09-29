@@ -329,4 +329,9 @@ def api_codes_proposes():
     Sans codes, le générateur de nom de prise R8 ne produit rien — et personne
     ne saisit quarante codes à la main pour découvrir ce que ça donne.
     """
-    return jsonify(codes=_engine().propose_codes())
+    # 3 lettres par défaut : deux codes de 3 tiennent exactement dans les 6
+    # caractères que le R8 laisse une fois le suffixe `_1` posé. À 4, un nom à
+    # deux appareils est rogné — c'est un choix, pas un défaut, et l'aperçu de
+    # /vite le signale.
+    taille = min(4, max(2, request.args.get("taille", 3, type=int)))
+    return jsonify(codes=_engine().propose_codes(taille), taille=taille)

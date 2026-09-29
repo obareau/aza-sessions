@@ -164,47 +164,72 @@ class CatalogueEngine:
         brut = re.sub(r"(?<=[A-Za-z])(?=\d)", " ", brut)
         return [m for m in re.split(r"[^A-Za-z0-9]+", brut.upper()) if m]
 
+    # Trois lettres par défaut : « MFR » se relit six mois plus tard, « MF » se
+    # devine. Deux codes de 3 tiennent exactement dans les 6 caractères que le
+    # R8 laisse une fois le suffixe `_1` posé — au-delà, c'est rogné.
+    TAILLE_CODE = 3
+    VOYELLES = "AEIOUY"
+
     @classmethod
-    def _candidats(cls, nom: str) -> list[str]:
+    def _candidats(cls, nom: str, taille: int | None = None) -> list[str]:
         """Les codes possibles pour un nom, du plus parlant au plus arbitraire."""
+        taille = taille or cls.TAILLE_CODE
         mots = cls._mots(nom)
         if not mots:
             return []
+
+        # Un chiffre est ce qu'il y a de plus discriminant dans ces noms
+        # (NTS-1, R8, H4n) et se lit mieux en fin de code : ZR8, NT1.
+        chiffres = "".join(c for m in mots for c in m if c.isdigit())
+        lettres = [m for m in mots if not m.isdigit()]
+
+        def etoffe(base: str, sources: list[str]) -> str:
+            """Complète un début de code par les consonnes qui suivent."""
+            out = base
+            for mot in sources:
+                for lettre in mot[1:]:
+                    if len(out) >= taille:
+                        return out
+                    if lettre not in cls.VOYELLES and lettre.isalpha():
+                        out += lettre
+            for mot in sources:                      # à défaut, les voyelles
+                for lettre in mot[1:]:
+                    if len(out) >= taille:
+                        return out
+                    if lettre.isalpha():
+                        out += lettre
+            return out
+
         out = []
-        if len(mots) >= 2:
-            out.append(mots[0][0] + mots[1][0])          # Volca Drum → VD
-        premier = mots[0]
-        if len(premier) >= 2:
-            out.append(premier[:2])                       # Peach → PE
-            # Première consonne suivante : PCH → PC, plus distinctif que PE
-            for lettre in premier[1:]:
-                if lettre not in "AEIOUY":
-                    out.append(premier[0] + lettre)
-                    break
-        # Un chiffre du nom est très discriminant : NTS-1 → N1, ID4 → I4
-        for mot in mots:
-            for car in mot:
-                if car.isdigit():
-                    out.append(premier[0] + car)
-                    break
-        if len(mots) >= 3:
-            out.append(mots[0][0] + mots[2][0])
-        # Repli : première lettre + une lettre de la suite, puis + un chiffre
-        for mot in mots[1:]:
-            out.append(premier[0] + mot[0])
-        for lettre in premier[1:]:
-            out.append(premier[0] + lettre)
+        initiales = "".join(m[0] for m in lettres)
+
+        if chiffres:
+            # Le chiffre occupe la dernière place : NTS-1 → NT1, Zoom R8 → ZR8
+            tete = etoffe(initiales[:taille - 1], lettres[-1:] + lettres[:-1])[: taille - 1]
+            out.append(tete + chiffres[0])
+        # Les consonnes se prennent d'abord dans le DERNIER mot : c'est lui qui
+        # distingue (Volca Drum → VDR et non VDL, MicroFreak → MFR et non MFC).
+        out.append(etoffe(initiales[:taille], lettres[-1:] + lettres[:-1]))
+        out.append(etoffe(initiales[:1], lettres))    # M + consonnes : MFR, PCH
+        if len(lettres) >= 2:
+            out.append(etoffe(lettres[0][0] + lettres[1][0], lettres[1:]))
+        # Replis : on décale dans le nom, puis on numérote.
+        for mot in lettres[1:]:
+            out.append(etoffe(initiales[:1] + mot[0], [mot]))
+        for lettre in (lettres[0][1:] if lettres else ""):
+            out.append(etoffe(initiales[:1] + lettre, lettres))
         for chiffre in "23456789":
-            out.append(premier[0] + chiffre)
+            out.append((etoffe(initiales[:1], lettres)[: taille - 1] or "X") + chiffre)
+
         vus, propres = set(), []
         for c in out:
             c = re.sub(r"[^A-Z0-9]", "", c)
-            if len(c) == 2 and c not in vus:
+            if len(c) == taille and c not in vus:
                 vus.add(c)
                 propres.append(c)
         return propres
 
-    def propose_codes(self) -> dict:
+    def propose_codes(self, taille: int | None = None) -> dict:
         """Un code par fiche active qui n'en a pas. Les codes existants sont
         intouchables : ils sont peut-être déjà inscrits sur des prises.
 
@@ -227,7 +252,7 @@ class CatalogueEngine:
         for r in rows:
             if (r["code"] or "").strip():
                 continue
-            for candidat in self._candidats(r["name"]):
+            for candidat in self._candidats(r["name"], taille):
                 if candidat not in pris:
                     pris.add(candidat)
                     propositions[r["id"]] = candidat
