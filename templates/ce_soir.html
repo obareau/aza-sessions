@@ -18,6 +18,21 @@
 .cs-val { font-family:var(--mono); font-size:14px; color:var(--text); text-align:right; flex:1; min-width:0; }
 </style>
 
+{# Écarter une fiche du tirage sans la désactiver : une carte son reste du
+   matériel qu'on coche dans une séance, elle n'a juste rien à faire dans un
+   « ce soir tu joues ça ». #}
+{% macro ecarter(g) %}
+<form method="POST" action="{{ url_for('sessions.ce_soir_ecarter') }}" style="margin-top:6px;">
+    <input type="hidden" name="gear_id" value="{{ g.id }}">
+    <input type="hidden" name="nom" value="{{ g.name }}">
+    <button type="submit" title="Ne plus jamais tirer cette fiche — elle reste utilisable en séance"
+            style="background:none;border:none;color:var(--text-muted);cursor:pointer;
+                   font-family:var(--mono);font-size:9px;text-decoration:underline;padding:0;">
+        ne plus tirer
+    </button>
+</form>
+{% endmacro %}
+
 <div class="page-header">
     <div>
         <div class="page-title">◐ Ce soir</div>
@@ -44,6 +59,7 @@
             <div class="cs-nom">{{ t.instrument.name }}</div>
             <div class="cs-role">instrument</div>
             {% if t.instrument.code %}<div class="cs-code">{{ t.instrument.code }}</div>{% endif %}
+            {{ ecarter(t.instrument) }}
         </div>
         {% endif %}
         {% if t.instrument and t.traitement %}<div class="cs-fleche">→</div>{% endif %}
@@ -52,6 +68,7 @@
             <div class="cs-nom">{{ t.traitement.name }}</div>
             <div class="cs-role">traitement</div>
             {% if t.traitement.code %}<div class="cs-code">{{ t.traitement.code }}</div>{% endif %}
+            {{ ecarter(t.traitement) }}
         </div>
         {% endif %}
     </div>
@@ -87,13 +104,36 @@
 
 <div class="card">
     <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);line-height:1.8;">
-        Le tirage pioche dans les fiches <strong>actives</strong> du catalogue, et
-        sort les favoris deux fois plus souvent. Un appareil qui ne devrait jamais
-        tomber se désactive depuis le catalogue ; une machine qu'on veut revoir se
-        marque favorite.
+        Le tirage pioche dans les fiches <strong>actives</strong> du catalogue et sort
+        les favoris deux fois plus souvent. Une carte son, un contrôleur, un
+        ordinateur : <strong>ne plus tirer</strong> les écarte d'ici sans les
+        retirer des séances, où ils servent. Réversible dans la
+        <a href="{{ url_for('catalogue.fiches') }}">vue fiches</a>.
     </div>
 </div>
 
+{% endif %}
+
+{% if ecartees %}
+<div class="card" style="margin-top:16px;">
+    <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.12em;
+                color:var(--text-muted);margin-bottom:10px;">
+        Écartées du tirage — {{ ecartees|length }}
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        {% for g in ecartees %}
+        <form method="POST" action="{{ url_for('sessions.ce_soir_reprendre') }}">
+            <input type="hidden" name="gear_id" value="{{ g.id }}">
+            <button type="submit" title="Remettre dans les tirages"
+                    style="font-family:var(--mono);font-size:11px;padding:5px 10px;
+                           border:1px solid var(--border);border-radius:var(--radius);
+                           background:var(--bg);color:var(--text-muted);cursor:pointer;">
+                {{ g.name }} <span style="color:var(--accent);">↺</span>
+            </button>
+        </form>
+        {% endfor %}
+    </div>
+</div>
 {% endif %}
 
 {% endblock %}

@@ -16,6 +16,10 @@ from core.lore_names import propose as propose_titres
 from core.oblique import rand_oblique
 
 # Ce qui joue, et ce qui traite — les types du catalogue rangés par rôle.
+# ⚠️ Le catalogue range en `machine` aussi bien un synthé qu'une carte son ou un
+# contrôleur : le type ne suffit pas à dire ce qui se joue. Plutôt que de deviner
+# à partir des noms, une fiche s'écarte du tirage d'un clic (`no_draw`) — c'est
+# son geste qui tranche, pas une heuristique.
 INSTRUMENTS = ("machine", "synth_ios", "app_ios")
 TRAITEMENTS = ("effet", "plugin", "plugin_ios")
 
@@ -24,7 +28,8 @@ def _actifs(conn, types) -> list[dict]:
     marques = ", ".join("?" * len(types))
     rows = conn.execute(
         f"SELECT id, name, type, code, favorite, purpose, intent FROM catalogue "
-        f"WHERE active = 1 AND type IN ({marques})", types).fetchall()
+        f"WHERE active = 1 AND COALESCE(no_draw, 0) = 0 AND type IN ({marques})",
+        types).fetchall()
     return [dict(r) for r in rows]
 
 
@@ -60,3 +65,17 @@ def tirer(db_path: str, seed=None) -> dict:
         "titre": (propose_titres(1, seed=r.randrange(10**6)) or [""])[0],
         "vide": not gear,
     }
+
+
+def ecartees(db_path: str) -> list[dict]:
+    """Les fiches retirées du tirage, pour pouvoir les y remettre.
+
+    Affichées là où on les a écartées : une exclusion qu'on ne retrouve nulle
+    part est une exclusion définitive par accident.
+    """
+    conn = get_db(db_path)
+    rows = conn.execute(
+        "SELECT id, name, type FROM catalogue WHERE COALESCE(no_draw, 0) = 1 "
+        "ORDER BY name COLLATE NOCASE").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]

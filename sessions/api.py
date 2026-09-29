@@ -222,8 +222,42 @@ def ce_soir():
         gear["effects"] = t["traitement"]["name"]
     apercu = CatalogueEngine(db_path).take_preview(gear, datetime.now().date().isoformat())
 
+    from core.tirage import ecartees
     return render_template("ce_soir.html", t=t, prise=apercu,
+                           ecartees=ecartees(db_path),
                            version=_version(), oblique=t["oblique"])
+
+
+@bp.route("/ce-soir/reprendre", methods=["POST"])
+def ce_soir_reprendre():
+    """Remet une fiche dans les tirages."""
+    from core.db import get_db
+    gear_id = request.form.get("gear_id")
+    if gear_id:
+        conn = get_db(current_app.config["DB_PATH"])
+        conn.execute("UPDATE catalogue SET no_draw = 0 WHERE id = ?", (gear_id,))
+        conn.commit()
+        conn.close()
+    return redirect(url_for("sessions.ce_soir"))
+
+
+@bp.route("/ce-soir/ecarter", methods=["POST"])
+def ce_soir_ecarter():
+    """Retire une fiche des tirages — sans la désactiver.
+
+    Une carte son ou un contrôleur doit rester cochable dans une séance : c'est
+    du matériel qui sert. Il n'a simplement rien à faire dans un « ce soir tu
+    joues ça ». Réversible depuis la vue fiches.
+    """
+    from core.db import get_db
+    gear_id = request.form.get("gear_id")
+    if gear_id:
+        conn = get_db(current_app.config["DB_PATH"])
+        conn.execute("UPDATE catalogue SET no_draw = 1 WHERE id = ?", (gear_id,))
+        conn.commit()
+        conn.close()
+        flash(f"« {request.form.get('nom', 'Cette fiche')} » ne sera plus tirée.", "success")
+    return redirect(url_for("sessions.ce_soir"))
 
 
 @bp.route("/atelier")

@@ -132,3 +132,42 @@ def test_bouton_je_joue_sur_la_fiche(client):
     h = client.get(f"/catalogue/{gid}").get_data(as_text=True)
     assert "Je joue avec ça" in h
     assert "/vite?gear=Bouton+Jouer" in h or "Bouton%20Jouer" in h
+
+
+# ── Écarter du tirage ────────────────────────────────────────────────────────
+
+def test_ecarter_sans_desactiver(client, tmp_path):
+    """Une carte son doit rester cochable en séance sans jamais être tirée :
+    `no_draw` est distinct de `active`, et c'est tout l'intérêt."""
+    from core.init_db import init_db
+    from core.tirage import ecartees
+    chemin = str(tmp_path / "e.db")
+    init_db(chemin)
+    conn = get_db(chemin)
+    conn.execute("UPDATE catalogue SET active = 0")
+    conn.execute("INSERT INTO catalogue (type,name,active) VALUES ('machine','Interface Son',1)")
+    conn.execute("INSERT INTO catalogue (type,name,active) VALUES ('machine','Vrai Synthe',1)")
+    gid = conn.execute("SELECT id FROM catalogue WHERE name='Interface Son'").fetchone()["id"]
+    conn.execute("UPDATE catalogue SET no_draw = 1 WHERE id = ?", (gid,))
+    conn.commit()
+
+    for graine in range(25):
+        assert tirer(chemin, seed=graine)["instrument"]["name"] == "Vrai Synthe"
+
+    # Toujours active, donc toujours utilisable dans une séance
+    actif = conn.execute("SELECT active FROM catalogue WHERE id=?", (gid,)).fetchone()["active"]
+    conn.close()
+    assert actif == 1
+    assert [g["name"] for g in ecartees(chemin)] == ["Interface Son"]
+
+
+def test_ecarter_puis_reprendre_par_les_routes(client):
+    from core.tirage import ecartees
+    gid = _gear("Ecarte Moi", "machine", "ECM")
+    client.post("/ce-soir/ecarter", data={"gear_id": gid, "nom": "Ecarte Moi"},
+                follow_redirects=True)
+    assert "Ecarte Moi" in [g["name"] for g in ecartees(_DB)]
+    h = client.get("/ce-soir").get_data(as_text=True)
+    assert "Écartées du tirage" in h          # retrouvable là où on l'a écartée
+    client.post("/ce-soir/reprendre", data={"gear_id": gid}, follow_redirects=True)
+    assert "Ecarte Moi" not in [g["name"] for g in ecartees(_DB)]

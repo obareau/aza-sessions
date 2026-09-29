@@ -5,6 +5,26 @@
 
 ---
 
+## v3.36.0 — 2026-09-29 — Le tirage apprend ce qu'il ne doit pas tirer
+
+### 🎯 Correctif d'usage
+- `/ce-soir` proposait un **Launchpad ou un iPad comme « instrument »** : le
+  catalogue range en `machine` aussi bien un synthé qu'une carte son ou un
+  contrôleur, et le type ne dit donc pas ce qui se joue.
+- **`ne plus tirer`** sous chaque appareil tiré l'écarte définitivement des
+  tirages — **sans le désactiver** : il reste cochable dans une séance, où il
+  sert. C'est le geste qui tranche, pas une heuristique sur les noms : deviner
+  qu'« Audient ID4 » n'est pas un instrument marcherait jusqu'au jour où ça ne
+  marcherait plus.
+- Les fiches écartées sont listées **en bas de la même page**, avec un bouton
+  pour les remettre. Une exclusion qu'on ne retrouve nulle part est une exclusion
+  définitive par accident.
+
+### 🗄 Base
+- Colonne `catalogue.no_draw`, distincte de `active`.
+
+---
+
 ## v3.35.0 — 2026-09-29 — Avant de jouer, pas après
 
 ### 🔎 Le constat qui a guidé ces trois ajouts
