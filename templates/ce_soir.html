@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Ce soir — AZA{% endblock %}
+{% block content %}
+
+<style>
+.cs-chaine { display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap; margin:10px 0 24px; }
+.cs-bloc { text-align:center; min-width:150px; }
+.cs-nom { font-family:var(--mono); font-size:17px; font-weight:600; color:var(--text); line-height:1.3; }
+.cs-role { font-family:var(--mono); font-size:9px; text-transform:uppercase; letter-spacing:.14em;
+           color:var(--text-muted); margin-top:5px; }
+.cs-code { font-family:var(--mono); font-size:10px; color:var(--accent); margin-top:3px; }
+.cs-fleche { font-size:20px; color:var(--text-muted); }
+.cs-champ { display:flex; justify-content:space-between; gap:14px; padding:12px 0;
+            border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.cs-champ:last-child { border-bottom:none; }
+.cs-lbl { font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.12em;
+          color:var(--text-muted); }
+.cs-val { font-family:var(--mono); font-size:14px; color:var(--text); text-align:right; flex:1; min-width:0; }
+</style>
+
+<div class="page-header">
+    <div>
+        <div class="page-title">◐ Ce soir</div>
+        <div class="page-subtitle">Un point de départ, tiré de ce que tu as</div>
+    </div>
+    <a href="{{ url_for('sessions.index') }}" class="btn btn-secondary">← Retour</a>
+</div>
+
+{% if t.vide %}
+<div class="card">
+    <div class="card-title">∙ Rien à tirer</div>
+    <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);line-height:1.8;">
+        Aucun matériel actif au catalogue. Le tirage part de ce que tu possèdes —
+        il ne peut rien inventer.
+    </p>
+    <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-primary btn-sm" style="margin-top:10px;">Ouvrir le catalogue</a>
+</div>
+{% else %}
+
+<div class="card" style="margin-bottom:20px;">
+    <div class="cs-chaine">
+        {% if t.instrument %}
+        <div class="cs-bloc">
+            <div class="cs-nom">{{ t.instrument.name }}</div>
+            <div class="cs-role">instrument</div>
+            {% if t.instrument.code %}<div class="cs-code">{{ t.instrument.code }}</div>{% endif %}
+        </div>
+        {% endif %}
+        {% if t.instrument and t.traitement %}<div class="cs-fleche">→</div>{% endif %}
+        {% if t.traitement %}
+        <div class="cs-bloc">
+            <div class="cs-nom">{{ t.traitement.name }}</div>
+            <div class="cs-role">traitement</div>
+            {% if t.traitement.code %}<div class="cs-code">{{ t.traitement.code }}</div>{% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="cs-champ">
+        <span class="cs-lbl">∴ Contrainte</span>
+        <span class="cs-val" style="font-style:italic;">{{ t.oblique }}</span>
+    </div>
+    <div class="cs-champ">
+        <span class="cs-lbl">Titre proposé</span>
+        <span class="cs-val" style="color:var(--accent);">{{ t.titre }}</span>
+    </div>
+    <div class="cs-champ">
+        <span class="cs-lbl">Prise R8</span>
+        <span class="cs-val">
+            {% if prise.nom %}{{ prise.nom }}{% else %}—{% endif %}
+            {% if prise.sans_code %}
+            <div style="font-size:10px;color:var(--text-muted);">sans code : {{ prise.sans_code|join(', ') }}</div>
+            {% endif %}
+            {% if prise.tronque %}
+            <div style="font-size:10px;color:var(--accent);">rogné à {{ prise.max }} caractères</div>
+            {% endif %}
+        </span>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
+        <a href="{{ url_for('sessions.quick_session', gear=t.noms|join(','), title=t.titre) }}"
+           class="btn btn-primary">▶ Je joue ça</a>
+        <a href="{{ url_for('sessions.ce_soir') }}" class="btn btn-ghost">↻ Autre tirage</a>
+        <a href="{{ url_for('sessions.atelier', gear=t.noms|join(',')) }}" class="btn btn-ghost">⎙ Feuille d'atelier</a>
+    </div>
+</div>
+
+<div class="card">
+    <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);line-height:1.8;">
+        Le tirage pioche dans les fiches <strong>actives</strong> du catalogue, et
+        sort les favoris deux fois plus souvent. Un appareil qui ne devrait jamais
+        tomber se désactive depuis le catalogue ; une machine qu'on veut revoir se
+        marque favorite.
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

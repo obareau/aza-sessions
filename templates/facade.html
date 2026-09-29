@@ -57,6 +57,8 @@
         </div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="{{ url_for('sessions.quick_session', gear=gear.name) }}" class="btn btn-primary btn-sm">▶ Je joue avec ça</a>
+        <a href="{{ url_for('sessions.atelier', gear=gear.name) }}" class="btn btn-ghost btn-sm">⎙ Atelier</a>
         <a href="{{ url_for('catalogue.gear_notebook', gear_id=gear.id) }}" class="btn btn-ghost btn-sm">◧ Carnet</a>
         <a href="{{ url_for('catalogue.facades') }}" class="btn btn-secondary">← Façades</a>
     </div>

@@ -86,7 +86,8 @@
                 <label class="q-lbl" for="q-title">Titre <span style="text-transform:none;">— facultatif</span></label>
                 <button type="button" class="btn btn-ghost btn-sm" data-nom-aza="title"
                         title="Proposer un titre dans l'esthétique AZA">⟳ titre AZA</button>
-                <input id="q-title" type="text" name="title" class="q-input" autocomplete="off">
+                <input id="q-title" type="text" name="title" class="q-input" autocomplete="off"
+                       value="{{ titre_pre or '' }}">
             </div>
             <div>
                 <label class="q-lbl" for="q-machines">Autre matériel <span style="text-transform:none;">— hors catalogue</span></label>
@@ -153,8 +154,15 @@
     const chips = [...document.querySelectorAll('.q-chip')];
     if (!chips.length) return;
 
+    // Une présélection venue de l'URL l'emporte sur le brouillon local : elle
+    // traduit un geste qu'on vient de faire, pas une intention d'hier.
+    const PRESEL = {{ (preselection or [])|tojson }};
     let picked = [];
-    try { picked = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) {}
+    if (PRESEL.length) {
+        picked = PRESEL;
+    } else {
+        try { picked = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) {}
+    }
 
     function sync() {
         const by = {};

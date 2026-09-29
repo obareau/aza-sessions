@@ -5,6 +5,44 @@
 
 ---
 
+## v3.35.0 — 2026-09-29 — Avant de jouer, pas après
+
+### 🔎 Le constat qui a guidé ces trois ajouts
+- 20 modules, et une base presque vide : **3 séances**, 0 preset, 0 association,
+  0 projet, 0 layout. Tout ce qu'AZA savait faire ne servait qu'**après** avoir
+  joué, pour consigner. Ce qui manquait n'était pas une 21ᵉ fonctionnalité, mais
+  une raison d'ouvrir l'app **avant**, et un chemin qui ne coûte rien.
+
+### ◐ Ce soir — `/ce-soir`, dans le menu Sessions
+- Un point de départ tiré de ce qu'il possède : un instrument, un traitement, une
+  stratégie oblique, un titre dans l'esthétique AZA, et le **nom de prise R8 déjà
+  calculé**. Rien à accumuler d'abord — ça marche avec le catalogue seul.
+- Les **favoris sortent deux fois plus souvent** ; une fiche désactivée ne tombe
+  jamais. Ce sont les deux seuls réglages, et ils existaient déjà.
+- `▶ Je joue ça` ouvre `/vite` avec le matériel coché et le titre posé.
+
+### ⎙ La feuille d'atelier — `/atelier`
+- L'inverse de la fiche de rappel : une feuille **vierge**, imprimée *avant*. La
+  chaîne, le nom de prise amorcé, puis les potards de chaque instrument en jauges
+  à noircir au stylo. On joue debout aux machines ; la façade se note pendant
+  qu'elle est encore réglée, et se saisit après — ou jamais, et la feuille reste.
+- Un instrument sans commandes déclarées sort avec des lignes vides plutôt
+  qu'avec rien.
+
+### ▶ Journaliser en un clic
+- `▶ Je joue avec ça` sur la fiche matériel et sur la page de façade : ouvre une
+  séance avec l'appareil déjà coché.
+- `/vite` accepte `?gear=` et `?title=`. Une présélection venue de l'URL **prime
+  sur le brouillon local** : elle traduit un geste qu'on vient de faire, pas une
+  intention d'hier.
+
+### 🧪 Tests
+- `tests/test_ce_soir.py` — 13 cas, dont le catalogue vide, le matériel désactivé
+  jamais tiré, la pondération des favoris, et la feuille pour un instrument non
+  déclaré.
+
+---
+
 ## v3.34.0 — 2026-09-29 — Le nom de prise sort de `/vite`
 
 ### ✨ Nouveauté

@@ -11,6 +11,10 @@
             {% if not gear.active %} · inactif{% endif %}
         </div>
     </div>
+    <a href="{{ url_for('sessions.quick_session', gear=gear.name) }}" class="btn btn-primary btn-sm"
+       title="Ouvre une séance avec cet appareil déjà coché">▶ Je joue avec ça</a>
+    <a href="{{ url_for('sessions.atelier', gear=gear.name) }}" class="btn btn-ghost btn-sm"
+       title="Feuille vierge à imprimer avant de jouer">⎙ Atelier</a>
     <a href="{{ url_for('catalogue.manage_catalogue') }}" class="btn btn-secondary">← Catalogue</a>
 </div>
 

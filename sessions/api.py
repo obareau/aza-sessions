@@ -198,6 +198,70 @@ def print_session(sid):
     return render_template("print.html", session=session, version=_version())
 
 
+@bp.route("/ce-soir")
+def ce_soir():
+    """Un point de départ tiré du matériel qu'il possède.
+
+    Tout ce qu'AZA sait — le catalogue, les obliques, les titres de l'univers, le
+    nom de prise — ne servait qu'**après** avoir joué, pour consigner. Ici ça sert
+    avant : on ouvre la page, on a une chaîne, une contrainte et un nom, et on
+    part jouer. Rien n'est retenu ; un tirage qui ne dit rien se rejoue.
+    """
+    from catalogue.engine import CatalogueEngine
+    from core.tirage import tirer
+
+    db_path = current_app.config["DB_PATH"]
+    t = tirer(db_path)
+
+    # Le nom de prise se calcule comme partout ailleurs : c'est le serveur qui
+    # connaît les codes et les prises du jour.
+    gear = {c: "" for c in CatalogueEngine.CODE_ORDER}
+    if t["instrument"]:
+        gear["machines"] = t["instrument"]["name"]
+    if t["traitement"]:
+        gear["effects"] = t["traitement"]["name"]
+    apercu = CatalogueEngine(db_path).take_preview(gear, datetime.now().date().isoformat())
+
+    return render_template("ce_soir.html", t=t, prise=apercu,
+                           version=_version(), oblique=t["oblique"])
+
+
+@bp.route("/atelier")
+def atelier():
+    """Feuille vierge à imprimer **avant** de jouer, l'inverse de la fiche de rappel.
+
+    On joue debout, aux machines, pas au clavier d'un ordinateur : la façade se
+    note au stylo pendant qu'elle est encore réglée, et se saisit après — ou
+    jamais, et c'est la feuille qui reste. Les potards imprimés viennent des
+    commandes déclarées sur chaque fiche ; un instrument non déclaré sort avec
+    des lignes vides, pas avec rien.
+    """
+    from catalogue.engine import CatalogueEngine, KnobSheetEngine
+
+    db_path = current_app.config["DB_PATH"]
+    cat = CatalogueEngine(db_path)
+    knobs = KnobSheetEngine(db_path)
+    fiches = {f["name"]: f for f in cat.fiches()}
+
+    noms = [n.strip() for n in (request.args.get("gear") or "").split(",") if n.strip()]
+    chaine = []
+    for nom in noms:
+        f = fiches.get(nom, {})
+        chaine.append({
+            "nom": nom,
+            "code": f.get("code", ""),
+            "fabricant": f.get("manufacturer", ""),
+            "controls": knobs.controls(f["id"]) if f.get("id") else [],
+        })
+
+    gear = {c: "" for c in CatalogueEngine.CODE_ORDER}
+    gear["machines"] = ", ".join(noms)
+    prise = cat.take_preview(gear, datetime.now().date().isoformat())
+
+    return render_template("atelier.html", chaine=chaine, prise=prise,
+                           version=_version())
+
+
 @bp.route("/session/<int:sid>/rappel")
 def recall_session(sid):
     """Fiche de rappel — de quoi reconstruire la chaîne exacte d'une séance.
@@ -320,8 +384,15 @@ def quick_session():
     from catalogue.engine import CatalogueEngine, GearNotebookEngine
     chips = CatalogueEngine(current_app.config["DB_PATH"]).chips(
         GearNotebookEngine.GEAR_COLUMNS)
+    # Matériel présélectionné par l'URL : c'est ce qui permet d'ouvrir une
+    # séance depuis n'importe où — une fiche, une façade, le tirage du soir —
+    # au lieu de recocher à la main ce qu'on vient de choisir ailleurs.
+    preselection = [n.strip() for n in (request.args.get("gear") or "").split(",") if n.strip()]
+    titre_pre = (request.args.get("title") or "").strip()
     return render_template("quick.html",
                            chips=chips,
+                           preselection=preselection,
+                           titre_pre=titre_pre,
                            version=current_app.config.get("VERSION", ""),
                            oblique=_oblique())
 

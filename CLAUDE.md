@@ -8,7 +8,7 @@ App Flask + SQLite de documentation de sessions musicales pour l'univers de fict
 
 ⚠️ **Plus sur Fly.io** — déploiement bare metal sur Roblab, voir « Déploiement » plus bas. `fly.toml` et la branche `FLY_APP_NAME` de `wsgi.py` ont été retirés le 2026-08-29. Le `Dockerfile` subsiste : il ne servait qu'au build Fly et n'est plus utilisé, mais il n'a rien de nuisible.
 
-Version actuelle : voir `VERSION` dans `app.py` (**v3.34.0**).
+Version actuelle : voir `VERSION` dans `app.py` (**v3.35.0**).
 
 ⚠️ **`VERSION` a déjà pris deux releases de retard** (resté à 3.10.0 alors que le ROADMAP documentait v3.11.0 et v3.12.0), ce qui a fait attribuer un numéro déjà pris à une nouvelle feature le 2026-08-29. Avant de bumper, croiser `app.py`, `CHANGELOG.md` **et** `ROADMAP.md` — les trois divergent facilement.
 
@@ -250,6 +250,26 @@ signaler ceux qui reviennent.
 
 ℹ️ Le générateur de nom du catalogue (`take_name`) reste la bonne aide : il
 *propose* le nom, c'est la frappe qui l'inscrit.
+
+---
+
+## Avant de jouer / après avoir joué
+
+Trois pages se répondent, et il ne faut pas les confondre :
+
+| Page | Quand | Quoi |
+|---|---|---|
+| `/ce-soir` | **avant** | tirage : instrument + traitement + oblique + titre + nom de prise |
+| `/atelier` | **pendant** | feuille **vierge** à imprimer, potards en jauges à noircir au stylo |
+| `/session/<id>/rappel` | **après** | la chaîne et les façades **relevées**, pour rejouer |
+
+ℹ️ `/vite` accepte `?gear=Nom1,Nom2` et `?title=` — c'est ce qui permet d'ouvrir
+une séance depuis n'importe où. Une présélection d'URL **prime sur le brouillon
+localStorage** : elle traduit un geste qu'on vient de faire.
+
+⚠️ Le constat de fond (2026-09-29) : 20 modules pour 3 séances en base. Avant
+d'ajouter une fonctionnalité, se demander si elle produit quelque chose **dès la
+première séance** ou si elle suppose un historique qui n'existe pas.
 
 ---
 

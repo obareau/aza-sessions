@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Feuille d'atelier — AZA{% endblock %}
+{% block content %}
+
+<style>
+/* Feuille destinée au papier : à l'écran elle sert d'aperçu, rien de plus. */
+@media print {
+    header, nav, footer, .oblique-banner, .page-header, .pomo,
+    #kbd-overlay, #focus-exit, .no-print { display:none !important; }
+    body { background:#fff; color:#000; }
+    .card { border:1px solid #999 !important; box-shadow:none !important; break-inside:avoid; }
+    main { padding:0 !important; }
+    .at-ligne { border-bottom:1px solid #999 !important; }
+    .at-jauge { border-color:#999 !important; }
+}
+.at-entete { display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap;
+             border-bottom:2px solid var(--border); padding-bottom:12px; margin-bottom:18px; }
+.at-case { font-family:var(--mono); font-size:12px; }
+.at-case b { display:block; font-size:9px; text-transform:uppercase; letter-spacing:.14em;
+             color:var(--text-muted); margin-bottom:5px; }
+.at-vide { display:inline-block; min-width:120px; border-bottom:1px solid var(--border); height:16px; }
+.at-bloc-titre { font-family:var(--mono); font-size:10px; text-transform:uppercase;
+                 letter-spacing:.12em; color:var(--accent2); margin:14px 0 6px; }
+.at-ligne { display:flex; align-items:center; gap:12px; padding:7px 0; border-bottom:1px dotted var(--border); }
+.at-nom { font-family:var(--mono); font-size:11px; color:var(--text); min-width:120px; }
+/* Une jauge à noircir : plus rapide au stylo qu'un chiffre à écrire, et on lit
+   la façade d'un coup d'œil une fois la feuille remplie. */
+.at-jauge { flex:1; height:13px; border:1px solid var(--border); border-radius:2px;
+            background:repeating-linear-gradient(to right, var(--border) 0 1px, transparent 1px 10%); }
+.at-lignes { border-bottom:1px solid var(--border); height:22px; margin-top:8px; }
+</style>
+
+<div class="page-header">
+    <div>
+        <div class="page-title">⎙ Feuille d'atelier</div>
+        <div class="page-subtitle">À imprimer avant de jouer — la façade se note au stylo</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" onclick="window.print()" class="btn btn-primary btn-sm">Imprimer</button>
+        <a href="{{ url_for('sessions.ce_soir') }}" class="btn btn-secondary">← Ce soir</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="at-entete">
+        <div class="at-case"><b>Date</b><span class="at-vide"></span></div>
+        <div class="at-case"><b>Prise R8</b>
+            {% if prise.nom %}{{ prise.nom[:-1] }}<span style="border-bottom:1px solid var(--border);">&nbsp;&nbsp;</span>
+            {% else %}<span class="at-vide"></span>{% endif %}
+        </div>
+        <div class="at-case"><b>Titre</b><span class="at-vide"></span></div>
+        <div class="at-case"><b>Durée</b><span class="at-vide" style="min-width:60px;"></span></div>
+    </div>
+
+    {% if chaine %}
+    <div class="at-case" style="margin-bottom:6px;"><b>Chaîne</b>
+        {% for e in chaine %}{{ e.nom }}{% if e.code %} ({{ e.code }}){% endif %}{% if not loop.last %} → {% endif %}{% endfor %}
+        → R8
+    </div>
+
+    {% for e in chaine %}
+    <div style="margin-top:20px;">
+        <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);">
+            {{ e.nom }}{% if e.fabricant %} <span style="font-size:10px;color:var(--text-muted);">· {{ e.fabricant }}</span>{% endif %}
+        </div>
+        {% if e.controls %}
+            {% for c in e.controls %}
+                {% if c.kind == 'section' %}
+                <div class="at-bloc-titre">{{ c.name }}</div>
+                {% elif c.kind == 'switch' %}
+                <div class="at-ligne">
+                    <span class="at-nom">{{ c.name }}</span>
+                    <span style="font-family:var(--mono);font-size:10px;color:var(--text-muted);">
+                        {% for o in c.options %}◻ {{ o }}&nbsp;&nbsp;{% endfor %}
+                    </span>
+                </div>
+                {% else %}
+                <div class="at-ligne">
+                    <span class="at-nom">{{ c.name }}</span>
+                    <span class="at-jauge"></span>
+                </div>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            {# Commandes non déclarées : des lignes vides valent mieux que rien —
+               on écrit ce qu'on veut, et on déclarera plus tard si ça sert. #}
+            {% for i in range(6) %}
+            <div class="at-ligne"><span class="at-nom" style="border-bottom:1px solid var(--border);min-width:120px;">&nbsp;</span><span class="at-jauge"></span></div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div style="font-family:var(--mono);font-size:12px;color:var(--text-muted);">
+        Aucun matériel choisi. La feuille se demande depuis le tirage du soir, une
+        fiche ou une façade.
+    </div>
+    {% endif %}
+
+    <div style="margin-top:24px;">
+        <div class="at-case"><b>Ce qui s'est passé</b></div>
+        {% for i in range(6) %}<div class="at-lignes"></div>{% endfor %}
+    </div>
+</div>
+
+{% endblock %}
