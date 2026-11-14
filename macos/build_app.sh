@@ -7,7 +7,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD="$HERE/build"
 APP="$BUILD/AZA.app"
-VERSION="1.6.0"
+VERSION="1.7.1"
 
 echo "▸ compilation release"
 # Binaire universel : Apple Silicon + Intel

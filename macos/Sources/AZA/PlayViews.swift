@@ -70,6 +70,9 @@ struct TonightView: View {
                                                              data: store.data, version: Store.version),
                                        fileName: "atelier_\(Clock.today())"))
                 } label: { Label("Feuille d'atelier", systemImage: "printer") }
+                Button {
+                    nav.quick = QuickRequest(gear: [d.instrument, d.treatment].compactMap { $0?.name })
+                } label: { Label("Séance rapide", systemImage: "bolt") }
                 Spacer()
             }
             .disabled(d.isEmpty)
@@ -172,6 +175,7 @@ struct TonightView: View {
 struct LiveView: View {
     @EnvironmentObject var store: Store
     @EnvironmentObject var nav: Nav
+    @EnvironmentObject var prefs: Prefs
     @Local private var mode = ""
     @Local private var intention = ""
     @Local private var project: Int? = nil
@@ -298,6 +302,8 @@ struct LiveView: View {
         store.data.sessions.append(s)
         store.data.live = nil
         nav.open(session: s.id)
+        // Comme /new?from_live=1 de l'app web : le récap part en fond, la séance est déjà enregistrée.
+        if prefs.recapAfterLive { store.generateRecap(s.id, baseURL: prefs.ollamaURL, model: prefs.ollamaModel) }
     }
 }
 

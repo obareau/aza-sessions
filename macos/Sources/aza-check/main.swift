@@ -368,5 +368,28 @@ check(lk.patches[0].nodes[0].catalogueId == nil, "lien : nœud délié à la mai
 check(lk.patches(using: lk.catalogue.first { $0.name == "MicroFreak MK2" }?.id ?? -1).isEmpty
       && lk.patches(using: lk.catalogue.first { $0.name == "Ableton Live" }!.id).isEmpty, "lien : patches d'une fiche")
 
+// 14. Récap, CSV, vault
+var rs = Session(id: 8, date: "2026-11-14"); rs.machines = ["MicroFreak"]; rs.comments = "nappe, souffle"; rs.durationMin = 40
+let pr = Recap.prompt(for: rs)
+check(pr.contains("Machines : MicroFreak") && pr.contains("Notes live : nappe, souffle") && pr.contains("Effets : —")
+      && !pr.contains("{"), "récap : prompt musique complet")
+rs.sessionType = "veille"
+check(Recap.prompt(for: rs).hasSuffix("Résumé :"), "récap : prompt veille")
+let rq = Recap.request(for: rs, baseURL: "http://192.168.1.100:11434/", model: "m")
+check(rq?.url?.absoluteString == "http://192.168.1.100:11434/api/generate" && rq?.httpMethod == "POST", "récap : requête")
+check(Recap.request(for: rs, baseURL: "pas une url", model: "m") == nil, "récap : URL invalide refusée")
+check((try? Recap.parse(Data(#"{"response":"  Le drone tenait.  "}"#.utf8), status: 200).get()) == "Le drone tenait.", "récap : réponse")
+if case .failure(let e) = Recap.parse(Data(#"{"error":"model 'x' not found"}"#.utf8), status: 404) {
+    check(e.message.contains("404") && e.message.contains("not found"), "récap : erreur lisible (modèle absent)")
+} else { check(false, "récap : erreur lisible (modèle absent)") }
+if case .failure = Recap.parse(Data(#"{"response":""}"#.utf8), status: 200) { check(true, "") } else { check(false, "récap : vide = erreur") }
+var cd = AZAData(); var cs = Session(id: 1, date: "2026-11-14"); cs.comments = "ligne 1\n« ok », \"cité\""; cs.machines = ["A", "B"]
+cd.sessions = [cs]
+let csv = cd.csv()
+check(csv.hasPrefix("\u{FEFF}id,session_type") && csv.contains("\"A, B\"") && csv.contains("\"ligne 1\n« ok », \"\"cité\"\"\""), "csv : échappement")
+let vdir = work.appendingPathComponent("vault-export/Sessions")
+check((try? cd.exportToVault(cs, folder: vdir, version: "t")) == "session_20261114_1.md"
+      && FileManager.default.fileExists(atPath: vdir.appendingPathComponent("session_20261114_1.md").path), "vault : fichier écrit")
+
 print(failures == 0 ? "✓ aza-check : \(passed) vérifications OK" : "✗ aza-check : \(failures) échec(s), \(passed) OK")
 exit(failures == 0 ? 0 : 1)

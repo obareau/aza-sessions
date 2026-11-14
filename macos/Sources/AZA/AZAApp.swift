@@ -12,6 +12,8 @@ final class Nav: ObservableObject {
     @Published var gear: Int?
     @Published var printJob: PrintJob?
     @Published var patch: Int?
+    @Published var quick: QuickRequest?
+    @Published var shortcuts = false
 
     func open(patch id: Int) { pane = .patcher; patch = id }
 
@@ -27,6 +29,7 @@ struct AZAApp: App {
     @StateObject private var nav = Nav()
     @StateObject private var midi = MIDIManager()
     @StateObject private var lore = LoreCache()
+    @StateObject private var pomo = Pomodoro()
 
     var body: some Scene {
         WindowGroup("AZA — Journal de Sessions") {
@@ -38,10 +41,12 @@ struct AZAApp: App {
                 .environmentObject(nav)
                 .environmentObject(midi)
                 .environmentObject(lore)
+                .environmentObject(pomo)
         }
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("Nouvelle séance") { nav.open(session: store.newSession()) }.keyboardShortcut("n")
+                Button("Séance rapide…") { nav.quick = QuickRequest(gear: []) }.keyboardShortcut("n", modifiers: [.command, .shift])
                 Button("Copier le setup de la séance") {
                     let t = store.data.sessions.first { $0.id == nav.session }
                     nav.open(session: store.newSession(from: t))
@@ -87,6 +92,19 @@ struct AZAApp: App {
                                        html: Sheets.catalogue(store.data.catalogue, filter: "", version: Store.version),
                                        landscape: true, fileName: "fiches_materiel_\(Clock.today())"))
                 }
+                Button("Exporter les séances en CSV…") {
+                    if let url = Panels.save(name: "aza_\(Clock.today().replacingOccurrences(of: "-", with: "")).csv", ext: "csv") {
+                        store.exportCSV(to: url)
+                    }
+                }
+                Button("Écrire toutes les séances dans le vault Obsidian") {
+                    guard Panels.confirm("Écrire \(store.data.sessions.count) séance(s) dans le vault ?",
+                                         "Dossier : \(prefs.obsidianVault)\nLes fichiers du même nom sont remplacés.",
+                                         ok: "Écrire") else { return }
+                    let msg = store.exportToVault(store.data.sessions.map(\.id), folder: prefs.obsidianVault)
+                    if !msg.isEmpty { store.lastError = "✓ " + msg }
+                }
+                .disabled(prefs.obsidianVault.isEmpty)
                 Button("Exporter toutes les séances en Markdown…") {
                     if let url = Panels.save(name: "aza_\(Clock.today()).md", ext: "md") {
                         store.exportMarkdown(store.data.sessions.sorted { $0.date > $1.date }, to: url)
@@ -104,6 +122,18 @@ struct AZAApp: App {
                 Button("Réduire le texte") { prefs.scale = max(0.8, prefs.scale - 0.1) }.keyboardShortcut("-")
                 Button("Taille réelle") { prefs.scale = 1.0 }.keyboardShortcut("0")
                 Divider()
+            }
+        }
+
+        .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("À propos d'AZA") { AboutPanel.show() }
+            }
+            CommandGroup(replacing: .help) {
+                Button("Raccourcis clavier") { nav.shortcuts = true }.keyboardShortcut("/", modifiers: .command)
+                Button("Code source et releases") {
+                    NSWorkspace.shared.open(URL(string: "https://github.com/obareau/aza-sessions/releases")!)
+                }
             }
         }
 
@@ -201,22 +231,39 @@ struct ContentView: View {
                     SwiftUI.Section {
                         ForEach(group.1) { p in
                             Label {
-                                Text(p.label)
+                                Text(p.label).font(prefs.sidebarFont(.body))
                             } icon: {
                                 Image(systemName: p.icon)
+                                    .font(prefs.sidebarFont(.body))
                                     .foregroundStyle(p == .live && store.data.live != nil ? Color.red : prefs.accent)
                             }
                             .badge(count(p))
                             .tag(p)
                         }
-                    } header: { Text(group.0.uppercased()).azaHeading(.caption2) }
+                    } header: {
+                        Text(group.0.uppercased())
+                            .font(prefs.sidebarFont(.caption2, mono: prefs.monoTitles))
+                            .foregroundStyle(prefs.accent)
+                    }
                 }
             }
             .azaSurface(alt: true)
-            .navigationSplitViewColumnWidth(min: 190, ideal: 215)
+            .navigationSplitViewColumnWidth(min: 190, ideal: 215 * max(1, prefs.sidebarScale))
+            .environment(\.defaultMinListRowHeight, (prefs.compact ? 18 : 24) * prefs.sidebarScale)
             .safeAreaInset(edge: .bottom) { footer }
         } detail: {
-            detail.azaSurface()
+            VStack(spacing: 0) {
+                if prefs.obliqueBanner { ObliqueBanner(); Divider() }
+                detail.azaSurface()
+            }
+        }
+        .sheet(item: $nav.quick) { q in
+            QuickSessionSheet(preselection: q.gear) { nav.quick = nil }
+                .environmentObject(store).environmentObject(nav).environmentObject(prefs)
+                .azaRoot()
+        }
+        .sheet(isPresented: $nav.shortcuts) {
+            ShortcutsHelp { nav.shortcuts = false }.environmentObject(prefs).azaRoot()
         }
         .sheet(item: $nav.printJob) { job in
             PrintPreview(job: job) { nav.printJob = nil }
@@ -278,6 +325,7 @@ struct ContentView: View {
 
     var footer: some View {
         VStack(alignment: .leading, spacing: 2) {
+            PomodoroWidget().padding(.bottom, 6)
             Text("AZA").azaHeading(.headline)
             Text(store.storage.url.lastPathComponent).foregroundStyle(.secondary).azaFont(.caption2, mono: true)
             if let t = store.lastSaved {
@@ -290,4 +338,9 @@ struct ContentView: View {
         .onTapGesture(count: 2) { store.revealFile() }
         .help("Double-clic : afficher le fichier JSON dans le Finder")
     }
+}
+
+struct QuickRequest: Identifiable {
+    let id = UUID()
+    let gear: [String]
 }

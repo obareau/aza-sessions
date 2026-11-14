@@ -3,26 +3,44 @@ import SwiftUI
 
 struct SessionsView: View {
     @EnvironmentObject var store: Store
+    @EnvironmentObject var prefs: Prefs
+    @Local private var exportNote = ""
     @Binding var selection: Int?
     @Local private var query = ""
     @Local private var projectFilter: Int? = nil
     @Local private var modeFilter = ""
     @Local private var onlyRework = false
+    @Local private var typeFilter = ""
+    @Local private var intentionFilter = ""
+    @Local private var minRating = 0
+    @Local private var monthFilter = ""
+    @Local private var showHeatmap = false
+
+    var activeFilters: Int {
+        [typeFilter.isEmpty, intentionFilter.isEmpty, minRating == 0, monthFilter.isEmpty].filter { !$0 }.count
+    }
+
+    func matches(_ s: Session) -> Bool {
+        if let p = projectFilter, s.projectId != p { return false }
+        if !modeFilter.isEmpty && s.mode != modeFilter { return false }
+        if onlyRework && !s.toRework { return false }
+        if !typeFilter.isEmpty && s.sessionType != typeFilter { return false }
+        if !intentionFilter.isEmpty && s.intention != intentionFilter { return false }
+        if minRating > 0 && (s.rating ?? 0) < minRating { return false }
+        if !monthFilter.isEmpty && !s.date.hasPrefix(monthFilter) { return false }
+        let q = query.lowercased().trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return true }
+        var parts: [String] = [s.title, s.date, s.mode, s.intention, s.comments, s.patches, s.audioFile,
+                               s.signalRouting, s.loreLink, s.oblique, s.tempo, s.tonality, s.recapClaude]
+        parts += s.tags
+        parts += s.allGear
+        parts += s.influences
+        parts += s.character
+        return parts.joined(separator: " ").lowercased().contains(q)
+    }
 
     var filtered: [Session] {
-        let q = query.lowercased().trimmingCharacters(in: .whitespaces)
-        return store.data.sessions
-            .filter { projectFilter == nil || $0.projectId == projectFilter }
-            .filter { modeFilter.isEmpty || $0.mode == modeFilter }
-            .filter { !onlyRework || $0.toRework }
-            .filter { s in
-                guard !q.isEmpty else { return true }
-                let hay = ([s.title, s.date, s.mode, s.intention, s.comments, s.patches, s.audioFile,
-                            s.signalRouting, s.loreLink, s.oblique, s.tempo, s.tonality]
-                           + s.tags + s.allGear + s.influences + s.character).joined(separator: " ").lowercased()
-                return hay.contains(q)
-            }
-            .sorted { ($0.date, $0.id) > ($1.date, $1.id) }
+        store.data.sessions.filter(matches).sorted { ($0.date, $0.id) > ($1.date, $1.id) }
     }
 
     var body: some View {
@@ -55,18 +73,26 @@ struct SessionsView: View {
             .frame(minWidth: 520, maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle("Séances")
-        .navigationSubtitle("\(filtered.count) / \(store.data.sessions.count)")
+        .navigationSubtitle(exportNote.isEmpty ? "\(filtered.count) / \(store.data.sessions.count)" : exportNote)
+        .onChange(of: selection) { _ in exportNote = "" }
         .toolbar {
             ToolbarItemGroup {
                 Button { selection = store.newSession() } label: { Label("Nouvelle", systemImage: "plus") }
                     .help("Nouvelle séance (⌘N)")
                 if let s = current { SessionPrintMenu(session: s) }
-                Button {
-                    if let s = current, let url = Panels.save(name: "session_\(s.date)_\(s.id).md", ext: "md") {
-                        store.exportMarkdown([s], to: url)
+                Menu {
+                    Button("Markdown…") {
+                        if let s = current, let url = Panels.save(name: "session_\(s.date)_\(s.id).md", ext: "md") {
+                            store.exportMarkdown([s], to: url)
+                        }
                     }
-                } label: { Label("Markdown", systemImage: "doc.plaintext") }
-                    .help("Exporter la séance en Markdown").disabled(current == nil)
+                    Button("→ Vault Obsidian") {
+                        if let s = current { exportNote = store.exportToVault([s.id], folder: prefs.obsidianVault) }
+                    }
+                    .disabled(prefs.obsidianVault.isEmpty)
+                } label: { Label("Exporter", systemImage: "square.and.arrow.up") }
+                    .help(prefs.obsidianVault.isEmpty ? "Exporter la séance (vault Obsidian : à régler dans les Réglages)"
+                                                      : "Exporter la séance").disabled(current == nil)
                 Button { if let s = current { delete(s) } } label: { Label("Supprimer", systemImage: "trash") }
                     .help("Supprimer la séance").disabled(current == nil)
             }
@@ -88,6 +114,38 @@ struct SessionsView: View {
                     ForEach(Vocab.modes, id: \.self) { Text($0).tag($0) }
                 }.labelsHidden()
                 Toggle("↻", isOn: $onlyRework).toggleStyle(.button).help("À retravailler seulement")
+                Menu {
+                    Picker("Type", selection: $typeFilter) {
+                        Text("Tous types").tag("")
+                        ForEach(Vocab.sessionTypes, id: \.key) { Text($0.label).tag($0.key) }
+                    }
+                    Picker("Intention", selection: $intentionFilter) {
+                        Text("Toutes intentions").tag("")
+                        ForEach(Vocab.intentions, id: \.self) { Text($0).tag($0) }
+                    }
+                    Picker("Note", selection: $minRating) {
+                        Text("Toutes notes").tag(0)
+                        ForEach(1...5, id: \.self) { Text(String(repeating: "★", count: $0) + " et plus").tag($0) }
+                    }
+                    Picker("Mois", selection: $monthFilter) {
+                        Text("Tous les mois").tag("")
+                        ForEach(Array(Set(store.data.sessions.map { String($0.date.prefix(7)) })).sorted(by: >), id: \.self) {
+                            Text($0).tag($0)
+                        }
+                    }
+                    Divider()
+                    Button("Effacer les filtres") { typeFilter = ""; intentionFilter = ""; minRating = 0; monthFilter = "" }
+                } label: {
+                    Image(systemName: activeFilters > 0 ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                }
+                .menuStyle(.borderlessButton).frame(width: 34)
+                .help(activeFilters > 0 ? "\(activeFilters) filtre(s) actif(s)" : "Plus de filtres")
+                Toggle(isOn: $showHeatmap) { Image(systemName: "square.grid.3x3.fill") }
+                    .toggleStyle(.button).help("Activité de l'année")
+            }
+            if showHeatmap {
+                Heatmap(counts: Dictionary(store.data.sessions.map { (String($0.date.prefix(10)), 1) }, uniquingKeysWith: +))
+                    .frame(height: 60)
             }
         }
         .padding(8)
@@ -133,13 +191,24 @@ struct SessionRow: View {
 
 struct SessionEditor: View {
     @EnvironmentObject var store: Store
+    @EnvironmentObject var prefs: Prefs
     @Binding var session: Session
     var onOpen: (Int) -> Void
+    @Local private var titles: [String] = Titles.propose(6)
 
     var body: some View {
         Form {
             Section {
-                TextField("Titre", text: $session.title, prompt: Text(session.displayTitle))
+                HStack {
+                    TextField("Titre", text: $session.title, prompt: Text(session.displayTitle))
+                    Menu {
+                        ForEach(titles, id: \.self) { t in Button(t) { session.title = t } }
+                        Divider()
+                        Button("Autres propositions") { titles = Titles.propose(6) }
+                    } label: { Image(systemName: "wand.and.stars") }
+                        .menuStyle(.borderlessButton).frame(width: 36)
+                        .help("Proposer un titre dans l'esthétique d'AZA")
+                }
                 HStack {
                     DatePicker("Date", selection: Binding(
                         get: { Clock.day(session.date) ?? Date() },
@@ -207,6 +276,12 @@ struct SessionEditor: View {
                         .help(take.isEmpty ? "Aucune fiche du setup n'a de code catalogue"
                                            : "Nom de projet Zoom R8 (8 car. max)")
                 }
+                let path = (session.audioFile as NSString).expandingTildeInPath
+                if session.audioFile.contains("/"), FileManager.default.fileExists(atPath: path) {
+                    Button("Révéler le fichier dans le Finder") {
+                        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+                    }.buttonStyle(.link)
+                }
                 MultiLine("Timestamps intéressants", text: $session.timestamps)
             } header: { header("Enregistrement") }
 
@@ -240,6 +315,22 @@ struct SessionEditor: View {
             Section {
                 MultiLine("Notes libres", text: $session.comments, minHeight: 120)
                 MultiLine("Récap", text: $session.recapClaude)
+                HStack {
+                    let running = store.recapRunning.contains(session.id)
+                    Button {
+                        store.generateRecap(session.id, baseURL: prefs.ollamaURL, model: prefs.ollamaModel)
+                    } label: {
+                        Label(session.recapClaude.isEmpty ? "Générer le récap" : "Régénérer le récap", systemImage: "sparkles")
+                    }
+                    .disabled(running)
+                    if running { ProgressView().controlSize(.small); Text("Ollama rédige…").foregroundStyle(.secondary) }
+                    Spacer()
+                    Text(prefs.ollamaModel).foregroundStyle(.tertiary).azaFont(.caption2, mono: true)
+                }
+                if let err = store.recapErrors[session.id] {
+                    Label(err, systemImage: "exclamationmark.triangle").foregroundStyle(.orange).azaFont(.caption)
+                        .textSelection(.enabled)
+                }
             } header: { header("Notes") }
         }
         .formStyle(.grouped)

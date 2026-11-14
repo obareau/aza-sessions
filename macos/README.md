@@ -36,4 +36,8 @@ indisponible sans Xcode), l'état local passe par `@Local` (`Sources/AZA/Local.s
 Reprendre les données de l'app Flask : **Fichier › Importer une base sessions.db…**
 (lecture seule de la base ; le JSON courant est sauvegardé avant d'être remplacé).
 
-Non portés : export vers le vault Obsidian, récap IA (Ollama).
+Aussi : séance rapide (⇧⌘N), récap IA via Ollama (serveur et modèle dans Réglages › Obsidian & IA, échecs
+toujours affichés), export vers le vault Obsidian (une séance ou toutes), export CSV, propositions de titres,
+filtres (type, intention, note, mois), bandeau de stratégie oblique, pomodoro, aide clavier (⌘/), À propos.
+
+Toutes les fonctions de l'app web sont portées.

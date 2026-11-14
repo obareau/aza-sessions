@@ -7,7 +7,7 @@ import SwiftUI
 /// modification (écriture différée de 0,6 s pour regrouper la frappe).
 @MainActor
 final class Store: ObservableObject {
-    static let version = "1.6.0"
+    static let version = "1.7.1"
 
     @Published var data: AZAData {
         didSet {
@@ -171,6 +171,73 @@ final class Store: ObservableObject {
         let md = sessions.map { data.markdown($0, version: Self.version) }.joined(separator: "\n\n")
         do { try md.write(to: url, atomically: true, encoding: .utf8) }
         catch { lastError = "Export impossible : \(error.localizedDescription)" }
+    }
+
+    // MARK: Récap IA
+
+    @Published private(set) var recapRunning: Set<Int> = []
+    @Published var recapErrors: [Int: String] = [:]
+
+    /// Récap Ollama d'une séance, en tâche de fond. Tout échec est gardé et affiché.
+    func generateRecap(_ id: Int, baseURL: String, model: String) {
+        guard !recapRunning.contains(id), let s = data.sessions.first(where: { $0.id == id }) else { return }
+        guard let req = Recap.request(for: s, baseURL: baseURL, model: model) else {
+            recapErrors[id] = "Adresse du serveur Ollama invalide : « \(baseURL) » (Réglages › Obsidian & IA)."
+            return
+        }
+        recapRunning.insert(id)
+        recapErrors[id] = nil
+        Task {
+            do {
+                let (body, resp) = try await URLSession.shared.data(for: req)
+                switch Recap.parse(body, status: (resp as? HTTPURLResponse)?.statusCode ?? 0) {
+                case .success(let text):
+                    if let i = data.sessions.firstIndex(where: { $0.id == id }) { data.sessions[i].recapClaude = text }
+                case .failure(let e):
+                    recapErrors[id] = e.message + " (modèle « \(model) »)"
+                }
+            } catch {
+                recapErrors[id] = "Ollama injoignable sur \(baseURL) : \(error.localizedDescription)"
+            }
+            recapRunning.remove(id)
+        }
+    }
+
+    // MARK: Vault Obsidian
+
+    /// Écrit la séance dans le vault ; rend un message pour l'interface.
+    @discardableResult
+    func exportToVault(_ ids: [Int], folder: String) -> String {
+        guard !folder.isEmpty else {
+            lastError = "Dossier du vault Obsidian non configuré (Réglages › Obsidian & IA)."
+            return ""
+        }
+        let url = URL(fileURLWithPath: (folder as NSString).expandingTildeInPath, isDirectory: true)
+        var written = 0
+        for id in ids {
+            guard let s = data.sessions.first(where: { $0.id == id }) else { continue }
+            do { _ = try data.exportToVault(s, folder: url, version: Self.version); written += 1 }
+            catch { lastError = "Écriture dans le vault impossible : \(error.localizedDescription)"; return "" }
+        }
+        return ids.count == 1 ? "→ \(AZAData.obsidianFileName(data.sessions.first { $0.id == ids[0] }!))"
+                              : "\(written) séance(s) écrites dans le vault"
+    }
+
+    func exportCSV(to url: URL) {
+        do { try data.csv().write(to: url, atomically: true, encoding: .utf8) }
+        catch { lastError = "Export CSV impossible : \(error.localizedDescription)" }
+    }
+
+    /// Supprime toutes les séances (après une sauvegarde datée).
+    func resetSessions() {
+        flush()
+        try? storage.backup()
+        data.sessions = []
+        data.live = nil
+        for p in data.patches.indices { data.patches[p].sessionId = nil }
+        for i in data.presets.indices { data.presets[i].sessionId = nil }
+        for i in data.knobSheets.indices { data.knobSheets[i].sessionId = nil }
+        flush()
     }
 
     func revealFile() {

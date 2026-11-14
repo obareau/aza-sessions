@@ -100,6 +100,14 @@ final class Prefs: ObservableObject {
     @Published var customAccent: String { didSet { ud.set(customAccent, forKey: "customAccent") } }
     @Published var customBorder: String { didSet { ud.set(customBorder, forKey: "customBorder") } }
     @Published var compact: Bool { didSet { ud.set(compact, forKey: "compact") } }
+    @Published var obsidianVault: String { didSet { ud.set(obsidianVault, forKey: "obsidianVault") } }
+    @Published var ollamaURL: String { didSet { ud.set(ollamaURL, forKey: "ollamaURL") } }
+    @Published var ollamaModel: String { didSet { ud.set(ollamaModel, forKey: "ollamaModel") } }
+    @Published var recapAfterLive: Bool { didSet { ud.set(recapAfterLive, forKey: "recapAfterLive") } }
+    @Published var obliqueBanner: Bool { didSet { ud.set(obliqueBanner, forKey: "obliqueBanner") } }
+    /// Taille propre au menu latéral : la barre latérale macOS impose sa propre
+    /// taille de texte et ne suit pas d'elle-même la taille générale.
+    @Published var sidebarScale: Double { didSet { ud.set(sidebarScale, forKey: "sidebarScale") } }
 
     init() {
         let s = ud.double(forKey: "fontScale")
@@ -112,6 +120,13 @@ final class Prefs: ObservableObject {
         customAccent = ud.string(forKey: "customAccent") ?? "#F97316"
         customBorder = ud.string(forKey: "customBorder") ?? "#2E2C29"
         compact = ud.bool(forKey: "compact")
+        obsidianVault = ud.string(forKey: "obsidianVault") ?? ""
+        ollamaURL = ud.string(forKey: "ollamaURL") ?? Recap.defaultURL
+        ollamaModel = ud.string(forKey: "ollamaModel") ?? Recap.defaultModel
+        recapAfterLive = ud.object(forKey: "recapAfterLive") as? Bool ?? true
+        obliqueBanner = ud.object(forKey: "obliqueBanner") as? Bool ?? true
+        let sb = ud.double(forKey: "sidebarScale")
+        sidebarScale = sb == 0 ? 1.0 : sb
     }
 
     var palette: Theme? {
@@ -136,8 +151,15 @@ final class Prefs: ObservableObject {
 
     func font(_ role: TextRole, mono: Bool = false) -> Font { style.font(role, mono: mono) }
 
+    /// Police du menu latéral : taille de base × réglage du menu (indépendant de la taille générale).
+    func sidebarFont(_ role: TextRole, mono: Bool = false) -> Font {
+        var s = style
+        s.scale = sidebarScale
+        return s.font(role, mono: mono)
+    }
+
     func reset() {
-        scale = 1.0; theme = .system; family = .system; monoTitles = true; compact = false
+        scale = 1.0; sidebarScale = 1.0; theme = .system; family = .system; monoTitles = true; compact = false
         customBg = "#111210"; customText = "#E8E4DC"; customAccent = "#F97316"; customBorder = "#2E2C29"
     }
 }
@@ -254,6 +276,7 @@ struct SettingsView: View {
         TabView {
             appearance.tabItem { Label("Apparence", systemImage: "paintpalette") }
             data.tabItem { Label("Données", systemImage: "externaldrive") }
+            integrations.tabItem { Label("Obsidian & IA", systemImage: "sparkles") }
         }
         .frame(width: 560, height: 520)
         .azaRoot()
@@ -265,6 +288,10 @@ struct SettingsView: View {
                 HStack {
                     Slider(value: $prefs.scale, in: 0.8...1.8, step: 0.05) { Text("Taille du texte") }
                     Text("\(Int((prefs.scale * 100).rounded())) %").monospacedDigit().frame(width: 52, alignment: .trailing)
+                }
+                HStack {
+                    Slider(value: $prefs.sidebarScale, in: 0.8...1.8, step: 0.05) { Text("Taille du menu latéral") }
+                    Text("\(Int((prefs.sidebarScale * 100).rounded())) %").monospacedDigit().frame(width: 52, alignment: .trailing)
                 }
                 HStack(spacing: 6) {
                     ForEach([0.9, 1.0, 1.15, 1.3, 1.5], id: \.self) { v in
@@ -278,6 +305,7 @@ struct SettingsView: View {
                 }
                 Toggle("Titres en monospace", isOn: $prefs.monoTitles)
                 Toggle("Interface compacte", isOn: $prefs.compact)
+                Toggle("Bandeau de stratégie oblique", isOn: $prefs.obliqueBanner)
             } header: { Text("Texte").azaHeading() }
 
             Section {
@@ -335,6 +363,73 @@ struct SettingsView: View {
                     supportsOpacity: false)
     }
 
+    @Local private var testing = false
+    @Local private var testResult = ""
+
+    var integrations: some View {
+        Form {
+            Section {
+                LabeledContent("Dossier") {
+                    Text(prefs.obsidianVault.isEmpty ? "non configuré" : prefs.obsidianVault)
+                        .textSelection(.enabled).azaFont(.caption, mono: true)
+                }
+                HStack {
+                    Button("Choisir…") {
+                        let p = NSOpenPanel()
+                        p.canChooseDirectories = true; p.canChooseFiles = false; p.canCreateDirectories = true
+                        p.message = "Dossier du vault où écrire les séances (ex. …/Journal/Sessions)"
+                        if p.runModal() == .OK, let u = p.url { prefs.obsidianVault = u.path }
+                    }
+                    if !prefs.obsidianVault.isEmpty {
+                        Button("Ouvrir") { NSWorkspace.shared.open(URL(fileURLWithPath: prefs.obsidianVault)) }
+                        Button("Retirer") { prefs.obsidianVault = "" }
+                    }
+                }
+                Text("« → Obsidian » sur une séance y écrit session_AAAAMMJJ_id.md (même format que l'export Markdown).")
+                    .foregroundStyle(.secondary).azaFont(.caption)
+            } header: { Text("Vault Obsidian").azaHeading() }
+
+            Section {
+                TextField("Serveur Ollama", text: $prefs.ollamaURL)
+                TextField("Modèle", text: $prefs.ollamaModel)
+                Toggle("Générer le récap en terminant une séance en cours", isOn: $prefs.recapAfterLive)
+                HStack {
+                    Button("Tester la connexion") { test() }.disabled(testing)
+                    if testing { ProgressView().controlSize(.small) }
+                    Text(testResult).foregroundStyle(.secondary).azaFont(.caption).textSelection(.enabled)
+                }
+                Text("Les données de la séance (matériel, mode, notes) sont envoyées à ce serveur pour rédiger le récap. "
+                     + "Un échec est toujours affiché : un récap qui ne vient pas sans rien dire ne se voit jamais.")
+                    .foregroundStyle(.secondary).azaFont(.caption)
+            } header: { Text("Récap IA (Ollama)").azaHeading() }
+        }
+        .formStyle(.grouped)
+        .azaSurface()
+    }
+
+    func test() {
+        testing = true; testResult = ""
+        let base = prefs.ollamaURL.trimmingCharacters(in: CharacterSet(charactersIn: "/ "))
+        guard let url = URL(string: base + "/api/tags") else { testing = false; testResult = "✗ URL invalide"; return }
+        let model = prefs.ollamaModel
+        Task {
+            do {
+                var r = URLRequest(url: url, timeoutInterval: 6)
+                r.httpMethod = "GET"
+                let (data, resp) = try await URLSession.shared.data(for: r)
+                let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+                let names = ((try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["models"] as? [[String: Any]] ?? [])
+                    .compactMap { $0["name"] as? String }
+                testResult = code != 200 ? "✗ HTTP \(code)"
+                    : names.contains(model) ? "✓ serveur joignable, modèle « \(model) » présent"
+                    : "⚠ serveur joignable, mais « \(model) » n'est pas dans ses modèles (\(names.count))"
+            } catch {
+                testResult = "✗ \(error.localizedDescription)"
+            }
+            testing = false
+        }
+    }
+
     var data: some View {
         Form {
             Section {
@@ -372,6 +467,14 @@ struct SettingsView: View {
             Section {
                 LabeledContent("Sauvegardes") { Text("\((try? store.storage.backups().count) ?? 0) / 5") }
                 Button("Faire une sauvegarde maintenant") { store.backupNow() }
+                Button("Supprimer toutes les séances…", role: .destructive) {
+                    guard Panels.confirm("Supprimer les \(store.data.sessions.count) séances ?",
+                                         "Une sauvegarde datée du JSON est faite avant. Le catalogue, les patches, presets "
+                                         + "et le reste sont conservés ; leurs liens vers des séances sont retirés.",
+                                         ok: "Tout supprimer") else { return }
+                    store.resetSessions()
+                }
+                .disabled(store.data.sessions.isEmpty)
                 Text("Une copie datée est prise à chaque ouverture et avant chaque import ; "
                      + "les 5 plus récentes sont gardées dans le dossier backups/.")
                     .foregroundStyle(.secondary).azaFont(.caption)

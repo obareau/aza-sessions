@@ -87,6 +87,9 @@ struct CatalogueView: View {
                                        html: Sheets.catalogue(store.data.catalogue, filter: "", version: Store.version),
                                        landscape: true, fileName: "fiches_materiel"))
                 }
+                Button("Séance rapide avec cette fiche") {
+                    if let g = store.data.gear(nav.gear) { nav.quick = QuickRequest(gear: [g.name]) }
+                }.disabled(nav.gear == nil)
                 Button("Feuille d'atelier — cette fiche") {
                     if let g = store.data.gear(nav.gear) {
                         nav.print(PrintJob(title: "Feuille d'atelier",
