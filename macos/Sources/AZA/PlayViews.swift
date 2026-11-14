@@ -64,6 +64,12 @@ struct TonightView: View {
                 Button { start(d, live: true) } label: { Label("Démarrer en direct", systemImage: "record.circle") }
                     .buttonStyle(.borderedProminent)
                 Button { start(d, live: false) } label: { Label("Créer la séance", systemImage: "plus") }
+                Button {
+                    nav.print(PrintJob(title: "Feuille d'atelier",
+                                       html: Sheets.workshop(gear: [d.instrument, d.treatment].compactMap { $0?.name },
+                                                             data: store.data, version: Store.version),
+                                       fileName: "atelier_\(Clock.today())"))
+                } label: { Label("Feuille d'atelier", systemImage: "printer") }
                 Spacer()
             }
             .disabled(d.isEmpty)

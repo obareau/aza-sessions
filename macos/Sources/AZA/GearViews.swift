@@ -75,6 +75,26 @@ struct CatalogueView: View {
                 store.data.catalogue.append(g)
                 nav.gear = g.id
             } label: { Label("Nouvelle", systemImage: "plus") }
+            Menu {
+                Button("Fiches matériel — \(Vocab.itemLabel(type))") {
+                    nav.print(PrintJob(title: "Fiches matériel",
+                                       html: Sheets.catalogue(store.data.catalogue.filter { $0.type == type },
+                                                              filter: Vocab.itemLabel(type), version: Store.version),
+                                       landscape: true, fileName: "fiches_\(type)"))
+                }
+                Button("Fiches matériel — tout le catalogue") {
+                    nav.print(PrintJob(title: "Fiches matériel",
+                                       html: Sheets.catalogue(store.data.catalogue, filter: "", version: Store.version),
+                                       landscape: true, fileName: "fiches_materiel"))
+                }
+                Button("Feuille d'atelier — cette fiche") {
+                    if let g = store.data.gear(nav.gear) {
+                        nav.print(PrintJob(title: "Feuille d'atelier",
+                                           html: Sheets.workshop(gear: [g.name], data: store.data, version: Store.version),
+                                           fileName: "atelier_\(g.name)"))
+                    }
+                }.disabled(nav.gear == nil)
+            } label: { Label("Imprimer", systemImage: "printer") }
             Button { proposal = CodeProposer.propose(store.data.catalogue) } label: {
                 Label("Proposer les codes", systemImage: "textformat.abc")
             }.help("Proposer un code de prise aux fiches actives qui n'en ont pas")
@@ -365,7 +385,14 @@ struct FacadeEditor: View {
                 } else {
                     Text(controls.filter { $0.kind != .section }.map(\.name).joined(separator: " · "))
                         .foregroundStyle(.secondary)
-                    Button("Modifier la déclaration") { editingDecl = true }
+                    HStack {
+                        Button("Modifier la déclaration") { editingDecl = true }
+                        Button("Feuille d'atelier") {
+                            nav.print(PrintJob(title: "Feuille d'atelier",
+                                               html: Sheets.workshop(gear: [gear.name], data: store.data, version: Store.version),
+                                               fileName: "atelier_\(gear.name)"))
+                        }
+                    }
                 }
             } header: { Text("FAÇADE — \(gear.name.uppercased())").azaHeading() }
 

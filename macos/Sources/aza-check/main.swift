@@ -4,6 +4,27 @@ import AZACore
 import Foundation
 import SQLite3
 
+// `aza-check --sheets <dossier>` : écrit les 5 fiches d'exemple (aperçu / contrôle PDF).
+if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "--sheets" {
+    let dir = CommandLine.arguments[2]
+    var d = Seed.initial()
+    d.catalogue[0].controls = "-- OSCILLATEUR\nCutoff\nReso\nFiltre: LP | BP | HP"
+    d.catalogue[0].code = "MFR"
+    var s = Session(id: 1, date: "2026-11-14")
+    s.title = "MÉMOIRE RÉSIDUELLE"; s.machines = ["MicroFreak"]; s.effects = ["Sonicake Smartbox"]
+    s.comments = String(repeating: "Une nappe longue qui dérive. ", count: 40); s.rating = 4; s.audioFile = "MFR_1"
+    s.oblique = "Commence par la fin."
+    d.sessions = [s]
+    var k = KnobSheet(id: 1, gearId: d.catalogue[0].id); k.sessionId = 1; k.values = ["Cutoff": "7", "Filtre": "LP"]
+    d.knobSheets = [k]
+    let pages = ["session": Sheets.session(s, data: d, version: "dev"), "recall": Sheets.recall(s, data: d, version: "dev"),
+                 "atelier": Sheets.workshop(gear: ["MicroFreak", "Volca Drum"], data: d, version: "dev"),
+                 "blank": Sheets.blankForm(data: d, version: "dev"), "catalogue": Sheets.catalogue(d.catalogue, filter: "", version: "dev")]
+    for (n, html) in pages { try html.write(toFile: dir + "/" + n + ".html", atomically: true, encoding: .utf8) }
+    print("✓ 5 fiches écrites dans \(dir)")
+    exit(0)
+}
+
 var failures = 0
 var passed = 0
 func check(_ cond: Bool, _ what: String) {
@@ -296,6 +317,25 @@ check(tl.count == 2 && tl[0].event == "Fondation du C.G.U." && tl[0].era == "Èr
 let qs = lore.quotes()
 check(qs.count == 1 && qs[0].source == "C.G.U. de la Rectitude", "lore : citations (définitions et trop courtes écartées)")
 check(LoreReader.search(lore.all(), "granit").count == 1 && LoreReader.search(lore.all(), "ADMINISTRATION").count == 1, "lore : recherche")
+
+// 12. Fiches imprimables
+var shd = Seed.initial()
+let mfIdx = shd.catalogue.firstIndex { $0.name == "MicroFreak" }!
+shd.catalogue[mfIdx].code = "MFR"; shd.catalogue[mfIdx].controls = "-- OSC\nCutoff\nFiltre: LP | BP"
+var shs = Session(id: 3, date: "2026-11-14"); shs.machines = ["MicroFreak"]; shs.effects = ["Sonicake Smartbox"]
+shs.comments = "<b>pas du HTML</b>"; shs.audioFile = "MFR_1"
+shd.sessions = [shs]
+var shk = KnobSheet(id: 1, gearId: shd.catalogue[mfIdx].id); shk.sessionId = 3; shk.values = ["Cutoff": "7", "Filtre": "LP"]
+shd.knobSheets = [shk]
+let rec = Sheets.recall(shs, data: shd, version: "t")
+check(rec.contains("&lt;b&gt;pas du HTML") && !rec.contains("<b>pas du HTML"), "fiches : texte échappé")
+check(rec.range(of: "MicroFreak")!.lowerBound < rec.range(of: "Sonicake Smartbox")!.lowerBound
+      && rec.contains("width:70%") && rec.contains("pas relevé") == false, "fiches : rappel (ordre du signal, façade)")
+let ws = Sheets.workshop(gear: ["MicroFreak", "Volca Drum"], data: shd, version: "t")
+check(ws.contains("<b>MFR_</b>") && ws.contains("◻ LP") && ws.components(separatedBy: "class=\"gauge\"").count - 1 == 7,
+      "fiches : atelier (préfixe de prise, sélecteur, jauges + lignes vides)")
+check(Sheets.blankForm(data: shd, version: "t").contains("Behringer Uphoria 1820"), "fiches : formulaire vierge")
+check(Sheets.catalogue(shd.catalogue, filter: "", version: "t").contains("A4 landscape"), "fiches : catalogue en paysage")
 
 print(failures == 0 ? "✓ aza-check : \(passed) vérifications OK" : "✗ aza-check : \(failures) échec(s), \(passed) OK")
 exit(failures == 0 ? 0 : 1)

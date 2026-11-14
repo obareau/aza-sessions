@@ -90,10 +90,13 @@ struct StatsView: View {
     }
 
     func bars(_ items: [(String, Int)]) -> some View {
-        Chart(Array(items.enumerated()), id: \.offset) { _, it in
+        // Charts dessine ses annotations dans un rendu à part, sans les
+        // EnvironmentObject de l'app : la police doit y entrer comme une valeur.
+        let font = prefs.font(.caption2)
+        return Chart(Array(items.enumerated()), id: \.offset) { _, it in
             BarMark(x: .value("n", it.1), y: .value("nom", it.0))
                 .foregroundStyle(Color.accentColor)
-                .annotation(position: .trailing) { Text("\(it.1)").azaFont(.caption2) }
+                .annotation(position: .trailing) { Text("\(it.1)").font(font) }
         }
         .chartXAxis(.hidden)
         .frame(height: CGFloat(max(1, items.count)) * 22 + 10)

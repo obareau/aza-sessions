@@ -60,6 +60,7 @@ struct SessionsView: View {
             ToolbarItemGroup {
                 Button { selection = store.newSession() } label: { Label("Nouvelle", systemImage: "plus") }
                     .help("Nouvelle séance (⌘N)")
+                if let s = current { SessionPrintMenu(session: s) }
                 Button {
                     if let s = current, let url = Panels.save(name: "session_\(s.date)_\(s.id).md", ext: "md") {
                         store.exportMarkdown([s], to: url)

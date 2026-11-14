@@ -10,6 +10,7 @@ final class Nav: ObservableObject {
     @Published var pane: Pane = .sessions
     @Published var session: Int?
     @Published var gear: Int?
+    @Published var printJob: PrintJob?
 
     func open(session id: Int) { pane = .sessions; session = id }
     func open(gear id: Int) { pane = .catalogue; gear = id }
@@ -73,6 +74,16 @@ struct AZAApp: App {
                         store.exportJSON(to: url)
                     }
                 }.keyboardShortcut("e", modifiers: [.command, .shift])
+                Divider()
+                Button("Imprimer un formulaire vierge…") {
+                    nav.print(PrintJob(title: "Formulaire terrain", html: Sheets.blankForm(data: store.data, version: Store.version),
+                                       fileName: "formulaire_aza"))
+                }
+                Button("Imprimer les fiches matériel…") {
+                    nav.print(PrintJob(title: "Fiches matériel",
+                                       html: Sheets.catalogue(store.data.catalogue, filter: "", version: Store.version),
+                                       landscape: true, fileName: "fiches_materiel_\(Clock.today())"))
+                }
                 Button("Exporter toutes les séances en Markdown…") {
                     if let url = Panels.save(name: "aza_\(Clock.today()).md", ext: "md") {
                         store.exportMarkdown(store.data.sessions.sorted { $0.date > $1.date }, to: url)
@@ -203,6 +214,11 @@ struct ContentView: View {
             .safeAreaInset(edge: .bottom) { footer }
         } detail: {
             detail.azaSurface()
+        }
+        .sheet(item: $nav.printJob) { job in
+            PrintPreview(job: job) { nav.printJob = nil }
+                .environmentObject(prefs)
+                .azaRoot()
         }
         .alert("AZA", isPresented: Binding(get: { store.lastError != nil },
                                            set: { if !$0 { store.lastError = nil } })) {

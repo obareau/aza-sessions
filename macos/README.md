@@ -24,6 +24,9 @@ indisponible sans Xcode), l'état local passe par `@Local` (`Sources/AZA/Local.s
     export .syx, envoi). Envoi par MIDISendSysex, cadencé par CoreMIDI.
   - Références : Lore (lecture du vault Obsidian : sections, recherche, chronologie, citations ;
     rien n'est copié dans le JSON), Influences, Stratégies obliques, Morceaux, Inspirations, Samples, MiRack
+- Fiches imprimables (A4, aperçu → Imprimer… ou PDF) : fiche de séance, fiche de rappel (chaîne dans l'ordre
+  du signal + façades relevées), feuille d'atelier (potards à noircir au stylo), formulaire terrain vierge,
+  fiches matériel en paysage. `aza-check --sheets <dossier>` écrit des exemples en HTML.
 - Réglages (⌘,) : taille du texte (⌘+ / ⌘− / ⌘0), police, thèmes de l'app web
   (Béton, Machine, Nord, Solarized, Gruvbox, personnalisé), interface compacte, emplacement du fichier JSON
 - `Sources/aza-check` — auto-test, lancé par `build_app.sh`
@@ -31,5 +34,4 @@ indisponible sans Xcode), l'état local passe par `@Local` (`Sources/AZA/Local.s
 Reprendre les données de l'app Flask : **Fichier › Importer une base sessions.db…**
 (lecture seule de la base ; le JSON courant est sauvegardé avant d'être remplacé).
 
-Non portés : fiche de rappel / feuille
-d'atelier imprimables, export vers le vault Obsidian, récap IA (Ollama).
+Non portés : export vers le vault Obsidian, récap IA (Ollama).

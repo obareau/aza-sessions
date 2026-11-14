@@ -130,18 +130,11 @@ final class Prefs: ObservableObject {
 
     var accent: Color { palette?.accent ?? azaOrange }
 
-    func font(_ role: TextRole, mono: Bool = false) -> Font {
-        let size = (role.base * scale).rounded()
-        let fam: FontFamily = mono && family == .system ? .mono : family
-        switch fam {
-        case .system: return .system(size: size, weight: role.weight)
-        case .mono: return .system(size: size, weight: role.weight, design: .monospaced)
-        case .menlo: return .custom("Menlo", size: size).weight(role.weight)
-        case .plex:
-            let name = NSFont(name: "IBMPlexMono", size: size) != nil ? "IBMPlexMono" : "IBM Plex Mono"
-            return .custom(name, size: size).weight(role.weight)
-        }
+    var style: AZAStyle {
+        AZAStyle(scale: scale, family: family, monoTitles: monoTitles, accent: accent, palette: palette)
     }
+
+    func font(_ role: TextRole, mono: Bool = false) -> Font { style.font(role, mono: mono) }
 
     func reset() {
         scale = 1.0; theme = .system; family = .system; monoTitles = true; compact = false
@@ -161,28 +154,64 @@ extension Color {
 
 // MARK: - Application aux vues
 
+/// Instantané des réglages, transmis par l'environnement SwiftUI.
+///
+/// Les modificateurs ne lisent PAS `Prefs` en EnvironmentObject : certains
+/// rendus (annotations de Swift Charts, ImageRenderer, fenêtres annexes) n'en
+/// héritent pas, et un EnvironmentObject manquant fait planter l'app. Une valeur
+/// d'environnement absente retombe simplement sur le style par défaut.
+struct AZAStyle: Equatable {
+    var scale: Double = 1
+    var family: FontFamily = .system
+    var monoTitles = true
+    var accent: Color = azaOrange
+    var palette: Theme? = nil
+
+    func font(_ role: TextRole, mono: Bool = false) -> Font {
+        let size = (role.base * scale).rounded()
+        let fam: FontFamily = mono && family == .system ? .mono : family
+        switch fam {
+        case .system: return .system(size: size, weight: role.weight)
+        case .mono: return .system(size: size, weight: role.weight, design: .monospaced)
+        case .menlo: return .custom("Menlo", size: size).weight(role.weight)
+        case .plex:
+            let name = NSFont(name: "IBMPlexMono", size: size) != nil ? "IBMPlexMono" : "IBM Plex Mono"
+            return .custom(name, size: size).weight(role.weight)
+        }
+    }
+}
+
+private struct AZAStyleKey: EnvironmentKey { static let defaultValue = AZAStyle() }
+
+extension EnvironmentValues {
+    var azaStyle: AZAStyle {
+        get { self[AZAStyleKey.self] }
+        set { self[AZAStyleKey.self] = newValue }
+    }
+}
+
 struct AZAFont: ViewModifier {
-    @EnvironmentObject var prefs: Prefs
+    @Environment(\.azaStyle) var style
     let role: TextRole
     let mono: Bool
-    func body(content: Content) -> some View { content.font(prefs.font(role, mono: mono)) }
+    func body(content: Content) -> some View { content.font(style.font(role, mono: mono)) }
 }
 
 /// Titre de section / en-tête : monospace si l'option est cochée.
 struct AZAHeading: ViewModifier {
-    @EnvironmentObject var prefs: Prefs
+    @Environment(\.azaStyle) var style
     let role: TextRole
     func body(content: Content) -> some View {
-        content.font(prefs.font(role, mono: prefs.monoTitles)).foregroundStyle(prefs.accent)
+        content.font(style.font(role, mono: style.monoTitles)).foregroundStyle(style.accent)
     }
 }
 
 /// Fond d'une liste ou d'un formulaire selon le thème.
 struct AZASurface: ViewModifier {
-    @EnvironmentObject var prefs: Prefs
+    @Environment(\.azaStyle) var style
     var alt = false
     func body(content: Content) -> some View {
-        if let p = prefs.palette {
+        if let p = style.palette {
             content.scrollContentBackground(.hidden).background(alt ? p.bgAlt : p.bg)
         } else {
             content
@@ -196,6 +225,7 @@ struct AZARoot: ViewModifier {
     func body(content: Content) -> some View {
         let p = prefs.palette
         content
+            .environment(\.azaStyle, prefs.style)
             .font(prefs.font(.body))
             .tint(prefs.accent)
             .foregroundStyle(p?.text ?? Color.primary)
