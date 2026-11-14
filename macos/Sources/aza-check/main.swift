@@ -169,5 +169,53 @@ check(full.gearPairings.first?.note == "chaud", "import : associations")
 check(full.live?.machines == ["MicroFreak"] && full.live?.mode == "Dawless", "import : séance en cours")
 check(try JSONStorage.decode(JSONStorage.encode(full)) == full, "aller-retour JSON complet")
 
+// 9. Patcher
+var pl = PatchLayout(id: 1, name: "Studio")
+let mf = pl.addNode("MicroFreak", type: "machine", x: 100, y: 100)
+let sb = pl.addNode("Smartbox", type: "effet", x: 400, y: 100)
+let ab = pl.addNode("Ableton Live", type: "daw", x: 700, y: 100)
+let nt = pl.addNode("NTS-1", type: "machine", x: 100, y: 300)
+pl.connect(mf, sb, signal: "audio"); pl.connect(sb, ab, signal: "audio"); pl.connect(nt, ab, signal: "midi")
+check(pl.connect(mf, mf, signal: "audio") == nil, "patch : pas de câble sur soi-même")
+check(pl.routingText() == "MicroFreak → Smartbox → Ableton Live\nNTS-1 → Ableton Live", "patch : routing\n\(pl.routingText())")
+let fields = pl.sessionFields()
+check(fields.gear[.machines] == ["MicroFreak", "NTS-1"] && fields.gear[.daws] == ["Ableton Live"], "patch : → séance")
+var lone = PatchLayout(id: 2, name: "x")
+lone.addNode("Ableton Live", type: "daw", x: 0, y: 0); lone.addNode("MicroFreak", type: "machine", x: 0, y: 0)
+check(lone.routingText() == "MicroFreak → Ableton Live", "patch : routing sans câble, ordre des types")
+let back2 = try PatchLayout.fromPortable(pl.portableJSON(), id: 9)
+check(back2.nodes.map(\.label) == pl.nodes.map(\.label) && back2.connections.count == 3
+      && back2.routingText() == pl.routingText(), "patch : JSON portable aller-retour")
+let md = pl.mermaid(session: nil)
+check(md.contains("graph LR") && md.contains("n4 -.->|\"midi\"| n3"), "patch : Mermaid")
+check(pl.svg().contains("marker-end=\"url(#arrow-midi)\""), "patch : SVG")
+var par = pl; par.connect(mf, sb, signal: "midi")
+let c1 = par.cable(par.connections[0])!, c2 = par.cable(par.connections.last!)!
+check(abs(c1.c1y - c2.c1y) > 10, "patch : câbles parallèles écartés")
+check(c1.distance(to: c1.midX, c1.midY) < 3, "patch : clic sur un câble")
+var withSession = PatchLayout(id: 3, name: "s")
+var src = Session(id: 1, date: "2026-11-14"); src.machines = ["MicroFreak", "NTS-1"]; src.effects = ["Sonicake Smartbox"]
+check(withSession.importSession(src, catalogue: Seed.initial().catalogue) == 3
+      && withSession.nodes.first?.catalogueId != nil, "patch : import depuis une séance")
+
+let db3 = work.appendingPathComponent("patch.db").path
+var h3: OpaquePointer?
+sqlite3_open(db3, &h3)
+sqlite3_exec(h3, """
+CREATE TABLE sessions (id INTEGER PRIMARY KEY, date TEXT NOT NULL);
+CREATE TABLE patch_layouts (id INTEGER PRIMARY KEY, name TEXT, session_id INTEGER, created_at TEXT);
+CREATE TABLE patch_nodes (id INTEGER PRIMARY KEY, layout_id INTEGER, label TEXT, x REAL, y REAL, node_type TEXT, color TEXT, catalogue_id INTEGER, note TEXT);
+CREATE TABLE patch_connections (id INTEGER PRIMARY KEY, layout_id INTEGER, from_id INTEGER, to_id INTEGER, label TEXT, signal_type TEXT, note TEXT);
+INSERT INTO patch_layouts VALUES (5, 'Live set', NULL, '2026-03-03 10:00:00');
+INSERT INTO patch_nodes VALUES (11, 5, 'MicroFreak', 120, 80, 'machine', '#D4380D', NULL, 'algo Karplus');
+INSERT INTO patch_nodes VALUES (12, 5, 'Wasp', 400, 80, 'synth_android', '', NULL, '');
+INSERT INTO patch_connections VALUES (7, 5, 11, 12, 'clock', 'midi', '');
+""", nil, nil, nil)
+sqlite3_close(h3)
+let pimp = try SQLiteImport.load(path: db3)
+let lay = pimp.patches.first
+check(lay?.name == "Live set" && lay?.nodes.count == 2 && lay?.connections.first?.fromId == 11, "import : patch")
+check(lay?.nodes.last?.color.hasPrefix("#") == true && lay?.nodes.first?.note == "algo Karplus", "import : nœuds, type custom coloré")
+
 print(failures == 0 ? "✓ aza-check : \(passed) vérifications OK" : "✗ aza-check : \(failures) échec(s), \(passed) OK")
 exit(failures == 0 ? 0 : 1)

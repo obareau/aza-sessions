@@ -252,12 +252,13 @@ public struct AZAData: Codable, Equatable, Sendable {
     public var gearNotes: [GearNote] = []
     public var knobSheets: [KnobSheet] = []
     public var live: LiveSession?
+    public var patches: [PatchLayout] = []
 
     public init() {}
 
     enum CodingKeys: String, CodingKey {
         case format, sessions, projects, catalogue, influences, obliques
-        case wishlist, samples, tracks, inspirations, mirack, presets, gearPairings, gearNotes, knobSheets, live
+        case wishlist, samples, tracks, inspirations, mirack, presets, gearPairings, gearNotes, knobSheets, live, patches
     }
     public init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
@@ -277,6 +278,7 @@ public struct AZAData: Codable, Equatable, Sendable {
         gearNotes = try c.decodeIfPresent([GearNote].self, forKey: .gearNotes) ?? []
         knobSheets = try c.decodeIfPresent([KnobSheet].self, forKey: .knobSheets) ?? []
         live = try c.decodeIfPresent(LiveSession.self, forKey: .live)
+        patches = try c.decodeIfPresent([PatchLayout].self, forKey: .patches) ?? []
     }
 }
 

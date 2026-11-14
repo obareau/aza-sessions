@@ -177,6 +177,30 @@ public enum SQLiteImport {
             }
             d.knobSheets.append(k)
         }
+        // Patcher : un layout porte ses nœuds et connexions (ids gardés).
+        try each(db, t, "patch_layouts") { id, r in
+            var p = PatchLayout(id: id, name: str(r["name"]).isEmpty ? "Patch" : str(r["name"]))
+            p.sessionId = int(r["session_id"])
+            if !str(r["created_at"]).isEmpty { p.createdAt = str(r["created_at"]) }
+            d.patches.append(p)
+        }
+        let layoutIndex = Dictionary(uniqueKeysWithValues: d.patches.enumerated().map { ($0.element.id, $0.offset) })
+        try each(db, t, "patch_nodes") { id, r in
+            guard let l = int(r["layout_id"]), let li = layoutIndex[l] else { return }
+            var n = PatchNode(id: id, label: str(r["label"]), nodeType: str(r["node_type"]).isEmpty ? "free" : str(r["node_type"]),
+                              x: double(r["x"]) ?? 100, y: double(r["y"]) ?? 100)
+            if !str(r["color"]).isEmpty { n.color = str(r["color"]) }
+            n.catalogueId = int(r["catalogue_id"]); n.note = str(r["note"])
+            d.patches[li].nodes.append(n)
+        }
+        try each(db, t, "patch_connections") { id, r in
+            guard let l = int(r["layout_id"]), let li = layoutIndex[l],
+                  let f = int(r["from_id"]), let to = int(r["to_id"]) else { return }
+            var c = PatchConnection(id: id, fromId: f, toId: to,
+                                    signalType: str(r["signal_type"]).isEmpty ? "audio" : str(r["signal_type"]))
+            c.label = str(r["label"]); c.note = str(r["note"])
+            d.patches[li].connections.append(c)
+        }
         if t.contains("live_session"), let r = try rows(db, "SELECT * FROM live_session LIMIT 1").first {
             var l = LiveSession(startedAt: str(r["started_at"]).isEmpty ? Clock.stamp() : str(r["started_at"]))
             l.notes = str(r["notes_live"]); l.machines = splitList(str(r["machines"]))

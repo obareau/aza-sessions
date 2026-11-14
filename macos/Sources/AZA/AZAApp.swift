@@ -43,6 +43,7 @@ struct AZAApp: App {
                 Divider()
                 Button("Séance en cours") { nav.pane = .live }.keyboardShortcut("l", modifiers: [.command, .shift])
                 Button("Ce soir — tirer une séance") { nav.pane = .tonight }.keyboardShortcut("t", modifiers: [.command, .shift])
+                Button("Patcher") { nav.pane = .patcher }.keyboardShortcut("p", modifiers: [.command, .shift])
             }
             CommandGroup(after: .importExport) {
                 Button("Importer une base sessions.db…") {
@@ -108,14 +109,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 enum Pane: String, CaseIterable, Identifiable {
     case tonight, live, spark
     case sessions, projects, takes, stats
-    case catalogue, facades, presets
+    case catalogue, facades, presets, patcher
     case influences, obliques, tracks, inspirations, samples, mirack, wishlist
     var id: String { rawValue }
 
     static let groups: [(String, [Pane])] = [
         ("Jouer", [.tonight, .live, .spark]),
         ("Journal", [.sessions, .projects, .takes, .stats]),
-        ("Matériel", [.catalogue, .facades, .presets, .wishlist]),
+        ("Matériel", [.catalogue, .patcher, .facades, .presets, .wishlist]),
         ("Références", [.influences, .obliques, .tracks, .inspirations, .samples, .mirack]),
     ]
 
@@ -131,6 +132,7 @@ enum Pane: String, CaseIterable, Identifiable {
         case .catalogue: "Catalogue"
         case .facades: "Façades"
         case .presets: "Presets"
+        case .patcher: "Patcher"
         case .influences: "Influences"
         case .obliques: "Stratégies obliques"
         case .tracks: "Morceaux"
@@ -152,6 +154,7 @@ enum Pane: String, CaseIterable, Identifiable {
         case .catalogue: "pianokeys"
         case .facades: "dial.medium"
         case .presets: "slider.horizontal.3"
+        case .patcher: "point.3.connected.trianglepath.dotted"
         case .influences: "person.2"
         case .obliques: "suit.diamond"
         case .tracks: "music.note.list"
@@ -210,6 +213,7 @@ struct ContentView: View {
         case .catalogue: CatalogueView()
         case .facades: FacadesView()
         case .presets: PresetsView()
+        case .patcher: PatcherView()
         case .influences: InfluencesView()
         case .obliques: ObliquesView()
         case .tracks: TracksView()
@@ -229,6 +233,7 @@ struct ContentView: View {
         case .influences: return d.influences.count
         case .obliques: return d.obliques.count
         case .presets: return d.presets.count
+        case .patcher: return d.patches.count
         case .facades: return d.knobSheets.count
         case .tracks: return d.tracks.count
         case .inspirations: return d.inspirations.count
