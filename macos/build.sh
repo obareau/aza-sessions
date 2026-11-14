@@ -57,6 +57,7 @@ VPY="$BUILD/venv/bin/python"
 step "MarkupSafe universel"
 MS="$("$VPY" -c 'import importlib.metadata as m; print(m.version("markupsafe"))')"
 PYV="$("$VPY" -c 'import sys; print(f"{sys.version_info[0]}{sys.version_info[1]}")')"
+# (MarkupSafe 3.0.3+ ne publie plus de roue universelle : le repli est alors normal.)
 if "$VPY" -m pip download -q --no-deps --only-binary=:all: \
      --platform macosx_10_13_universal2 --platform macosx_10_9_universal2 \
      --platform macosx_11_0_universal2 --python-version "$PYV" \
@@ -80,7 +81,7 @@ step "Serveur embarqué (PyInstaller, universal2)"
 step "App (Swift — arm64 + x86_64, macOS $MIN_MACOS+)"
 SDK="$(xcrun --sdk macosx --show-sdk-path)"
 for arch in arm64 x86_64; do
-  xcrun swiftc -O -swift-version 5 -sdk "$SDK" -target "$arch-apple-macos$MIN_MACOS" \
+  xcrun swiftc -O -swift-version 5 -parse-as-library -sdk "$SDK" -target "$arch-apple-macos$MIN_MACOS" \
     "$HERE"/AZASessions/*.swift -o "$BUILD/AZASessions-$arch"
 done
 
