@@ -90,5 +90,84 @@ check(imp.obliques.first?.active == false && imp.influences.isEmpty, "import : o
 check(imp.nextSessionId() == 6, "import : identifiants suivants")
 check((try? SQLiteImport.load(path: work.appendingPathComponent("aza.json").path)) == nil, "import : refuse un non-SQLite")
 
+// 7. Modules ajoutés
+let titles = Titles.propose(5)
+check(titles.count == 5 && Set(titles).count == 5, "titres : 5 distincts")
+check(!titles.contains { $0.contains("SIGNAL RÉSIDUELLE") }, "titres : accord du genre")
+
+var dr = Seed.initial()
+for i in dr.catalogue.indices where !["MicroFreak", "Sonicake Smartbox"].contains(dr.catalogue[i].name) {
+    dr.catalogue[i].noDraw = true
+}
+dr.catalogue[dr.catalogue.firstIndex { $0.name == "MicroFreak" }!].code = "MFR"
+let tir = dr.draw()
+check(tir.instrument?.name == "MicroFreak" && tir.treatment?.name == "Sonicake Smartbox", "tirage : hors tirage respecté")
+check(tir.take == "MFR_1" && !tir.oblique.isEmpty && !tir.title.isEmpty, "tirage : prise, oblique, titre")
+
+let codes = CodeProposer.propose(Seed.initial().catalogue)
+let byName = Dictionary(uniqueKeysWithValues: Seed.initial().catalogue.map { ($0.name, $0.id) })
+check(codes[byName["MicroFreak"]!] == "MFR", "codes : MicroFreak → \(codes[byName["MicroFreak"]!] ?? "nil")")
+check(codes[byName["NTS-1"]!] == "NT1", "codes : NTS-1 → \(codes[byName["NTS-1"]!] ?? "nil")")
+check(codes[byName["Zoom R8"]!] == "ZR8", "codes : Zoom R8 → \(codes[byName["Zoom R8"]!] ?? "nil")")
+check(Set(codes.values).count == codes.count, "codes : pas de doublon")
+var withCode = Seed.initial(); withCode.catalogue[0].code = "XYZ"
+check(CodeProposer.propose(withCode.catalogue)[withCode.catalogue[0].id] == nil, "codes : existant intouché")
+
+let ctl = parseControls("-- OSC\nCutoff\n# rien\nFiltre: LP | BP | HP\n\nReso")
+check(ctl.map(\.kind) == [.section, .dial, .switch, .dial] && ctl[2].options == ["LP", "BP", "HP"], "façade : déclaration")
+
+var reg = AZAData()
+for (i, (date, take)) in [("2026-11-01", "MF_1"), ("2026-11-02", "mf_1"), ("2026-11-03", "NT_1"), ("2026-11-04", "")].enumerated() {
+    var s = Session(id: i + 1, date: date); s.audioFile = take; reg.sessions.append(s)
+}
+let groupsR = reg.takeRegistry()
+check(groupsR.count == 2 && groupsR.first { $0.key == "MF_1" }?.duplicate == true, "prises : doublon insensible à la casse")
+
+var stData = AZAData()
+let today = Clock.day("2026-11-14")!
+for (i, day) in ["2026-11-14", "2026-11-13", "2026-11-12", "2026-11-01", "2026-10-31"].enumerated() {
+    var s = Session(id: i + 1, date: day); s.rating = 3; s.energyLevel = 2; s.durationMin = 30 + i; s.machines = ["MicroFreak"]
+    stData.sessions.append(s)
+}
+let sts = stData.stats(today: today)!
+check(sts.streak == 3 && sts.maxStreak == 3, "stats : série \(sts.streak) / record \(sts.maxStreak)")
+check(sts.totalMinutes == 160 && sts.thisMonth == 4 && !sts.monthlyRating.isEmpty, "stats : totaux et tendances")
+check(stData.stats(today: Clock.day("2026-11-16")!)!.streak == 0, "stats : série rompue")
+
+var sp = Seed.initial(); sp.inspirations = [Inspiration(id: 1, content: "Une idée")]
+check(sp.sparks().contains { $0.kind == "Idée en vrac" }, "spark : idées en vrac")
+
+var gp = Seed.initial()
+gp.gearPairings = [GearPairing(id: 1, gearId: 1, partnerId: 16)]
+check(gp.pairings(of: 16).first?.partner.id == 1 && gp.pairings(of: 1).first?.partner.id == 16, "carnet : association des deux côtés")
+
+// 8. Import des tables secondaires
+let db2 = work.appendingPathComponent("full.db").path
+var h: OpaquePointer?
+sqlite3_open(db2, &h)
+sqlite3_exec(h, """
+CREATE TABLE sessions (id INTEGER PRIMARY KEY, date TEXT NOT NULL);
+CREATE TABLE gear_wishlist (id INTEGER PRIMARY KEY, manufacturer TEXT, name TEXT, type TEXT, price REAL, priority TEXT, notes TEXT, url TEXT, acquired INTEGER);
+CREATE TABLE preset_notes (id INTEGER PRIMARY KEY, date TEXT, catalogue_id INTEGER, preset_name TEXT, evocation TEXT, song_idea TEXT, influence_id INTEGER, rating INTEGER, tags TEXT, session_id INTEGER, notes TEXT);
+CREATE TABLE knob_sheets (id INTEGER PRIMARY KEY, gear_id INTEGER, session_id INTEGER, label TEXT, values_json TEXT, notes TEXT, created_at TEXT, preset_id INTEGER);
+CREATE TABLE gear_pairings (id INTEGER PRIMARY KEY, gear_id INTEGER, partner_id INTEGER, note TEXT);
+CREATE TABLE live_session (id INTEGER PRIMARY KEY, started_at TEXT, notes_live TEXT, machines TEXT, effects TEXT, daws TEXT, synths_ios TEXT, plugins TEXT, mode TEXT, intention TEXT, oblique TEXT, project_id INTEGER);
+INSERT INTO sessions VALUES (1, '2026-01-01');
+INSERT INTO gear_wishlist VALUES (1, 'Behringer', 'Wasp', 'Synthétiseur', 129.5, 'Bientôt', NULL, NULL, 0);
+INSERT INTO preset_notes VALUES (4, '2026-02-02', 1, 'Brume', 'brouillard', NULL, NULL, 5, NULL, 1, NULL);
+INSERT INTO knob_sheets VALUES (2, 1, 1, 'Nappe', '{"Cutoff": 7, "Reso": 0, "Filtre": "LP", "Env": 2.5}', '', '2026-02-02 10:00:00', 4);
+INSERT INTO gear_pairings VALUES (1, 1, 2, 'chaud');
+INSERT INTO live_session VALUES (1, '2026-11-14 20:00:00', 'ça tourne', 'MicroFreak', '', '', '', '', 'Dawless', '', 'Commence par la fin.', NULL);
+""", nil, nil, nil)
+sqlite3_close(h)
+let full = try SQLiteImport.load(path: db2)
+check(full.wishlist.first?.price == 129.5 && full.wishlist.first?.priority == "Bientôt", "import : wishlist")
+check(full.presets.first?.presetName == "Brume" && full.presets.first?.rating == 5, "import : presets")
+let ks = full.knobSheets.first
+check(ks?.values == ["Cutoff": "7", "Reso": "0", "Filtre": "LP", "Env": "2.5"] && ks?.presetId == 4, "import : relevé (0 gardé)")
+check(full.gearPairings.first?.note == "chaud", "import : associations")
+check(full.live?.machines == ["MicroFreak"] && full.live?.mode == "Dawless", "import : séance en cours")
+check(try JSONStorage.decode(JSONStorage.encode(full)) == full, "aller-retour JSON complet")
+
 print(failures == 0 ? "✓ aza-check : \(passed) vérifications OK" : "✗ aza-check : \(failures) échec(s), \(passed) OK")
 exit(failures == 0 ? 0 : 1)

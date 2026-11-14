@@ -242,10 +242,23 @@ public struct AZAData: Codable, Equatable, Sendable {
     public var catalogue: [GearItem] = []
     public var influences: [Influence] = []
     public var obliques: [Oblique] = []
+    public var wishlist: [WishItem] = []
+    public var samples: [SampleBank] = []
+    public var tracks: [InspiringTrack] = []
+    public var inspirations: [Inspiration] = []
+    public var mirack: [MiRackModule] = []
+    public var presets: [PresetNote] = []
+    public var gearPairings: [GearPairing] = []
+    public var gearNotes: [GearNote] = []
+    public var knobSheets: [KnobSheet] = []
+    public var live: LiveSession?
 
     public init() {}
 
-    enum CodingKeys: String, CodingKey { case format, sessions, projects, catalogue, influences, obliques }
+    enum CodingKeys: String, CodingKey {
+        case format, sessions, projects, catalogue, influences, obliques
+        case wishlist, samples, tracks, inspirations, mirack, presets, gearPairings, gearNotes, knobSheets, live
+    }
     public init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         format = c.v(.format, 1)
@@ -254,6 +267,16 @@ public struct AZAData: Codable, Equatable, Sendable {
         catalogue = try c.decodeIfPresent([GearItem].self, forKey: .catalogue) ?? []
         influences = try c.decodeIfPresent([Influence].self, forKey: .influences) ?? []
         obliques = try c.decodeIfPresent([Oblique].self, forKey: .obliques) ?? []
+        wishlist = try c.decodeIfPresent([WishItem].self, forKey: .wishlist) ?? []
+        samples = try c.decodeIfPresent([SampleBank].self, forKey: .samples) ?? []
+        tracks = try c.decodeIfPresent([InspiringTrack].self, forKey: .tracks) ?? []
+        inspirations = try c.decodeIfPresent([Inspiration].self, forKey: .inspirations) ?? []
+        mirack = try c.decodeIfPresent([MiRackModule].self, forKey: .mirack) ?? []
+        presets = try c.decodeIfPresent([PresetNote].self, forKey: .presets) ?? []
+        gearPairings = try c.decodeIfPresent([GearPairing].self, forKey: .gearPairings) ?? []
+        gearNotes = try c.decodeIfPresent([GearNote].self, forKey: .gearNotes) ?? []
+        knobSheets = try c.decodeIfPresent([KnobSheet].self, forKey: .knobSheets) ?? []
+        live = try c.decodeIfPresent(LiveSession.self, forKey: .live)
     }
 }
 

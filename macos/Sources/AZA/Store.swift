@@ -7,7 +7,7 @@ import SwiftUI
 /// modification (écriture différée de 0,6 s pour regrouper la frappe).
 @MainActor
 final class Store: ObservableObject {
-    static let version = "1.0.0"
+    static let version = "1.1.0"
 
     @Published var data: AZAData {
         didSet { if data != oldValue { scheduleSave() } }
@@ -15,29 +15,23 @@ final class Store: ObservableObject {
     @Published var lastError: String?
     @Published private(set) var lastSaved: Date?
 
-    let storage: JSONStorage
+    @Published private(set) var storage: JSONStorage
     private var pending: DispatchWorkItem?
+    /// Fichier illisible au chargement : on ne l'écrase jamais, même après
+    /// fermeture de l'alerte. Levé seulement en changeant de fichier.
+    private var saveBlocked = false
 
-    init(storage: JSONStorage = JSONStorage(url: JSONStorage.defaultURL)) {
-        self.storage = storage
-        var loaded: AZAData
-        var err: String?
-        do {
-            if let d = try storage.load() {
-                loaded = d
-                try storage.backup()
-            } else {
-                loaded = Seed.initial()
-                try storage.save(loaded)
-            }
-        } catch {
-            // Fichier illisible : on ne l'écrase surtout pas, on travaille sur
-            // une base vide et la sauvegarde est suspendue.
-            loaded = Seed.initial()
-            err = "Lecture impossible de \(storage.url.path) : \(error.localizedDescription). " +
-                  "Le fichier n'a pas été modifié ; la sauvegarde est suspendue."
-        }
-        data = loaded
+    static var savedURL: URL {
+        if let p = UserDefaults.standard.string(forKey: "dataFile"), !p.isEmpty { return URL(fileURLWithPath: p) }
+        return JSONStorage.defaultURL
+    }
+
+    init() {
+        storage = JSONStorage(url: Self.savedURL)
+        data = AZAData()
+        let (d, err) = Self.open(storage)
+        data = d ?? Seed.initial()
+        saveBlocked = d == nil
         lastError = err
         NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
                                                object: nil, queue: .main) { [weak self] _ in
@@ -45,7 +39,40 @@ final class Store: ObservableObject {
         }
     }
 
-    private var saveBlocked: Bool { lastError?.hasPrefix("Lecture impossible") == true }
+    /// Charge (ou crée) le fichier. `nil` = illisible, à ne pas écraser.
+    private static func open(_ storage: JSONStorage, seed: AZAData? = nil) -> (AZAData?, String?) {
+        do {
+            if let d = try storage.load() {
+                try storage.backup()
+                return (d, nil)
+            }
+            let fresh = seed ?? Seed.initial()
+            try storage.save(fresh)
+            return (fresh, nil)
+        } catch {
+            return (nil, "Lecture impossible de \(storage.url.path) : \(error.localizedDescription). "
+                    + "Le fichier n'a pas été modifié ; la sauvegarde y est suspendue.")
+        }
+    }
+
+    /// Change de fichier : ouvre celui-ci s'il existe, sinon y écrit les données actuelles.
+    func switchTo(url: URL) {
+        flush()
+        let next = JSONStorage(url: url)
+        let (d, err) = Self.open(next, seed: data)
+        guard let d else { lastError = err; return }
+        pending?.cancel()
+        storage = next
+        saveBlocked = false
+        data = d
+        UserDefaults.standard.set(url == JSONStorage.defaultURL ? "" : url.path, forKey: "dataFile")
+    }
+
+    func backupNow() {
+        flush()
+        do { try storage.backup() } catch { lastError = "Sauvegarde impossible : \(error.localizedDescription)" }
+        objectWillChange.send()
+    }
 
     private func scheduleSave() {
         pending?.cancel()

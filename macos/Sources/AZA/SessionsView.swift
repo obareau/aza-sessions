@@ -45,7 +45,7 @@ struct SessionsView: View {
                     SessionEditor(session: b, onOpen: { selection = $0 }).id(id)
                 } else {
                     VStack(spacing: 12) {
-                        Text("Aucune séance sélectionnée").font(.system(.title3, design: .monospaced))
+                        Text("Aucune séance sélectionnée").azaFont(.title3, mono: true)
                         Button("Nouvelle séance  ⌘N") { selection = store.newSession() }
                     }
                     .foregroundStyle(.secondary)
@@ -111,18 +111,18 @@ struct SessionRow: View {
                 .fill(store.data.project(session.projectId).map { Color(hex: $0.color) } ?? .clear)
                 .frame(width: 4)
             VStack(alignment: .leading, spacing: 2) {
-                Text(session.displayTitle).font(.system(.body, design: .monospaced)).lineLimit(1)
+                Text(session.displayTitle).azaFont(.body, mono: true).lineLimit(1)
                 HStack(spacing: 6) {
                     Text(session.date)
                     if !session.mode.isEmpty { Text(session.mode) }
-                    if let r = session.rating, r > 0 { Text(String(repeating: "★", count: r)).foregroundStyle(azaOrange) }
+                    if let r = session.rating, r > 0 { Text(String(repeating: "★", count: r)).foregroundStyle(.tint) }
                     if session.toRework { Text("↻") }
-                    if session.releasePotential { Text("◆").foregroundStyle(azaOrange) }
+                    if session.releasePotential { Text("◆").foregroundStyle(.tint) }
                 }
-                .font(.system(.caption, design: .monospaced)).foregroundStyle(.secondary)
+                .azaFont(.caption, mono: true).foregroundStyle(.secondary)
                 let gear = session.allGear
                 if !gear.isEmpty {
-                    Text(gear.joined(separator: " · ")).font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+                    Text(gear.joined(separator: " · ")).azaFont(.caption2).foregroundStyle(.tertiary).lineLimit(1)
                 }
             }
         }
@@ -170,7 +170,7 @@ struct SessionEditor: View {
                 }
                 HStack(spacing: 24) {
                     LabeledContent("Note") { Dots(value: $session.rating, symbol: "★") }
-                    LabeledContent("Énergie") { Dots(value: $session.energyLevel, symbol: "⚡") }
+                    LabeledContent("Énergie") { Dots(value: $session.energyLevel, symbol: "⚡", max: 3) }
                 }
                 HStack {
                     Toggle("À retravailler", isOn: $session.toRework)
@@ -242,7 +242,7 @@ struct SessionEditor: View {
     }
 
     func header(_ s: String) -> some View {
-        Text(s.uppercased()).font(.system(.caption, design: .monospaced)).foregroundStyle(azaOrange)
+        Text(s.uppercased()).azaHeading()
     }
 }
 
@@ -251,15 +251,16 @@ struct SessionEditor: View {
 struct Dots: View {
     @Binding var value: Int?
     let symbol: String
+    var max = 5
     var body: some View {
         HStack(spacing: 2) {
-            ForEach(1...5, id: \.self) { i in
+            ForEach(1...max, id: \.self) { i in
                 Text(symbol)
                     .opacity((value ?? 0) >= i ? 1 : 0.2)
                     .onTapGesture { value = value == i ? nil : i }
             }
         }
-        .foregroundStyle(azaOrange)
+        .foregroundStyle(.tint)
         .help("Clic pour noter, re-clic pour effacer")
     }
 }
@@ -273,9 +274,9 @@ struct MultiLine: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
+            Text(title).azaFont(.caption).foregroundStyle(.secondary)
             TextEditor(text: $text)
-                .font(.system(.body, design: .monospaced))
+                .azaFont(.body, mono: true)
                 .frame(minHeight: minHeight)
                 .scrollContentBackground(.hidden)
                 .padding(4)
@@ -336,7 +337,7 @@ struct NamePicker: View {
         let extra = values.filter { !options.contains($0) }
         let shown = (options + extra).filter { filter.isEmpty || $0.localizedCaseInsensitiveContains(filter) }
         return VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.system(.headline, design: .monospaced))
+            Text(title).azaFont(.headline, mono: true)
             TextField("Filtrer ou ajouter…", text: $filter)
                 .onSubmit {
                     let n = filter.trimmingCharacters(in: .whitespaces)
@@ -352,7 +353,7 @@ struct NamePicker: View {
                     }
                 }
             }.frame(height: min(320, CGFloat(shown.count) * 22 + 8))
-            Text("Entrée : ajouter un nom libre").font(.caption2).foregroundStyle(.secondary)
+            Text("Entrée : ajouter un nom libre").azaFont(.caption2).foregroundStyle(.secondary)
         }
         .padding(12).frame(width: 280)
     }
