@@ -5,6 +5,93 @@
 
 ---
 
+## v4.0.0 — 2026-11-14 — AZA devient une app Mac, et ne perd plus rien
+
+⚠️⚠️ **Roblab n'existe plus.** AZA ne tourne plus sur un serveur : c'est une
+**app Mac native**, la base vit sur le Mac. Fin de Gunicorn, de systemd et de
+l'URL publique.
+
+### 🖥 App Mac — `macos/`
+- **AZA Sessions.app** : fenêtre native (AppKit + WKWebView) sur le serveur AZA
+  **embarqué** (Python figé par PyInstaller). Double-clic, Dock, ⌘Q — plus de
+  terminal.
+- **macOS 12 Monterey et suivants, Intel ET Apple Silicon** dans un seul
+  binaire universel. Chaque binaire du bundle est vérifié au build (architectures
+  + version minimale de macOS), et la CI lance l'app pour de vrai sur les deux
+  processeurs.
+- Ce qu'un WKWebView ne fait pas seul, et qu'il a fallu brancher : `confirm()`
+  (sans quoi aucun bouton « Supprimer » ne marchait), sélecteur de fichier,
+  téléchargements (exports, `.db`, Markdown), **impression** (`window.print()`
+  est muet dans WebKit : fiches, atelier, rappel, PDF du Patcher).
+- Menus natifs : séance rapide ⌘N, complète ⇧⌘N, **sauvegarder ⌘S**, imprimer ⌘P,
+  aller à Ce soir / Atelier / Stats / Catalogue / Prises / Lore, zoom, plein écran,
+  « Ouvrir dans le navigateur » (le SysEx a besoin de Web MIDI, que WebKit n'a pas).
+- **Port fixe** (47017) retenu d'un lancement à l'autre : le stockage local des
+  pages — brouillons de `/vite`, thème, sections repliées — est rangé par origine.
+  Un port au hasard les aurait effacés à chaque ouverture.
+- L'app fermée, tuée ou plantée : le serveur fait sa dernière sauvegarde et
+  s'arrête (SIGTERM, ou disparition du processus parent). Un seul serveur par
+  base (verrou).
+- Chart.js servi par l'app (`static/vendor/`) : les statistiques s'affichent sans
+  réseau.
+
+### 💾 Sauvegarde JSON — `core/journal.py`
+- **Une copie JSON complète de la base à chaque modification** — toutes les
+  tables, pas seulement les séances. Écrite quelques secondes après la dernière
+  saisie, et à la fermeture. Auparavant : une copie SQLite **au démarrage du
+  service** seulement, 5 gardées, sur le même disque que la base.
+- **Lisible sans AZA** (JSON indenté, accents en clair), **vérifiée** par empreinte
+  SHA-256 : un fichier tronqué ou abîmé est refusé au lieu d'écraser la base.
+- Rangée **hors du dossier de la base** : `~/Documents/AZA Sessions/Sauvegardes`
+  (Time Machine, iCloud), réglable depuis le menu Fichier.
+- Rétention : tout ce qui a moins de 48 h, une par jour sur 60 jours, puis une par
+  mois sans limite — et toujours les 20 dernières.
+- La veille lit `PRAGMA data_version`, pas les routes HTTP : toute écriture est
+  vue, quelle que soit la page qui l'a faite.
+
+### ♻ Restauration — Paramètres
+- **Restaurer une sauvegarde `.json` ou une ancienne `sessions.db` entière** :
+  séances, catalogue, presets, patchs, façades — ce que l'import existant (séances
+  seules, fusionnées) ne savait pas faire.
+- Liste des sauvegardes avec **« Restaurer » en un clic**.
+- Une vieille base passe : colonnes absentes → valeurs par défaut, table du
+  Prompteur (partie chez D.I.M) ignorée. Une colonne **inconnue** est refusée
+  plutôt que perdue en silence (case à cocher pour forcer).
+- Réécriture **en place** par l'API backup de SQLite, jamais en remplaçant le
+  fichier : une connexion ouverte aurait continué d'écrire dans l'ancien.
+
+### 🛟 Pas de destruction sans filet
+- Avant **restaurer, fusionner ou vider les séances** : copie de sécurité étiquetée
+  (`avant-restauration`, `avant-vidage`…), jamais effacée par la rétention. **Si
+  elle ne peut pas être écrite, l'opération est annulée.**
+- **Bandeau sur toutes les pages** quand la sauvegarde automatique échoue — la
+  leçon du récap Ollama mort en silence.
+
+### 🐛 Corrigé en chemin
+- **`/settings` existait deux fois** (`sessions` et `settings_app`) : la première
+  enregistrée masquait l'autre. Une seule route désormais.
+- Le téléchargement `.db` lisait le fichier brut : copie déchirée possible pendant
+  une écriture. Passe par l'API backup de SQLite.
+- `/health` ouvrait la base par une URI non encodée : un `#` dans le chemin faisait
+  ouvrir un autre fichier, sans erreur. Helper `core.db.ro_uri()`.
+- Test `test_le_compteur_repart_chaque_jour` : `UPDATE … LIMIT` n'existe que dans
+  certains SQLite — il échouait selon la machine.
+- `python app.py` écoute sur **127.0.0.1** (et non plus 0.0.0.0) ; `HOST=` pour
+  l'ouvrir exprès.
+
+### 🗑 Retiré
+- `wsgi.py`, `Dockerfile`, `.dockerignore`, gunicorn — le service Roblab.
+
+### 🧪 Tests
+- `tests/test_journal.py` (19) et `tests/test_settings_backup.py` (15) :
+  aller-retour exact (BLOB, NULL, flottants, unicode, compteurs AUTOINCREMENT),
+  fichier abîmé refusé base intacte, vieille base, rétention, veille, rafale,
+  filet obligatoire avant destruction, bandeau d'échec.
+- `macos/server_main.py --selftest` visite toutes les pages du binaire figé, sur
+  chaque architecture.
+
+---
+
 ## v3.36.0 — 2026-09-29 — Le tirage apprend ce qu'il ne doit pas tirer
 
 ### 🎯 Correctif d'usage

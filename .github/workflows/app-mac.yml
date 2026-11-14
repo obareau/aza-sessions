@@ -1,0 +1,106 @@
+name: App Mac
+
+# Construit l'app, la vérifie, et la lance pour de vrai sur Apple Silicon et sur
+# Intel. Le dépôt est public : les machines macOS de GitHub sont gratuites.
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: app-mac-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python -m pytest tests/ -q
+
+  build:
+    name: Build (universel) + essai Apple Silicon
+    runs-on: macos-14
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # numéro de build = nombre de commits
+
+      - name: Python universel de python.org
+        run: |
+          curl -sSfLO https://www.python.org/ftp/python/3.12.10/python-3.12.10-macos11.pkg
+          sudo installer -pkg python-3.12.10-macos11.pkg -target /
+          echo "PYTHON=/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12" >> "$GITHUB_ENV"
+
+      - name: Construire
+        run: macos/build.sh
+
+      - name: Selftest Intel sous Rosetta
+        run: |
+          softwareupdate --install-rosetta --agree-to-license >/dev/null 2>&1 || true
+          arch -x86_64 "macos/dist/AZA Sessions.app/Contents/Resources/aza-server/aza-server" --selftest
+
+      - name: Lancer l'app comme un usager
+        run: macos/scripts/essai_lancement.sh "macos/dist/AZA Sessions.app" "$RUNNER_TEMP/essai"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: essai-apple-silicon
+          path: ${{ runner.temp }}/essai
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AZA-Sessions-macOS
+          path: |
+            macos/dist/*.dmg
+            macos/dist/*.zip
+
+  intel:
+    name: Essai sur Mac Intel
+    needs: build
+    runs-on: macos-15-intel
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: AZA-Sessions-macOS
+          path: dist
+      - name: Décompresser (ditto garde droits et liens)
+        run: ditto -x -k dist/AZA-Sessions-*.zip "$RUNNER_TEMP/app"
+      - name: Selftest
+        run: '"$RUNNER_TEMP/app/AZA Sessions.app/Contents/Resources/aza-server/aza-server" --selftest'
+      - name: Lancer l'app comme un usager
+        run: macos/scripts/essai_lancement.sh "$RUNNER_TEMP/app/AZA Sessions.app" "$RUNNER_TEMP/essai"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: essai-intel
+          path: ${{ runner.temp }}/essai
+          if-no-files-found: ignore
+
+  release:
+    name: Publier la version
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [tests, build, intel]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: AZA-Sessions-macOS
+          path: dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

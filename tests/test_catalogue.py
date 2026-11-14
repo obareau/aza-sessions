@@ -383,7 +383,11 @@ def test_le_compteur_repart_chaque_jour():
     for d in ("2026-09-27", "2026-09-27", "2026-09-28"):
         conn.execute("INSERT INTO sessions (date, audio_file) VALUES (?, ?)",
                      (d + "T10:00", "TC_1" if d == "2026-09-28" else "TC_x"))
-    conn.execute("UPDATE sessions SET audio_file='TC_1' WHERE date LIKE '2026-09-27%' LIMIT 1")
+    # Pas de `UPDATE … LIMIT` : cette syntaxe exige un SQLite compilé avec
+    # SQLITE_ENABLE_UPDATE_DELETE_LIMIT, ce que n'est ni le Python de python.org
+    # ni celui de bien des distributions — le test cassait selon la machine.
+    conn.execute("UPDATE sessions SET audio_file='TC_1' WHERE id = "
+                 "(SELECT id FROM sessions WHERE date LIKE '2026-09-27%' LIMIT 1)")
     conn.commit(); conn.close()
     # 2026-09-28 a déjà TC-1 → la prochaine du 28 est TC-2
     assert eng.take_name({"machines": "TakeCompteur"}, "2026-09-28") == "TC_2"

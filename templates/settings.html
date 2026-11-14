@@ -21,6 +21,18 @@
 </div>
 {% endif %}
 
+{% if premiere %}
+<div class="card" style="border-color:var(--warning);background:var(--warning-soft);">
+    <div class="card-title" style="color:var(--warning);">∙ Première ouverture — base neuve</div>
+    <p style="font-family:var(--mono);font-size:12px;margin:12px 0 0;line-height:1.7;">
+        Cette base ne contient que les valeurs d'usine. Si tu as gardé une ancienne
+        <code>sessions.db</code> (un vieux dossier <code>aza-sessions/</code>, un
+        <code>aza_backup_….db</code> téléchargé) ou une sauvegarde <code>.json</code>,
+        restaure-la ci-dessous : <strong>tout</strong> revient, séances, catalogue, presets, patchs.
+    </p>
+</div>
+{% endif %}
+
 <!-- ÉTAT ACTUEL -->
 <div class="card">
     <div class="card-title">∙ Base de données actuelle</div>
@@ -30,17 +42,89 @@
             <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-top:4px;">Session{% if nb_sessions > 1 %}s{% endif %}</div>
         </div>
         <div style="flex:1"></div>
-        <a href="{{ url_for('settings_app.settings_backup') }}" class="btn btn-ghost">↓ Télécharger la base (backup)</a>
+        <a href="{{ url_for('settings_app.settings_export_json') }}" class="btn btn-ghost">↓ Exporter en JSON</a>
+        <a href="{{ url_for('settings_app.settings_backup') }}" class="btn btn-ghost">↓ Télécharger la base (.db)</a>
     </div>
+</div>
+
+<!-- SAUVEGARDES AUTOMATIQUES -->
+<div class="card" id="sauvegardes">
+    <div class="card-title">∙ Sauvegardes automatiques</div>
+    <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);margin:12px 0;line-height:1.7;">
+        Une copie JSON complète de la base est écrite <strong>à chaque modification</strong>,
+        quelques secondes après la dernière saisie, et à la fermeture de l'app.
+        Lisible dans n'importe quel éditeur, vérifiée par empreinte SHA-256.<br>
+        Gardées : tout ce qui a moins de 48 h, une par jour sur 60 jours, puis une par mois —
+        et toujours les 20 dernières.
+    </p>
+    <div style="font-family:var(--mono);font-size:11px;line-height:1.9;">
+        <div>Dossier : <code style="word-break:break-all;">{{ sauvegarde.dossier }}</code></div>
+        <div>Dernière : {% if sauvegarde.derniere %}<strong>{{ sauvegarde.derniere_quand }}</strong>{% else %}<span style="color:var(--warning);">aucune pour l'instant</span>{% endif %}
+            · {{ sauvegarde.nombre }} fichier{% if sauvegarde.nombre > 1 %}s{% endif %}
+            · veille {% if sauvegarde.veille %}<span style="color:var(--success);">active</span>{% else %}<span style="color:var(--warning);">arrêtée</span>{% endif %}</div>
+        {% if sauvegarde.erreur %}
+        <div style="color:var(--accent);">✕ Dernière tentative en échec : {{ sauvegarde.erreur }}</div>
+        {% endif %}
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;">
+        <form method="POST" action="{{ url_for('settings_app.settings_save_now') }}">
+            <button type="submit" class="btn btn-primary">Sauvegarder maintenant</button>
+        </form>
+        {% if peut_ouvrir_dossier %}
+        <form method="POST" action="{{ url_for('settings_app.settings_open_folder') }}">
+            <button type="submit" class="btn btn-ghost">Ouvrir le dossier dans le Finder</button>
+        </form>
+        {% endif %}
+    </div>
+    {% if snapshots %}
+    <table style="width:100%;margin-top:16px;font-family:var(--mono);font-size:11px;border-collapse:collapse;">
+        {% for s in snapshots %}
+        <tr style="border-top:1px solid var(--border);">
+            <td style="padding:6px 4px;white-space:nowrap;">{{ s.when.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+            <td style="padding:6px 4px;color:var(--text-muted);">{% if s.label %}<span style="color:var(--warning);">{{ s.label }}</span>{% endif %}</td>
+            <td style="padding:6px 4px;color:var(--text-muted);text-align:right;">{{ (s.size / 1024)|round(1) }} Ko</td>
+            <td style="padding:6px 4px;text-align:right;white-space:nowrap;">
+                <a href="{{ url_for('settings_app.settings_snapshot_download', name=s.name) }}" class="btn btn-ghost" style="padding:2px 8px;font-size:10px;">↓</a>
+                <form method="POST" action="{{ url_for('settings_app.settings_snapshot_restore', name=s.name) }}" style="display:inline;"
+                      onsubmit="return confirm('Remettre la base dans l\'état du {{ s.when.strftime('%d/%m/%Y à %H:%M') }} ?\n\nL\'état actuel est d\'abord sauvegardé : rien n\'est perdu.')">
+                    <button type="submit" class="btn btn-ghost" style="padding:2px 8px;font-size:10px;">Restaurer</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+</div>
+
+<!-- RESTAURER -->
+<div class="card">
+    <div class="card-title">∙ Restaurer une sauvegarde</div>
+    <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);margin:12px 0;line-height:1.7;">
+        Une sauvegarde <code>.json</code> d'AZA, ou une ancienne base <code>sessions.db</code>.
+        <strong>Remplace toute la base</strong> — séances, catalogue, presets, patchs, façades.<br>
+        L'état actuel est d'abord écrit dans le dossier des sauvegardes (étiquette
+        <code>avant-restauration</code>, jamais effacée) : une erreur se répare en un clic.
+    </p>
+    <form method="POST" action="{{ url_for('settings_app.settings_restore') }}" enctype="multipart/form-data"
+          onsubmit="return confirm('Remplacer toute la base par ce fichier ?\n\nL\'état actuel est d\'abord sauvegardé.')"
+          style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px;">
+        <input type="file" name="backup_file" accept=".json,.db,application/json" required
+               style="font-family:var(--mono);font-size:12px;flex:1;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);">
+        <button type="submit" class="btn btn-primary">Restaurer →</button>
+        <label style="font-family:var(--mono);font-size:10px;color:var(--text-muted);flex-basis:100%;">
+            <input type="checkbox" name="allow_unknown" value="1">
+            ignorer les tables ou colonnes que cette version ne connaît pas (elles seraient perdues)
+        </label>
+    </form>
 </div>
 
 <!-- IMPORT -->
 <div class="card">
-    <div class="card-title">∙ Importer une ancienne base</div>
+    <div class="card-title">∙ Fusionner les séances d'une ancienne base</div>
     <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);margin:12px 0;">
         Upload un fichier <code>sessions.db</code> d'une version précédente.<br>
-        Les sessions seront <strong>fusionnées</strong> avec la base actuelle — les doublons (même date + machines) sont ignorés automatiquement.<br>
-        Les colonnes manquantes dans l'ancienne base sont gérées silencieusement.
+        Ses <strong>séances seules</strong> sont <strong>ajoutées</strong> à la base actuelle — les doublons (même date + machines) sont ignorés automatiquement.<br>
+        Pour tout reprendre (catalogue, presets…), utilise plutôt « Restaurer » ci-dessus.
     </p>
     <form method="POST" action="{{ url_for('settings_app.settings_import') }}" enctype="multipart/form-data"
           style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px;">
@@ -72,7 +156,7 @@
 <div class="card" style="border-color:var(--accent);">
     <div class="card-title" style="color:var(--accent);">∙ Zone dangereuse</div>
     <p style="font-family:var(--mono);font-size:12px;color:var(--text-muted);margin:12px 0;">
-        Ces actions sont irréversibles. Fais un backup avant.
+        Une copie de sécurité (<code>avant-vidage</code>) est écrite juste avant : si elle échoue, rien n'est supprimé.
     </p>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;">
         <form method="POST" action="{{ url_for('settings_app.settings_reset_sessions') }}"

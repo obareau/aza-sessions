@@ -38,8 +38,25 @@ class SettingsEngine:
         return n
 
     def backup_data(self):
-        with open(self.db_path, "rb") as f:
-            data = f.read()
+        """Copie téléchargeable de la base, prise par l'API backup de SQLite.
+
+        ⚠️ Pas un `open().read()` du fichier : lu pendant une écriture, il
+        donnait une base déchirée — exactement le fichier qu'on garde « au cas où ».
+        """
+        fd, tmp = tempfile.mkstemp(suffix=".db")
+        os.close(fd)
+        try:
+            src = sqlite3.connect(self.db_path, timeout=10.0)
+            dst = sqlite3.connect(tmp)
+            try:
+                src.backup(dst)
+            finally:
+                dst.close()
+                src.close()
+            with open(tmp, "rb") as f:
+                data = f.read()
+        finally:
+            os.remove(tmp)
         filename = f"aza_backup_{datetime.now().strftime('%Y%m%d_%H%M')}.db"
         return data, filename
 

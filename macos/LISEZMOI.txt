@@ -1,0 +1,27 @@
+AZA SESSIONS — installation
+===========================
+
+1. Glisse « AZA Sessions » sur le raccourci « Applications ».
+
+2. L'app n'est pas signée par un compte développeur Apple : macOS la bloque
+   au premier lancement. Une seule fois, dans le Terminal :
+
+       xattr -dr com.apple.quarantine "/Applications/AZA Sessions.app"
+
+   (Sans Terminal : Réglages Système → Confidentialité et sécurité →
+   « Ouvrir quand même », après une première tentative d'ouverture.)
+
+3. Au premier lancement, la base est neuve. Si tu as une ancienne
+   sessions.db ou une sauvegarde .json : Fichier → Sauvegardes et
+   restauration… → Restaurer.
+
+Où sont tes données
+-------------------
+  Base         ~/Library/Application Support/AZA Sessions/sessions.db
+  Sauvegardes  ~/Documents/AZA Sessions/Sauvegardes/   (une par modification)
+  Journaux     ~/Library/Logs/AZA Sessions/
+
+Le dossier des sauvegardes se change dans Fichier → Choisir le dossier des
+sauvegardes… (iCloud Drive, disque externe…).
+
+Compatible macOS 12 Monterey et suivants, Intel et Apple Silicon.

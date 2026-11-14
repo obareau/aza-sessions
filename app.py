@@ -1,8 +1,9 @@
-import os, json, random, socket, logging
+import os, json, random, socket, logging, atexit
 from flask import Flask
-from core.db import get_db as _get_db
+from core.db import get_db as _get_db, ro_uri
 from core.init_db import init_db, DEFAULT_OBLIQUE
 from core.backup import backup_db
+from core.journal import Journal
 
 # Se placer dans le dossier du script — évite PermissionError quand lancé via chemin absolu
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -12,11 +13,21 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.jinja_env.filters['fromjson'] = json.loads
 app.secret_key = os.environ.get("SECRET_KEY", "aza-sessions-local-dev")
 
-VERSION     = "3.36.0"
+VERSION     = "4.0.0"
 DB_PATH     = os.environ.get("DB_PATH",     os.path.join(os.path.dirname(__file__), "sessions.db"))
 CONFIG_PATH = os.environ.get("CONFIG_PATH", os.path.join(os.path.dirname(__file__), "config.json"))
 BACKUPS_DIR = os.environ.get("BACKUPS_DIR", os.path.join(os.path.dirname(__file__), "backups"))
-app.config.update(DB_PATH=DB_PATH, VERSION=VERSION, CONFIG_PATH=CONFIG_PATH, BACKUPS_DIR=BACKUPS_DIR)
+# Les sauvegardes JSON vont où on le demande : l'app Mac les range dans
+# ~/Documents/AZA Sessions/Sauvegardes, hors du dossier de la base — un seul
+# dossier perdu ne doit pas emporter la base ET ses copies.
+JSON_BACKUP_DIR = os.environ.get("JSON_BACKUP_DIR", os.path.join(BACKUPS_DIR, "json"))
+app.config.update(DB_PATH=DB_PATH, VERSION=VERSION, CONFIG_PATH=CONFIG_PATH,
+                  BACKUPS_DIR=BACKUPS_DIR, JSON_BACKUP_DIR=JSON_BACKUP_DIR)
+
+# La veille n'est PAS lancée à l'import (les tests importent app) :
+# `demarrer_sauvegardes()` s'en charge, depuis __main__ ou macos/server_main.py.
+journal = Journal(DB_PATH, JSON_BACKUP_DIR, VERSION)
+app.extensions["aza_journal"] = journal
 
 # ── BLUEPRINTS ────────────────────────────────────────────────────────────────
 from sessions     import bp as sessions_bp;     app.register_blueprint(sessions_bp)
@@ -65,7 +76,7 @@ def health():
     import sqlite3
     detail = {"status": "ok", "service": "aza-sessions"}
     try:
-        c = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=2)
+        c = sqlite3.connect(ro_uri(DB_PATH), uri=True, timeout=2)
         detail["sessions"] = c.execute("SELECT count(*) FROM sessions").fetchone()[0]
         c.close()
     except Exception as exc:
@@ -92,18 +103,36 @@ def inject_globals():
         live = conn.execute("SELECT id FROM live_session LIMIT 1").fetchone()
         conn.close()
         return {"has_live": live is not None,
-                "obsidian_vault": _get_config().get("obsidian_vault", "")}
+                "obsidian_vault": _get_config().get("obsidian_vault", ""),
+                "backup_error": app.extensions["aza_journal"].last_error}
     except Exception:
-        return {"has_live": False, "obsidian_vault": ""}
+        return {"has_live": False, "obsidian_vault": "",
+                "backup_error": app.extensions["aza_journal"].last_error}
+
+
+def demarrer_sauvegardes():
+    """Base prête, copie SQLite de démarrage, sauvegarde JSON, puis veille.
+
+    Retourne (copie SQLite écrite ou None, sauvegarde JSON écrite ou None).
+    """
+    init_db(DB_PATH)
+    written = backup_db(DB_PATH, BACKUPS_DIR)
+    snapshot = journal.save_now()
+    journal.start()
+    atexit.register(journal.stop)
+    return written, snapshot
 
 
 # ── BANNER ────────────────────────────────────────────────────────────────────
+
+HOST = os.environ.get("HOST", "127.0.0.1")
+
 
 def _find_free_port(start=5001, attempts=10):
     for port in range(start, start + attempts):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
-                s.bind(("0.0.0.0", port))
+                s.bind((HOST, port))
                 return port
             except OSError:
                 continue
@@ -138,11 +167,13 @@ def _print_banner(port):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 0)) or _find_free_port(5001)
     _print_banner(port)
-    init_db(DB_PATH)
 
-    written = backup_db(DB_PATH, BACKUPS_DIR)
-    print(f"  \033[38;5;240mBackup → {os.path.relpath(written)}\033[0m\n" if written
-          else "  \033[38;5;240mBackup ignoré — base inchangée\033[0m\n")
+    written, snapshot = demarrer_sauvegardes()
+    print(f"  \033[38;5;240mBackup → {os.path.relpath(written)}\033[0m" if written
+          else "  \033[38;5;240mBackup ignoré — base inchangée\033[0m")
+    print(f"  \033[38;5;240mJSON   → {snapshot or 'à jour'}  ({JSON_BACKUP_DIR})\033[0m\n")
 
+    # 127.0.0.1 par défaut : depuis la fin de Roblab, AZA est une app locale et
+    # n'a pas à s'ouvrir au réseau. HOST=0.0.0.0 pour le faire exprès.
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
-    app.run(debug=False, host="0.0.0.0", port=port, use_reloader=False)
+    app.run(debug=False, host=HOST, port=port, use_reloader=False)

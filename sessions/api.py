@@ -515,7 +515,7 @@ def settings_obsidian():
     cfg = _get_config()
     cfg["obsidian_vault"] = request.form.get("obsidian_vault", "").strip()
     _save_config(cfg)
-    return redirect(url_for("sessions.settings", msg="Chemin Obsidian sauvegardé"))
+    return redirect(url_for("settings_app.settings", msg="Chemin Obsidian sauvegardé"))
 
 
 
@@ -588,14 +588,6 @@ def search():
                            heatmap=engine.heatmap_data())
 
 
-@bp.route("/settings")
-def settings():
-    from core.db import get_db
-    conn = get_db(current_app.config["DB_PATH"])
-    nb_sessions = conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
-    conn.close()
-    msg = request.args.get("msg", "")
-    cfg = _get_config()
-    return render_template("settings.html", version=_version(),
-                           oblique=_oblique(), nb_sessions=nb_sessions, msg=msg,
-                           obsidian_vault=cfg.get("obsidian_vault", ""))
+# ⚠️ `/settings` vit dans settings_app. Une seconde route `/settings` ici,
+# enregistrée avant, masquait l'autre — et la page perdait l'état des
+# sauvegardes sans que rien ne casse. Supprimée en v4.0.0.
