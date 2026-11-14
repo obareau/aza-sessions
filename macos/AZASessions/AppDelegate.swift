@@ -52,15 +52,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
         server.start()
     }
 
+    /// Arrêt SYNCHRONE du serveur, pas `.terminateLater` : quand la fermeture
+    /// vient d'un bloc de la file principale (SIGTERM), une réponse renvoyée à
+    /// cette même file n'arrive jamais — l'app restait ouverte indéfiniment.
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        guard server.isRunning else { return .terminateNow }
         quitting = true
-        AppLog.write("fermeture — dernière sauvegarde")
-        server.stop {
+        if server.isRunning {
+            AppLog.write("fermeture — dernière sauvegarde")
+            server.stopAndWait()
             AppLog.write("serveur arrêté proprement")
-            NSApp.reply(toApplicationShouldTerminate: true)
         }
-        return .terminateLater
+        AppLog.flush()
+        return .terminateNow
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
@@ -287,8 +290,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
     private func restartServer(then path: String) {
         pendingPath = path
         port = nil
-        // ServerProcess sait que cet arrêt est voulu : pas de « relance ».
-        server.stop { [weak self] in self?.server.start() }
+        server.stopAndWait()  // arrêt voulu : pas de « relance » derrière
+        server.start()
     }
 
     // MARK: - Validation des menus

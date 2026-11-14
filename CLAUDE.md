@@ -183,6 +183,13 @@ pas, les pièces jointes ne se téléchargent pas, `window.print()` est muet. To
 branché dans `BrowserWindowController.swift` et `ScriptBridge`. Une nouvelle page qui
 use d'une API navigateur se vérifie **dans l'app**, pas dans Chrome.
 
+⚠️ **À la fermeture, rien ne doit attendre la file principale.** AppKit peut appeler
+`applicationShouldTerminate` depuis un bloc de `DispatchQueue.main` (le gestionnaire de
+SIGTERM) : un `.terminateLater` dont la réponse repasse par cette file n'arrive jamais.
+Vu en CI le 2026-11-14 — serveur arrêté, app bloquée pour toujours. D'où
+`ServerProcess.stopAndWait()`, synchrone, qui attend la fermeture de la sortie standard
+du serveur (lue sur une file à part) et écrit son journal hors du fil principal.
+
 ⚠️ **Web MIDI n'existe pas dans WebKit** : le SysEx ne peut pas envoyer depuis l'app.
 Menu Aller → « Ouvrir dans le navigateur » (⇧⌘O) ouvre la page dans le navigateur par
 défaut (Chrome a Web MIDI), sur le même serveur local.

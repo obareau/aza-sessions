@@ -16,7 +16,15 @@ LOGS="$HOME/Library/Logs/AZA Sessions"
 JSON_DIR="$OUT/sauvegardes"
 
 ok()   { printf '  ✓ %s\n' "$*"; }
-fail() { printf '  ✕ %s\n' "$*" >&2; [ -d "$LOGS" ] && cp -R "$LOGS" "$OUT/logs" || true; exit 1; }
+fail() {
+  printf '  ✕ %s\n' "$*" >&2
+  # Les journaux dans la sortie de la CI, pas seulement dans l'artefact.
+  for f in "$LOGS/app.log" "$LOGS/serveur.log"; do
+    [ -f "$f" ] && { echo "── $(basename "$f")"; tail -40 "$f"; }
+  done
+  [ -d "$LOGS" ] && cp -R "$LOGS" "$OUT/logs" || true
+  exit 1
+}
 
 mkdir -p "$JSON_DIR"
 rm -rf "$LOGS"
@@ -65,6 +73,12 @@ for _ in $(seq 1 20); do
   sleep 1
 done
 pgrep -f "aza-server/aza-server" >/dev/null && fail "le serveur a survécu à l'app"
+for _ in $(seq 1 10); do
+  pgrep -x "AZA Sessions" >/dev/null || break
+  sleep 1
+done
+# Vu en CI : serveur arrêté mais app bloquée à la fermeture, pour toujours.
+pgrep -x "AZA Sessions" >/dev/null && fail "l'app ne s'est pas fermée"
 ok "app et serveur arrêtés"
 grep -q "AZA-STOPPED" "$LOGS/serveur.log" || fail "le serveur ne s'est pas arrêté proprement"
 grep -lq "$TAG dernière" "$JSON_DIR"/*.json 2>/dev/null \

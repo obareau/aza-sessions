@@ -77,6 +77,11 @@ enum AppLog {
         return f
     }()
 
+    /// Attend que tout ce qui a été écrit soit sur le disque (avant de quitter).
+    static func flush() {
+        queue.sync {}
+    }
+
     static func write(_ message: String) {
         let line = "\(stamp.string(from: Date())) \(message)\n"
         queue.async {

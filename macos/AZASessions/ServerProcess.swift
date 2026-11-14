@@ -14,19 +14,25 @@ protocol ServerProcessDelegate: AnyObject {
 /// Contrat : voir `macos/server_main.py`. On lit `AZA-READY port=N first=0|1`
 /// sur la sortie standard ; on l'arrête par SIGTERM, ce qui déclenche la
 /// dernière sauvegarde JSON avant sa sortie.
+///
+/// ⚠️ L'arrêt (`stopAndWait`) ne dépend PAS du fil principal. À la fermeture,
+/// AppKit appelle `applicationShouldTerminate` depuis un bloc de la file
+/// principale (le gestionnaire de SIGTERM, par exemple) : tout ce qui serait
+/// renvoyé à `DispatchQueue.main` attendrait la fin de ce bloc — qui attendrait
+/// le serveur. Vu en CI : serveur arrêté, app bloquée pour toujours. On attend
+/// donc la fin de la sortie standard du serveur, lue sur une file à part.
 @MainActor
 final class ServerProcess {
     weak var delegate: ServerProcessDelegate?
 
     private(set) var port: Int?
     private var process: Process?
+    private var stdoutClosed: DispatchSemaphore?
     private var buffer = Data()
     private var lastError: String?
-    private var stopping = false
-    private var stopCompletion: (() -> Void)?
-    private var logHandle: FileHandle?
+    private let log = ServerLog()
 
-    var isRunning: Bool { process?.isRunning ?? false }
+    var isRunning: Bool { process != nil }
 
     func start() {
         guard let exe = Paths.serverExecutable,
@@ -36,9 +42,8 @@ final class ServerProcess {
         }
         port = nil
         lastError = nil
-        stopping = false
         buffer.removeAll()
-        openLog()
+        log.open()
 
         let backupDir = Paths.backupDirectory
         Paths.ensureDirectory(Paths.dataDirectory)
@@ -62,43 +67,60 @@ final class ServerProcess {
         let err = Pipe()
         p.standardOutput = out
         p.standardError = err
+
+        // Les gestionnaires tournent sur une file de FileHandle : ils écrivent
+        // le journal eux-mêmes, et ne passent au fil principal que pour lire
+        // les lignes du contrat (AZA-READY, AZA-ERROR).
+        let log = self.log
+        let closed = DispatchSemaphore(value: 0)
+        stdoutClosed = closed
         out.fileHandleForReading.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
-            if data.isEmpty { handle.readabilityHandler = nil; return }
+            if data.isEmpty {
+                handle.readabilityHandler = nil
+                closed.signal()
+                return
+            }
+            log.write(data)
             DispatchQueue.main.async { self?.consume(data) }
         }
-        err.fileHandleForReading.readabilityHandler = { [weak self] handle in
+        err.fileHandleForReading.readabilityHandler = { handle in
             let data = handle.availableData
             if data.isEmpty { handle.readabilityHandler = nil; return }
-            DispatchQueue.main.async { self?.log(data) }
+            log.write(data)
         }
         p.terminationHandler = { [weak self] proc in
             let status = proc.terminationStatus
-            DispatchQueue.main.async { self?.didTerminate(status: status) }
+            DispatchQueue.main.async { self?.didTerminate(proc, status: status) }
         }
 
         do {
             try p.run()
             process = p
-            log("— lancement \(exe.path) (sauvegardes → \(backupDir.path))\n")
+            log.write("— lancement \(exe.path) (sauvegardes → \(backupDir.path))\n")
         } catch {
             delegate?.serverDidFailToStart(message: "Lancement impossible : \(error.localizedDescription)")
         }
     }
 
-    /// SIGTERM, puis SIGKILL si le serveur n'est pas sorti au bout de 8 s.
-    func stop(completion: @escaping () -> Void) {
-        guard let p = process, p.isRunning else { completion(); return }
-        stopping = true
-        stopCompletion = completion
-        p.terminate()
+    /// SIGTERM, puis attente de la fin du serveur (sa sortie standard se ferme
+    /// quand il quitte) ; SIGKILL au bout de `timeout`. Bloque le fil appelant,
+    /// au plus quelques secondes : c'est voulu, l'app est en train de fermer.
+    func stopAndWait(timeout: TimeInterval = 8) {
+        guard let p = process else { return }
+        process = nil  // sa notification de fin, quand elle viendra, sera ignorée
+        port = nil
         let pid = p.processIdentifier
-        DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak self] in
-            guard let self = self, let current = self.process, current.processIdentifier == pid,
-                  current.isRunning else { return }
-            self.log("— arrêt forcé (SIGKILL)\n")
+        log.write("— arrêt demandé (SIGTERM)\n")
+        p.terminate()
+        if stdoutClosed?.wait(timeout: .now() + timeout) == .timedOut {
+            log.write("— pas de réponse en \(Int(timeout)) s : arrêt forcé (SIGKILL)\n")
             kill(pid, SIGKILL)
+            _ = stdoutClosed?.wait(timeout: .now() + 2)
         }
+        stdoutClosed = nil
+        log.write("— serveur arrêté\n")
+        log.close()
     }
 
     /// Les dernières lignes du journal, pour les messages d'erreur.
@@ -112,7 +134,6 @@ final class ServerProcess {
     // MARK: - Interne
 
     private func consume(_ data: Data) {
-        log(data)
         buffer.append(data)
         while let nl = buffer.firstIndex(of: 0x0A) {
             let lineData = buffer[buffer.startIndex..<nl]
@@ -141,7 +162,10 @@ final class ServerProcess {
         }
     }
 
-    private func didTerminate(status: Int32) {
+    /// Fin NON demandée (plantage, base verrouillée…). Une fin demandée passe
+    /// par `stopAndWait`, qui a déjà oublié ce processus.
+    private func didTerminate(_ proc: Process, status: Int32) {
+        guard proc === process else { return }
         process = nil
         // La sortie standard peut encore arriver APRÈS la notification de fin
         // (tampons du tube) : sans ce délai, le motif d'un échec (`AZA-ERROR …`)
@@ -152,15 +176,8 @@ final class ServerProcess {
     }
 
     private func finish(status: Int32) {
-        log("— serveur arrêté (code \(status))\n")
-        try? logHandle?.close()
-        logHandle = nil
-        if stopping {
-            let done = stopCompletion
-            stopCompletion = nil
-            done?()
-            return
-        }
+        log.write("— serveur arrêté (code \(status))\n")
+        log.close()
         if port == nil {
             delegate?.serverDidFailToStart(message: Self.explain(lastError, status: status))
         } else {
@@ -178,30 +195,46 @@ final class ServerProcess {
         }
         return error
     }
+}
 
-    private func openLog() {
-        Paths.ensureDirectory(Paths.logDirectory)
-        let url = Paths.serverLog
-        let fm = FileManager.default
-        // Rotation simple : au-delà de 2 Mo, l'ancien journal devient serveur.log.1
-        if let size = (try? fm.attributesOfItem(atPath: url.path))?[.size] as? NSNumber,
-           size.intValue > 2_000_000 {
-            let old = url.appendingPathExtension("1")
-            try? fm.removeItem(at: old)
-            try? fm.moveItem(at: url, to: old)
+/// Journal du serveur, écrit depuis n'importe quel fil (file série).
+final class ServerLog: @unchecked Sendable {
+    private let queue = DispatchQueue(label: "aza.serverlog")
+    private var handle: FileHandle?
+
+    func open() {
+        queue.sync {
+            try? handle?.close()
+            Paths.ensureDirectory(Paths.logDirectory)
+            let url = Paths.serverLog
+            let fm = FileManager.default
+            // Rotation simple : au-delà de 2 Mo, l'ancien journal devient serveur.log.1
+            if let size = (try? fm.attributesOfItem(atPath: url.path))?[.size] as? NSNumber,
+               size.intValue > 2_000_000 {
+                let old = url.appendingPathExtension("1")
+                try? fm.removeItem(at: old)
+                try? fm.moveItem(at: url, to: old)
+            }
+            if !fm.fileExists(atPath: url.path) {
+                fm.createFile(atPath: url.path, contents: nil)
+            }
+            handle = try? FileHandle(forWritingTo: url)
+            _ = try? handle?.seekToEnd()
         }
-        if !fm.fileExists(atPath: url.path) {
-            fm.createFile(atPath: url.path, contents: nil)
-        }
-        logHandle = try? FileHandle(forWritingTo: url)
-        _ = try? logHandle?.seekToEnd()
     }
 
-    private func log(_ text: String) { log(Data(text.utf8)) }
+    func write(_ text: String) { write(Data(text.utf8)) }
 
     /// `write(contentsOf:)` et non `write(_:)` : l'ancienne méthode lève une
     /// exception Objective-C (donc plante l'app) quand le disque est plein.
-    private func log(_ data: Data) {
-        try? logHandle?.write(contentsOf: data)
+    func write(_ data: Data) {
+        queue.sync { try? handle?.write(contentsOf: data) }
+    }
+
+    func close() {
+        queue.sync {
+            try? handle?.close()
+            handle = nil
+        }
     }
 }
