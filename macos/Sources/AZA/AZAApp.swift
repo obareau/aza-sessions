@@ -22,6 +22,7 @@ struct AZAApp: App {
     @StateObject private var prefs = Prefs()
     @StateObject private var nav = Nav()
     @StateObject private var midi = MIDIManager()
+    @StateObject private var lore = LoreCache()
 
     var body: some Scene {
         WindowGroup("AZA — Journal de Sessions") {
@@ -32,6 +33,7 @@ struct AZAApp: App {
                 .environmentObject(prefs)
                 .environmentObject(nav)
                 .environmentObject(midi)
+                .environmentObject(lore)
         }
         .commands {
             CommandGroup(replacing: .newItem) {
@@ -95,6 +97,7 @@ struct AZAApp: App {
             SettingsView()
                 .environmentObject(store)
                 .environmentObject(prefs)
+                .environmentObject(lore)
         }
     }
 }
@@ -112,14 +115,14 @@ enum Pane: String, CaseIterable, Identifiable {
     case tonight, live, spark
     case sessions, projects, takes, stats
     case catalogue, facades, presets, patcher, sysex
-    case influences, obliques, tracks, inspirations, samples, mirack, wishlist
+    case lore, influences, obliques, tracks, inspirations, samples, mirack, wishlist
     var id: String { rawValue }
 
     static let groups: [(String, [Pane])] = [
         ("Jouer", [.tonight, .live, .spark]),
         ("Journal", [.sessions, .projects, .takes, .stats]),
         ("Matériel", [.catalogue, .patcher, .facades, .presets, .sysex, .wishlist]),
-        ("Références", [.influences, .obliques, .tracks, .inspirations, .samples, .mirack]),
+        ("Références", [.lore, .influences, .obliques, .tracks, .inspirations, .samples, .mirack]),
     ]
 
     var label: String {
@@ -136,6 +139,7 @@ enum Pane: String, CaseIterable, Identifiable {
         case .presets: "Presets"
         case .patcher: "Patcher"
         case .sysex: "SysEx"
+        case .lore: "Lore"
         case .influences: "Influences"
         case .obliques: "Stratégies obliques"
         case .tracks: "Morceaux"
@@ -159,6 +163,7 @@ enum Pane: String, CaseIterable, Identifiable {
         case .presets: "slider.horizontal.3"
         case .patcher: "point.3.connected.trianglepath.dotted"
         case .sysex: "cable.connector.horizontal"
+        case .lore: "book.closed"
         case .influences: "person.2"
         case .obliques: "suit.diamond"
         case .tracks: "music.note.list"
@@ -219,6 +224,7 @@ struct ContentView: View {
         case .presets: PresetsView()
         case .patcher: PatcherView()
         case .sysex: SysexView()
+        case .lore: LoreView()
         case .influences: InfluencesView()
         case .obliques: ObliquesView()
         case .tracks: TracksView()

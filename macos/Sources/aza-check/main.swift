@@ -247,5 +247,55 @@ let simp = try SQLiteImport.load(path: db4)
 check(simp.sysexBanks.first?.data == blobData && simp.sysexBanks.first?.name == "Rom1A", "import : banque SysEx (BLOB avec octets nuls)")
 check(try JSONStorage.decode(JSONStorage.encode(simp)) == simp, "sysex : aller-retour JSON (base64)")
 
+// 11. Lore (vault factice)
+let vault = work.appendingPathComponent("vault")
+func put(_ rel: String, _ text: String) throws {
+    let u = vault.appendingPathComponent(rel)
+    try FileManager.default.createDirectory(at: u.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try text.write(to: u, atomically: true, encoding: .utf8)
+}
+try put("Lore/Factions/index.md", "# Sommaire")
+try put("Lore/Factions/Majeures/cgu-rectitude.md", """
+---
+title: "C.G.U. de la Rectitude"
+tags: [faction, administration]
+---
+# Ignoré
+
+> La conformité n'est pas une option, c'est un climat que l'on respire chaque matin.
+> Définition : organe central de la Rectitude, chargé de tout.
+> Trop court.
+""")
+try put("Lore/Lieux/scaer.md", """
+# Scaër
+
+Une ville de **granit** reliée au [[relais-3|Relais 3]] par la ligne quatre, toujours humide.
+""")
+try put("Lore/Temps/timeline.md", """
+---
+title: Chronologie
+---
+## Ère zéro
+| Date | Grégorien | Événement |
+|------|-----------|-----------|
+| An 0 | 2413 | Fondation du [[cgu|C.G.U.]] |
+## Ère des relais
+| A.12 | 2425 | Mise en service du [[relais-3]] |
+""")
+let lore = LoreReader(path: vault.path)
+check(lore.available && !LoreReader(path: work.appendingPathComponent("rien").path).available, "lore : disponibilité")
+let fac = lore.entries("Factions")
+check(fac.count == 1 && fac[0].title == "C.G.U. de la Rectitude" && fac[0].subsection == "Majeures"
+      && fac[0].tags == ["faction", "administration"], "lore : frontmatter, sous-dossier, index ignoré")
+let lieux = lore.entries("Lieux")
+check(lieux.first?.title == "Scaër" && lieux.first?.description == "Une ville de granit reliée au Relais 3 par la ligne quatre, toujours humide.",
+      "lore : titre # et premier paragraphe nettoyé")
+let tl = lore.timeline()
+check(tl.count == 2 && tl[0].event == "Fondation du C.G.U." && tl[0].era == "Ère zéro" && tl[1].era == "Ère des relais",
+      "lore : chronologie (wikilink à barre dans un tableau)")
+let qs = lore.quotes()
+check(qs.count == 1 && qs[0].source == "C.G.U. de la Rectitude", "lore : citations (définitions et trop courtes écartées)")
+check(LoreReader.search(lore.all(), "granit").count == 1 && LoreReader.search(lore.all(), "ADMINISTRATION").count == 1, "lore : recherche")
+
 print(failures == 0 ? "✓ aza-check : \(passed) vérifications OK" : "✗ aza-check : \(failures) échec(s), \(passed) OK")
 exit(failures == 0 ? 0 : 1)

@@ -215,7 +215,10 @@ struct SessionEditor: View {
                     NamePicker(options: store.data.influences.filter(\.active).map(\.name),
                                values: $session.influences, title: "Influences")
                 }
-                TextField("Lien lore AZA", text: $session.loreLink)
+                HStack {
+                    TextField("Lien lore AZA", text: $session.loreLink)
+                    LoreLinkPicker(value: $session.loreLink)
+                }
                 HStack(alignment: .top) {
                     TextField("Stratégie oblique", text: $session.oblique, axis: .vertical)
                     Button { session.oblique = store.data.randomOblique() ?? session.oblique } label: {

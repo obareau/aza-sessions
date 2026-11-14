@@ -22,7 +22,8 @@ indisponible sans Xcode), l'état local passe par `@Local` (`Sources/AZA/Local.s
   - SysEx (CoreMIDI) : loader .syx (glisser-déposer, noms des 32 voix DX7, contrôle du checksum), sortie + canal
     réécrit dans l'en-tête Yamaha, phrase de test, librairie ; éditeur de banque 32 voix (renommer, réordonner,
     export .syx, envoi). Envoi par MIDISendSysex, cadencé par CoreMIDI.
-  - Références : Influences, Stratégies obliques, Morceaux, Inspirations, Samples, MiRack
+  - Références : Lore (lecture du vault Obsidian : sections, recherche, chronologie, citations ;
+    rien n'est copié dans le JSON), Influences, Stratégies obliques, Morceaux, Inspirations, Samples, MiRack
 - Réglages (⌘,) : taille du texte (⌘+ / ⌘− / ⌘0), police, thèmes de l'app web
   (Béton, Machine, Nord, Solarized, Gruvbox, personnalisé), interface compacte, emplacement du fichier JSON
 - `Sources/aza-check` — auto-test, lancé par `build_app.sh`
@@ -30,5 +31,5 @@ indisponible sans Xcode), l'état local passe par `@Local` (`Sources/AZA/Local.s
 Reprendre les données de l'app Flask : **Fichier › Importer une base sessions.db…**
 (lecture seule de la base ; le JSON courant est sauvegardé avant d'être remplacé).
 
-Non portés : lore, fiche de rappel / feuille
+Non portés : fiche de rappel / feuille
 d'atelier imprimables, export vers le vault Obsidian, récap IA (Ollama).

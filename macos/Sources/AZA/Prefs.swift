@@ -218,6 +218,7 @@ extension View {
 struct SettingsView: View {
     @EnvironmentObject var prefs: Prefs
     @EnvironmentObject var store: Store
+    @EnvironmentObject var lore: LoreCache
 
     var body: some View {
         TabView {
@@ -322,6 +323,21 @@ struct SettingsView: View {
                      + "Un dossier iCloud Drive ou synchronisé fonctionne.")
                     .foregroundStyle(.secondary).azaFont(.caption)
             } header: { Text("Fichier JSON").azaHeading() }
+
+            Section {
+                LabeledContent("Dossier") {
+                    Text(lore.reader.root.path).textSelection(.enabled).azaFont(.caption, mono: true)
+                }
+                HStack {
+                    Button("Choisir…") { lore.chooseFolder() }
+                    Button("Relire") { lore.reload() }
+                    Spacer()
+                    Text(lore.available ? "✓ \(lore.entries.count) entrées" : "✗ aucun dossier Lore/")
+                        .foregroundStyle(lore.available ? Color.secondary : Color.orange)
+                }
+                Text("Le lore reste dans le vault Obsidian : AZA le lit, sans rien copier dans le JSON.")
+                    .foregroundStyle(.secondary).azaFont(.caption)
+            } header: { Text("Corpus de lore").azaHeading() }
 
             Section {
                 LabeledContent("Sauvegardes") { Text("\((try? store.storage.backups().count) ?? 0) / 5") }
