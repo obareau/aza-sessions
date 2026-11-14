@@ -6,9 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 App Flask + SQLite de documentation de sessions musicales pour l'univers de fiction **AZA** (dystopie personnelle d'Olivier — Dark Ambient / Industriel, Scaër, Bretagne).
 
-⚠️ **Plus sur Fly.io** — déploiement bare metal sur Roblab, voir « Déploiement » plus bas. `fly.toml` et la branche `FLY_APP_NAME` de `wsgi.py` ont été retirés le 2026-08-29. Le `Dockerfile` subsiste : il ne servait qu'au build Fly et n'est plus utilisé, mais il n'a rien de nuisible.
+⚠️⚠️ **Roblab n'existe plus (2026-11-14).** AZA est une **app Mac native** —
+`macos/`, voir « App Mac » plus bas. La base vit sur le Mac. Plus de serveur,
+plus de Gunicorn ni de systemd, plus d'URL publique : `wsgi.py`, `Dockerfile`
+et gunicorn sont retirés (v4.0.0). Fly.io avait déjà été abandonné le 2026-08-29.
 
-Version actuelle : voir `VERSION` dans `app.py` (**v3.36.0**).
+Version actuelle : voir `VERSION` dans `app.py` (**v4.0.0**).
 
 ⚠️ **`VERSION` a déjà pris deux releases de retard** (resté à 3.10.0 alors que le ROADMAP documentait v3.11.0 et v3.12.0), ce qui a fait attribuer un numéro déjà pris à une nouvelle feature le 2026-08-29. Avant de bumper, croiser `app.py`, `CHANGELOG.md` **et** `ROADMAP.md` — les trois divergent facilement.
 
@@ -17,7 +20,9 @@ Version actuelle : voir `VERSION` dans `app.py` (**v3.36.0**).
 ## Commandes
 
 ```bash
-python app.py          # Lancement local — port auto-détecté à partir de 5001
+python app.py          # Développement — 127.0.0.1, port auto-détecté à partir de 5001
+macos/build.sh         # Sur un Mac : construit AZA Sessions.app + .dmg (voir « App Mac »)
+python macos/server_main.py --selftest   # visite toutes les pages dans un dossier jetable
 ```
 
 Linter : **ruff** (config dans `ruff.toml`).
@@ -39,11 +44,15 @@ Tests : **pytest** (smoke tests routes + DB).
 
 ### Vue d'ensemble
 
-`app.py` (144 lignes) est le point d'entrée minimal : il crée l'app Flask, enregistre les 20 blueprints et injecte les globals Jinja2 (`has_live`, `obsidian_vault`).
+`app.py` est le point d'entrée minimal : il crée l'app Flask, enregistre les 20 blueprints, crée la veille de sauvegarde (`app.extensions["aza_journal"]`) et injecte les globals Jinja2 (`has_live`, `obsidian_vault`, `backup_error`).
 
-`wsgi.py` est le point d'entrée Gunicorn — il appelle `init_db()` **et** `backup_db()` explicitement, car `app.py.__main__` ne tourne pas sous Gunicorn. C'est le chemin réel en production ; le bloc `__main__` ne sert qu'au lancement local.
+`demarrer_sauvegardes()` (dans `app.py`) fait `init_db()`, la copie SQLite de démarrage, une sauvegarde JSON, puis lance la veille. Elle est appelée par le bloc `__main__` **et** par `macos/server_main.py` — jamais à l'import, que les tests font.
 
-La sauvegarde vit dans `core/backup.py`, appelée des deux côtés (5 derniers backups dans `backups/`). Elle **saute le snapshot si la base est inchangée** : le service tourne en `Restart=always`, et sans ce saut un crash-loop éviderait la rétention en cinq relances.
+`macos/server_main.py` est le chemin réel d'usage : le serveur embarqué dans l'app Mac (contrat stdout/SIGTERM décrit en tête du fichier).
+
+Deux sauvegardes, qui ne se remplacent pas :
+- `core/backup.py` — copie **SQLite** au démarrage, 5 gardées, à côté de la base. Saute si la base est inchangée.
+- `core/journal.py` — copie **JSON** complète **à chaque modification**, dans un dossier séparé. C'est elle qui protège l'historique ; voir « Sauvegardes » plus bas.
 
 ### Blueprints (pattern uniforme)
 
@@ -88,11 +97,13 @@ Les 20 blueprints enregistrés :
 
 ### Core
 
-- `core/db.py` — `get_db(db_path)` : connexion SQLite avec `row_factory = sqlite3.Row`
+- `core/db.py` — `get_db(db_path)` : connexion SQLite avec `row_factory = sqlite3.Row` ; `ro_uri(db_path)` : URI lecture seule **encodée** (un `#` brut dans le chemin fait ouvrir un autre fichier)
+- `core/journal.py` — sauvegarde JSON : `dump_db`, `restore`, `load_file` (`.json` ou `.db`), rétention `keep_set`, veille `Journal`
 - `core/init_db.py` — `init_db(db_path)` : crée toutes les tables si inexistantes, peuple les données par défaut (obliques, catalogue, influences), applique les migrations via `ALTER TABLE ... ADD COLUMN` dans un `try/except`
 - `core/constants.py` — enums partagés : `CHARACTERS`, `MODES`, `INTENTIONS`, `ITEM_TYPES`, `SAMPLE_TYPES`, etc.
 - `core/oblique.py` — `rand_oblique(db_path)` : stratégie aléatoire depuis la table `obliques`
 - `core/ollama_client.py` — génération du `recap_claude` via **`qwen3.5:cloud`** (`OLLAMA_MODEL`) sur `192.168.1.100` ; second modèle `qwen2.5-coder:7b` (`CODER_MODEL`) ; appelé depuis `/new?from_live=1` ; **silencieux si indisponible**
+  ⚠️ **À vérifier depuis la fin de Roblab** : l'adresse est en dur, et rien ne dit que la machine `192.168.1.100` existe encore.
   ⚠️ Ce silence a déjà coûté : le recap est resté mort sans que personne le voie, parce que le modèle configuré (`qwen3.5:latest`) n'existait pas. Corrigé le 2026-07-31. Réflexe — un appel LLM qui échoue sans bruit ne se verra jamais depuis l'interface : vérifier le **modèle** avant de chercher un bug dans le code.
 ⛔ **La dictée vocale a été retirée en v3.25.0** (2026-09-27), sur décision
 d'Olivier : « ça n'a jamais marché whisper dans aza ». `core/whisper_client.py`,
@@ -139,22 +150,58 @@ Tous héritent de `base.html`. Système de thèmes via attribut `data-theme` sur
 
 Multi-sélection dans les formulaires : `form.getlist("machines")` → jointure `, ` avant stockage.
 
-### Déploiement — Roblab (serveur bare metal)
+### App Mac — `macos/`
 
-- **URL publique** : `https://sessions.robotariis.com` via Cloudflare Tunnel
-- **URL locale** : `http://sessions.lan`
-- **Service** : `systemd` — `aza-sessions.service`
-- **Process** : Gunicorn, port `5001`, 1 worker
-- **DB** : `/home/olivier/DEV/aza-sessions/sessions.db`
-- **venv** : `/home/olivier/DEV/aza-sessions/.venv`
+- **App** : `AZA Sessions.app` — Swift (AppKit + WKWebView, `macos/AZASessions/`) qui
+  lance le serveur AZA figé par PyInstaller (`Contents/Resources/aza-server/`).
+- **Cible** : macOS 12 Monterey et suivants, **Intel ET Apple Silicon** (binaire
+  universel). Le MacBook Intel « instrument » plafonne à Monterey.
+- **Données** :
 
-```bash
-# Déployer une mise à jour
-cd /home/olivier/DEV/aza-sessions && git pull && sudo systemctl restart aza-sessions
+| | |
+|---|---|
+| base | `~/Library/Application Support/AZA Sessions/sessions.db` (+ `config.json`, `copies-sqlite/`) |
+| sauvegardes JSON | `~/Documents/AZA Sessions/Sauvegardes/` — réglable (menu Fichier, ou `defaults write com.robotariis.aza-sessions BackupDirectory …`) |
+| journaux | `~/Library/Logs/AZA Sessions/` (`serveur.log`, `app.log`) |
 
-# Logs
-journalctl -u aza-sessions -f
-```
+- **Build** : `macos/build.sh` sur un Mac, avec le **Python de python.org**
+  (universal2). Il vérifie chaque binaire (`scripts/verifier_binaires.py`), lance le
+  `--selftest` du binaire figé, produit `.dmg` et `.zip` dans `macos/dist/`.
+- **CI** (`.github/workflows/app-mac.yml`) : build sur Apple Silicon, selftest x86_64
+  sous Rosetta, puis **lancement réel** de l'app (`scripts/essai_lancement.sh`) sur
+  Apple Silicon et sur un runner Intel. Un tag `vX.Y.Z` publie le `.dmg` en release.
+- **Non signée** par un compte développeur : au premier lancement,
+  `xattr -dr com.apple.quarantine "/Applications/AZA Sessions.app"` (voir `macos/LISEZMOI.txt`).
+
+⚠️ **Le port est FIXE (47017) et retenu.** Le `localStorage` — brouillons de `/vite`,
+thème, sections repliées — est rangé par origine `http://127.0.0.1:PORT`. Un port tiré
+au hasard à chaque lancement effacerait les brouillons à chaque ouverture.
+
+⚠️ **WKWebView ne fait rien de ce qu'un navigateur offre d'office** : `confirm()`
+renvoie `false` (aucun bouton « Supprimer » ne marche), `<input type=file>` ne s'ouvre
+pas, les pièces jointes ne se téléchargent pas, `window.print()` est muet. Tout est
+branché dans `BrowserWindowController.swift` et `ScriptBridge`. Une nouvelle page qui
+use d'une API navigateur se vérifie **dans l'app**, pas dans Chrome.
+
+⚠️ **À la fermeture, rien ne doit attendre la file principale.** AppKit peut appeler
+`applicationShouldTerminate` depuis un bloc de `DispatchQueue.main` (le gestionnaire de
+SIGTERM) : un `.terminateLater` dont la réponse repasse par cette file n'arrive jamais.
+Vu en CI le 2026-11-14 — serveur arrêté, app bloquée pour toujours. D'où
+`ServerProcess.stopAndWait()`, synchrone, qui attend la fermeture de la sortie standard
+du serveur (lue sur une file à part) et écrit son journal hors du fil principal.
+
+⚠️ **Web MIDI n'existe pas dans WebKit** : le SysEx ne peut pas envoyer depuis l'app.
+Menu Aller → « Ouvrir dans le navigateur » (⇧⌘O) ouvre la page dans le navigateur par
+défaut (Chrome a Web MIDI), sur le même serveur local.
+
+⚠️ **Python de Homebrew = app cassée ailleurs.** Il ne contient qu'une architecture et
+exige la version de macOS qui l'a compilé. `build.sh` refuse un Python non universel ;
+pip installe MarkupSafe pour la seule architecture courante, `build.sh` le remplace par
+la roue universelle.
+
+ℹ️ Dans l'app, les templates sont **figés dans le bundle** : modifier un template ne
+change rien tant qu'on n'a pas reconstruit. (L'ancien piège « éditer un template casse
+la prod avant le `git pull` » a disparu avec Roblab.)
 
 ⚠️ **Un `<script>` posé dans `{% block title %}` ne tourne jamais** — il finit
 dans le `<title>`. Arrivé le 2026-09-28 sur `catalogue_detail.html` : le JS des
@@ -163,15 +210,44 @@ postent le formulaire sans exécuter la page. Réflexe : **du JS non trivial lai
 un harnais Node derrière lui** (`tests/js/`, branché sur pytest), qui exécute le
 script réellement servi par la page.
 
-⚠️ **Éditer un template suffit à casser le site en production, avant même le
-`git pull`.** Jinja relit les templates depuis le disque à chaque requête,
-alors que Gunicorn garde le code Python chargé à son dernier démarrage. Ajouter
-dans un template un `url_for()` vers une route qui n'existe pas encore dans le
-processus vivant lève un `BuildError` — donc une 500 — sur une page qui
-marchait la seconde d'avant. Arrivé le 2026-09-08 sur `/catalogue` (bouton vers
-`catalogue.fiches`). Réflexe : **une modif template + route va toujours par
-paire avec un `systemctl restart`**, et le checkout de dev EST la production —
-il n'y a pas de copie de travail séparée.
+ℹ️ **Template relu à chaud, Python non** — vrai en développement (`python app.py`,
+`TEMPLATES_AUTO_RELOAD`) : un `url_for()` vers une route pas encore chargée lève un
+`BuildError`, donc une 500. C'était un piège de production du temps de Roblab
+(2026-09-08, `/catalogue`) ; dans l'app figée il n'existe plus. Une modif template +
+route se teste après avoir relancé le serveur.
+
+---
+
+## Sauvegardes — décisions arrêtées
+
+✅ **Décidé le 2026-11-14**, après des pertes d'historique répétées : la base est
+copiée en **JSON complet à chaque modification** (`core/journal.py`), dans un dossier
+**séparé** de la base (`~/Documents/AZA Sessions/Sauvegardes` dans l'app).
+
+⛔ **Ne pas affaiblir ces points**, chacun répond à une façon de perdre des données :
+
+- **La veille lit `PRAGMA data_version`**, pas les routes HTTP. Une route qui écrirait
+  en GET, ou une écriture faite hors Flask, serait sinon invisible.
+- **Restaurer réécrit la base EN PLACE** par l'API backup de SQLite. Jamais
+  `os.replace` sur `sessions.db` : une connexion ouverte continuerait d'écrire dans
+  l'ancien fichier, et ses écritures disparaîtraient.
+- **Pas de destruction sans filet** : restaurer, fusionner, vider écrivent d'abord une
+  copie étiquetée (`avant-…`) que la rétention n'efface jamais, et **s'annulent** si
+  elle échoue (`settings_app/api.py`, `_filet`).
+- **Un échec de sauvegarde se voit** : bandeau sur toutes les pages
+  (`backup_error`). Une sauvegarde qui échoue en silence ne vaut rien — même leçon
+  que le récap Ollama.
+- **Une colonne inconnue est refusée**, pas ignorée : restaurer la sauvegarde d'une
+  version plus récente dans une plus ancienne perdrait des données sans le dire. La
+  case « ignorer » existe, cochée en connaissance de cause.
+- **La base ne va pas dans iCloud** — SQLite et la synchro de fichiers ne font pas bon
+  ménage. Les sauvegardes JSON, elles, peuvent.
+
+ℹ️ Le format est documenté en tête de `core/journal.py`. Un JSON corrigé à la main est
+accepté si on retire sa ligne `"sha256"` ; sinon l'empreinte refuse un fichier abîmé.
+
+ℹ️ Les tables qui ont existé puis disparu (`prompter_scripts`, `sessions_fts*`) sont
+dans `OBSOLETE_TABLES` : une vieille base se restaure sans elles, sans bloquer.
 
 ---
 
@@ -283,7 +359,7 @@ première séance** ou si elle suppose un historique qui n'existe pas.
 1. Bumper `VERSION` dans `app.py`
 2. Mettre à jour `CHANGELOG.md`
 3. Vérifier que `sessions.db` n'est pas dans le commit (`.gitignore`)
-4. Après `git push` : `ssh roblab 'cd /home/olivier/DEV/aza-sessions && git pull && sudo systemctl restart aza-sessions'`
+4. Pour mettre l'app à jour sur le Mac : `macos/build.sh`, ou pousser un tag `vX.Y.Z` (la CI publie le `.dmg`). Plus de Roblab à redémarrer.
 
 ---
 

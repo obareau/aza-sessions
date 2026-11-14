@@ -1,0 +1,4 @@
+# Dépendances du binaire Mac — PAS celles du développement (requirements.txt).
+# Flask seul : pytest n'a rien à faire dans l'app.
+flask>=3.0,<4
+pyinstaller==6.11.1

@@ -30,7 +30,9 @@
 </div>
 {% else %}
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+{# Chart.js 4.4.1 servi par l'app (paquet npm, intégrité vérifiée) : l'app Mac
+   doit afficher ses statistiques sans réseau. #}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
 <script>
 const S = {{ stats_data|safe }};
 const COLORS = {

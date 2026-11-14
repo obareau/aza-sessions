@@ -3,7 +3,7 @@
 > Application de documentation et de performance musicale pour le projet **AZA** —
 > univers de fiction dystopique dont les sessions de création constituent la bande originale.
 
-**Version : v3.15.1** · [Changelog](CHANGELOG.md) · [Live →](https://sessions.robotariis.com)
+**Version : v4.0.0** · [Changelog](CHANGELOG.md) · App Mac native — macOS 12+, Intel et Apple Silicon
 
 ---
 
@@ -17,27 +17,52 @@
 2. **⬡ Patcher** — mind map SVG interactif pour visualiser et documenter le routing signal
    entre machines hardware, effets, DAW, iOS et plugins.
 
-3. **Prompteur Dawless** — scripts de set avec minutage, noms de patch et instructions.
-   Vue performance plein écran avec transport DAW, horloge décompte, barre LED, avance auto.
+3. ~~**Prompteur Dawless**~~ — parti chez **D.I.M** en v3.12.0 ; sa section ci-dessous est historique.
 
-L'application tourne **localement** (`python app.py`) ou en **cloud** sur Fly.io.
+Depuis la v4.0.0, AZA est une **app Mac native** : la base vit sur le Mac, et une
+**sauvegarde JSON complète est écrite à chaque modification**. Plus de serveur
+(Roblab n'existe plus, Fly.io avant lui).
 
 ---
 
-## Démarrage rapide
+## Installer l'app Mac
+
+1. Récupérer `AZA-Sessions-<version>.dmg` : onglet **Releases** du dépôt (versions
+   taguées), ou l'artefact `AZA-Sessions-macOS` du dernier run **App Mac** dans
+   l'onglet Actions. Ou la construire : `macos/build.sh` (voir plus bas).
+2. Glisser **AZA Sessions** dans Applications.
+3. L'app n'est pas signée par un compte développeur Apple — une fois :
+
+   ```bash
+   xattr -dr com.apple.quarantine "/Applications/AZA Sessions.app"
+   ```
+
+4. Premier lancement : base neuve. Une ancienne `sessions.db` ou une sauvegarde
+   `.json` se restaure **entière** dans Fichier → Sauvegardes et restauration….
+
+| Où | Quoi |
+|---|---|
+| `~/Library/Application Support/AZA Sessions/` | la base (`sessions.db`) |
+| `~/Documents/AZA Sessions/Sauvegardes/` | une sauvegarde JSON par modification — réglable (Fichier → Choisir le dossier des sauvegardes…) |
+| `~/Library/Logs/AZA Sessions/` | journaux de l'app et du serveur |
+
+Raccourcis : ⌘N séance rapide · ⇧⌘N séance complète · **⌘S sauvegarder** · ⌘P imprimer ·
+⌘1…6 Ce soir / Atelier / Stats / Catalogue / Prises / Lore · ⇧⌘O ouvrir dans le
+navigateur (le SysEx a besoin de Web MIDI, que l'app n'a pas).
+
+## Développement
 
 ```bash
 pip install -r requirements.txt
-python app.py
-# → http://localhost:5000
+python app.py                 # → http://127.0.0.1:5001
+python -m pytest tests/ -q
 ```
 
-Pour le déploiement :
+Construire l'app (sur un Mac, avec le Python **universal2 de python.org** et les
+outils Xcode) :
 
 ```bash
-# Sur Roblab (bare metal, systemd + Gunicorn — plus de Fly.io depuis 2026)
-git pull && sudo systemctl restart aza-sessions
-# → https://sessions.robotariis.com
+macos/build.sh                # → macos/dist/AZA Sessions.app, .dmg, .zip
 ```
 
 ---
@@ -135,7 +160,8 @@ git pull && sudo systemctl restart aza-sessions
 |---|---|
 | Backend | Python 3 / Flask |
 | Base de données | SQLite (`sessions.db`) |
-| Hébergement | Fly.io (Docker + Gunicorn) ou local |
+| App | Swift (AppKit + WKWebView) + serveur Flask figé par PyInstaller, universel macOS 12+ |
+| Sauvegarde | JSON complet à chaque modification, SHA-256, rétention par paliers (`core/journal.py`) |
 | Templates | Jinja2 |
 | CSS | Vanilla — zéro framework externe |
 | Graphiques | Chart.js |
@@ -148,11 +174,16 @@ git pull && sudo systemctl restart aza-sessions
 ## Structure du projet
 
 ```
-app.py                      # Launcher — init_db, blueprints
-wsgi.py                     # Point d'entrée Gunicorn — init_db + backup au démarrage
-Dockerfile                  # Résiduel : servait au build Fly.io, plus utilisé
+app.py                      # Launcher — blueprints, demarrer_sauvegardes()
+macos/
+  AZASessions/*.swift       # L'app : fenêtre, menus, serveur, impression, téléchargements
+  server_main.py            # Serveur embarqué (contrat avec l'app, --selftest)
+  build.sh                  # Build universel → .app, .dmg, .zip
+  scripts/                  # vérification des binaires, essai de lancement, icône
 core/
-  db.py                     # get_db() partagé
+  db.py                     # get_db() partagé, ro_uri()
+  journal.py                # Sauvegarde JSON : export, veille, rétention, restauration
+  backup.py                 # Copie SQLite au démarrage
   init_db.py                # init_db(db_path) + migrations ALTER TABLE
   oblique.py / constants.py
 sessions/                   # Blueprint sessions — CRUD, exports, search
@@ -160,11 +191,10 @@ catalogue/                  # Blueprint catalogue matériel
 patcher/                    # Blueprint ⬡ Patcher
   engine.py                 # PatcherEngine — save, import session/catalogue, export
   api.py                    # Routes : view, save, import JSON, export Mermaid
-obliques/ influences/ spark/ dim/
+obliques/ influences/ spark/ lore/ takes/ …
 templates/
   patcher_list.html         # Liste layouts + form import JSON
   patcher_view.html         # Canvas SVG interactif complet
-  prompter_play.html        # Vue performance plein écran
   ...
 CHANGELOG.md
 sessions.db                 # NON VERSIONNÉ
@@ -178,7 +208,6 @@ sessions.db                 # NON VERSIONNÉ
 |---|---|
 | `sessions` | Sessions musicales — table principale (30+ champs) |
 | `projects` | Projets — regroupement de sessions |
-| `prompter_scripts` | Scripts prompteur — JSON cues |
 | `patch_layouts` | Layouts patcher — nom, session liée |
 | `patch_nodes` | Nœuds — label, position, type, couleur, note |
 | `patch_connections` | Connexions — from/to, signal_type, label, note |
@@ -190,15 +219,20 @@ Les migrations sont automatiques via `ALTER TABLE … ADD COLUMN` dans `init_db(
 
 ---
 
-## Déploiement Fly.io
+## Sauvegardes
 
-```bash
-fly launch                          # première fois — crée l'app + volume
-fly deploy                          # mise à jour
-fly logs --app robotariis-sessions  # logs
-```
+- **À chaque modification** (quelques secondes après la dernière saisie) et à la
+  fermeture : copie JSON complète de toutes les tables, lisible dans un éditeur,
+  vérifiée par empreinte SHA-256.
+- **Gardées** : tout ce qui a moins de 48 h, une par jour sur 60 jours, une par mois
+  au-delà — et toujours les 20 dernières.
+- **Restaurer** (Paramètres) : un `.json` ou une vieille `sessions.db`, ou une
+  sauvegarde de la liste en un clic. L'état courant est d'abord copié
+  (`avant-restauration`) ; si cette copie échoue, rien n'est touché.
+- **Si la sauvegarde échoue**, un bandeau le dit sur toutes les pages.
 
-La base SQLite vit dans un volume persistant monté sur `/data`.
+Fly.io (jusqu'en 2026-08) puis Roblab (jusqu'en 2026-11) ont hébergé AZA ; ni l'un ni
+l'autre n'existe plus.
 
 ---
 

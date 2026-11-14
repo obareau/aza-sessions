@@ -15,6 +15,7 @@ __pycache__/
 dist/
 build/
 *.spec
+!macos/aza-server.spec
 
 # Environnements virtuels
 venv/

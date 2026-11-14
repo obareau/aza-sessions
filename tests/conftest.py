@@ -16,6 +16,11 @@ _tmp_cfg.write(b"{}")
 _tmp_cfg.close()
 os.environ["CONFIG_PATH"] = _tmp_cfg.name
 
+# Sauvegardes dans un dossier jetable — jamais dans le dépôt
+_TMP_BACKUPS = tempfile.mkdtemp(prefix="aza-tests-backups-")
+os.environ["BACKUPS_DIR"] = _TMP_BACKUPS
+os.environ.pop("JSON_BACKUP_DIR", None)
+
 from app import app as flask_app  # noqa: E402 — import après env setup
 from core.init_db import init_db  # noqa: E402
 
@@ -26,11 +31,13 @@ def _setup_db():
     init_db(_TMP_DB_PATH)
     yield
     # Nettoyage
+    import shutil
     try:
         os.unlink(_TMP_DB_PATH)
         os.unlink(_tmp_cfg.name)
     except OSError:
         pass
+    shutil.rmtree(_TMP_BACKUPS, ignore_errors=True)
 
 
 @pytest.fixture(scope="session")

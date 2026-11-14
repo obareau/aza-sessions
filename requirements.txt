@@ -1,5 +1,6 @@
 flask>=3.0.0
-gunicorn>=21.0.0
 pytest>=8.0.0
 # ⚠️ LinkPython-extern RETIRÉ le 2026-08-08 : AZA ne tient plus de pair Link,
 # il lit celui de D.I.M via HTTP. Deux pairs = deux appareils sur le réseau.
+# ⚠️ gunicorn RETIRÉ le 2026-11-14 (v4.0.0) : Roblab n'existe plus, AZA tourne
+# dans l'app Mac (serveur embarqué, macos/server_main.py) ou via `python app.py`.

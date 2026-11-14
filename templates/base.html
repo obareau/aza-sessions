@@ -825,7 +825,7 @@
                 <div class="nav-drop">
                     <span class="nav-drop-label">Config</span>
                     <a href="{{ url_for('sessions.form_blank') }}">⎙ Form</a>
-                    <a href="{{ url_for('sessions.settings') }}">Paramètres</a>
+                    <a href="{{ url_for('settings_app.settings') }}">Paramètres</a>
                     <a href="{{ url_for('about.about') }}">About</a>
                 </div>
             </div>
@@ -843,6 +843,15 @@
     {% endif %}
 
     <main>
+    {% if backup_error %}
+    <div class="alert alert-error" id="backup-error" style="
+        padding:10px 16px;border-radius:var(--radius);margin-bottom:16px;
+        font-family:var(--mono);font-size:12px;background:rgba(212,56,13,.12);
+        border:1px solid rgba(212,56,13,.35);color:var(--accent);">
+        ⚠ La sauvegarde automatique échoue : {{ backup_error }}
+        — <a href="{{ url_for('settings_app.settings') }}#sauvegardes" style="color:inherit;">voir les Paramètres</a>
+    </div>
+    {% endif %}
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
       <div class="flash-stack" style="margin-bottom:16px;">
