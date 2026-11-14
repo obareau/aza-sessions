@@ -25,6 +25,99 @@ if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "--sheets" {
     exit(0)
 }
 
+// `aza-check --demo <fichier.json>` : jeu de données de démonstration (captures d'écran, essais).
+if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "--demo" {
+    var d = Seed.initial()
+    func gid(_ n: String) -> Int { d.catalogue.first { $0.name == n }!.id }
+    func setGear(_ n: String, maker: String, code: String, fav: Bool = false, purpose: String = "", intent: String = "", controls: String = "") {
+        let i = d.catalogue.firstIndex { $0.name == n }!
+        d.catalogue[i].manufacturer = maker; d.catalogue[i].code = code; d.catalogue[i].favorite = fav
+        d.catalogue[i].purpose = purpose; d.catalogue[i].intent = intent; d.catalogue[i].controls = controls
+    }
+    setGear("MicroFreak", maker: "Arturia", code: "MFR", fav: true, purpose: "Synthé hybride, source principale",
+            intent: "Nappes Karplus, textures granulaires",
+            controls: "-- OSCILLATEUR\nType: BasicW | Karplus | Texturer | Harmo\nWave\nTimbre\nShape\n-- FILTRE\nCutoff\nResonance\n-- ENVELOPPE\nAttack\nDecay\nSustain")
+    setGear("NTS-1", maker: "Korg", code: "NT1", fav: true, purpose: "Petit synthé + effets", intent: "Basses, reverb longue")
+    setGear("Volca Drum", maker: "Korg", code: "VDR", purpose: "Percussions FM / modélisation")
+    setGear("Sonicake Smartbox", maker: "Sonicake", code: "SBX", purpose: "Multi-effet guitare", intent: "Saturation, delay sale")
+    setGear("Korg Pandora PX Mini", maker: "Korg", code: "KPX")
+    setGear("Zoom R8", maker: "Zoom", code: "ZR8", purpose: "Enregistreur 8 pistes")
+    setGear("Ableton Live", maker: "Ableton", code: "ABL")
+    setGear("Tera Pro", maker: "Synthetic Bits", code: "TER")
+    d.projects = [Project(id: 1, title: "B.O. Scaër"), Project(id: 2, title: "Relais 3")]
+    d.projects[0].color = "#D4380D"; d.projects[0].description = "Bande originale des nuits de Scaër."
+    d.projects[1].color = "#2D4A6B"; d.projects[1].description = "Transmissions du relais nord."
+    let titles = ["MÉMOIRE RÉSIDUELLE", "NODE SCAER-7", "CORROSION LENTE", "A.212 — SIGNAL", "STRATE SOUTERRAINE",
+                  "VEILLE MÉCANIQUE", "CDX-14 / CENDRE NOCTURNE", "RUMEUR CONTINUE", "RELIQUE-08", "BALISE TARDIVE",
+                  "SOMMEIL CONFORME", "NODE KERGLAZ-3", "LATENCE BASSE", "INVENTAIRE MUET"]
+    let setups: [([String], [String], [String])] = [
+        (["MicroFreak"], ["Sonicake Smartbox"], []), (["NTS-1", "Volca Drum"], [], ["Ableton Live"]),
+        (["MicroFreak", "NTS-1"], ["Korg Pandora PX Mini"], []), (["Volca Drum"], ["Sonicake Smartbox"], ["Ableton Live"]),
+    ]
+    let modes = ["Dawless", "Hybride", "Dawless", "Full DAW"], intents = ["B.O AZA", "Exploration", "Jam", "B.O AZA"]
+    let chars = [["Drone", "Ambient"], ["Rythmique", "Industriel"], ["Texturé", "Drone"], ["Noise", "Percussif"]]
+    let notes = ["Une nappe qui dérive sur vingt minutes, le Karplus en boucle derrière la saturation.",
+                 "Le Volca tient la pulsation, la basse du NTS-1 vient la contredire. Garder le passage à 12:40.",
+                 "Moins de sources, plus de profondeur : deux voix seulement, et beaucoup de silence.",
+                 "Session courte, énergie haute. Le delay sale de la Smartbox fait tout le travail."]
+    let cal = Calendar(identifier: .gregorian)
+    var day = Clock.day("2026-11-14")!
+    for i in 0..<titles.count {
+        var s = Session(id: i + 1, date: Clock.day(day))
+        let k = i % 4
+        s.title = titles[i]; s.machines = setups[k].0; s.effects = setups[k].1; s.daws = setups[k].2
+        s.mode = modes[k]; s.intention = intents[k]; s.character = chars[k]; s.comments = notes[k]
+        s.durationMin = [45, 30, 75, 20][k] + i; s.rating = [5, 4, 3, 4, 5, 2][i % 6]; s.energyLevel = [2, 3, 1, 3][k]
+        s.projectId = i % 3 == 2 ? nil : (i % 2) + 1; s.tempo = ["", "92", "", "128"][k]; s.tonality = ["Ré mineur", "", "La", ""][k]
+        s.oblique = d.obliques[i % d.obliques.count].text; s.tags = [["nuit"], ["live", "rythme"], ["drone"], ["sale"]][k]
+        s.influences = [["Lustmord"], ["Vromb", "Converter"], ["Alva Noto"], ["Synapscape"]][k]
+        s.releasePotential = i % 5 == 0; s.toRework = i % 4 == 1
+        s.signalRouting = s.machines.joined(separator: " + ") + (s.effects.isEmpty ? "" : " → " + s.effects.joined()) + " → Zoom R8"
+        s.audioFile = d.takeName(for: s)
+        if i == 0 { s.recapClaude = "La nappe s'est levée avant moi. J'ai laissé le Karplus tourner dans la saturation jusqu'à ce que le souffle devienne une architecture. Rien n'a été décidé : la machine a déformé, j'ai seulement écouté." }
+        d.sessions.append(s)
+        day = cal.date(byAdding: .day, value: -[1, 2, 1, 3][k], to: day)!
+    }
+    var p = PatchLayout(id: 1, name: "Studio — chaîne Scaër")
+    let a = p.addNode("MicroFreak", type: "machine", x: 80, y: 80, catalogueId: gid("MicroFreak"))
+    let b = p.addNode("NTS-1", type: "machine", x: 80, y: 260, catalogueId: gid("NTS-1"))
+    let c = p.addNode("Volca Drum", type: "machine", x: 80, y: 420, catalogueId: gid("Volca Drum"))
+    let e = p.addNode("Sonicake Smartbox", type: "effet", x: 380, y: 120, catalogueId: gid("Sonicake Smartbox"))
+    let f = p.addNode("Behringer Uphoria 1820", type: "machine", x: 680, y: 260, catalogueId: gid("Behringer Uphoria 1820"))
+    let g = p.addNode("Ableton Live", type: "daw", x: 960, y: 260, catalogueId: gid("Ableton Live"))
+    let h = p.addNode("Zoom R8", type: "machine", x: 960, y: 80, catalogueId: gid("Zoom R8"))
+    let lp = p.addNode("Launchpad Pro mk3", type: "machine", x: 680, y: 460, catalogueId: gid("Launchpad Pro mk3"))
+    p.nodes[0].note = "algo Karplus"
+    p.connect(a, e, signal: "audio"); p.connect(e, f, signal: "audio"); p.connect(b, f, signal: "audio")
+    p.connect(c, f, signal: "audio"); p.connect(f, g, signal: "usb"); p.connect(e, h, signal: "audio")
+    p.connect(lp, g, signal: "midi"); p.connect(g, c, signal: "midi"); p.connect(g, b, signal: "midi"); p.connect(a, b, signal: "cv")
+    p.connections[0].label = "stéréo"
+    p.sessionId = 1
+    d.patches = [p]
+    var pn = PresetNote(id: 1, date: "2026-11-10", presetName: "Brume portuaire"); pn.catalogueId = gid("MicroFreak")
+    pn.rating = 5; pn.evocation = "Un quai dans le brouillard, des chaînes au loin"; pn.sessionId = 1
+    var pn2 = PresetNote(id: 2, date: "2026-11-02", presetName: "Grès 04"); pn2.catalogueId = gid("NTS-1"); pn2.rating = 4
+    d.presets = [pn, pn2]
+    var ks = KnobSheet(id: 1, gearId: gid("MicroFreak")); ks.sessionId = 1; ks.presetId = 1; ks.label = "Brume portuaire"
+    ks.values = ["Type": "Karplus", "Wave": "6.5", "Timbre": "3", "Cutoff": "4.5", "Resonance": "7", "Attack": "8", "Decay": "6"]
+    d.knobSheets = [ks]
+    d.gearNotes = [GearNote(id: 1, gearId: gid("MicroFreak"), date: "2026-11-08", note: "Le Karplus aime une résonance haute et un cutoff à mi-course.")]
+    d.gearPairings = [{ var x = GearPairing(id: 1, gearId: gid("MicroFreak"), partnerId: gid("Sonicake Smartbox")); x.note = "saturation + delay sale"; return x }()]
+    d.tracks = [InspiringTrack(id: 1, title: "The Last Light"), InspiringTrack(id: 2, title: "Xerrox Phaenomenon")]
+    d.tracks[0].artist = "Lustmord"; d.tracks[1].artist = "Alva Noto"
+    d.inspirations = [Inspiration(id: 1, content: "Une ville qui respire par ses relais"), Inspiration(id: 2, content: "Le silence comme instrument")]
+    d.mirack = [MiRackModule(id: 1, name: "Plaits"), MiRackModule(id: 2, name: "Clouds")]
+    d.mirack[0].category = "Oscillateur"; d.mirack[0].mastered = true; d.mirack[1].category = "Effet"
+    d.wishlist = [WishItem(id: 1, name: "Wasp"), WishItem(id: 2, name: "Digitone")]
+    d.wishlist[0].manufacturer = "Behringer"; d.wishlist[0].price = 129; d.wishlist[0].priority = "Bientôt"
+    d.wishlist[1].manufacturer = "Elektron"; d.wishlist[1].price = 749; d.wishlist[1].priority = "Rêve"
+    let url = URL(fileURLWithPath: CommandLine.arguments[2])
+    try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try JSONStorage(url: url).save(d)
+    print("✓ démo : \(d.sessions.count) séances, \(d.patches.count) patch → \(url.path)")
+    exit(0)
+}
+
 var failures = 0
 var passed = 0
 func check(_ cond: Bool, _ what: String) {

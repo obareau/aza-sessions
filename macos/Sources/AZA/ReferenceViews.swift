@@ -117,6 +117,7 @@ struct InfluencesView: View {
 // MARK: - Stratégies obliques
 
 struct ObliquesView: View {
+    @Environment(\.azaStyle) private var style
     @EnvironmentObject var store: Store
     @Local private var drawn: String?
     @Local private var newText = ""
@@ -135,7 +136,7 @@ struct ObliquesView: View {
             }
             .padding(24)
             .frame(maxWidth: .infinity)
-            .background(Color.accentColor.opacity(0.08))
+            .background(style.accent.opacity(0.08))
 
             HStack {
                 TextField("Nouvelle stratégie…", text: $newText).onSubmit(add)

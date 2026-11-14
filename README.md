@@ -3,11 +3,69 @@
 > Application de documentation et de performance musicale pour le projet **AZA** —
 > univers de fiction dystopique dont les sessions de création constituent la bande originale.
 
-**Version : v3.15.1** · [Changelog](CHANGELOG.md) · [Live →](https://sessions.robotariis.com)
+**App macOS** · [Télécharger](https://github.com/obareau/aza-sessions/releases/latest) · [Code de l'app](macos/) · [App web (historique)](#application-web-flask--historique)
+
+![AZA — journal des séances](macos/docs/screenshots/sessions.png)
 
 ---
 
-## Ce que c'est
+## App native macOS
+
+Le journal tourne désormais en **app native macOS (SwiftUI)**, sans serveur : toutes les données
+tiennent dans **un seul fichier JSON** (`~/Documents/AZA Sessions/aza-sessions.json`), sauvegardé à
+chaque modification, avec 5 copies datées. Toutes les fonctions de l'app web Flask ont été portées.
+
+### Installer
+
+1. Télécharger **`AZA-macos-vX.Y.Z.dmg`** depuis les [releases](https://github.com/obareau/aza-sessions/releases/latest)
+   et glisser AZA dans Applications.
+2. Au premier lancement : **clic droit → Ouvrir** (app signée ad-hoc, non notariée).
+
+macOS 13 Ventura ou plus récent · binaire universel (Apple Silicon et Intel).
+Pour reprendre une base de l'app web : **Fichier › Importer une base sessions.db…**
+
+### En images
+
+| | |
+|---|---|
+| ![Patcher lié au catalogue](macos/docs/screenshots/patcher.png) | ![Ce soir — le tirage](macos/docs/screenshots/tonight.png) |
+| **Patcher** — câbles audio / MIDI / CV / USB, minimap, lié en direct au catalogue | **Ce soir** — un instrument, un traitement, une contrainte, un titre, un nom de prise |
+| ![Statistiques](macos/docs/screenshots/stats.png) | ![Catalogue](macos/docs/screenshots/catalogue.png) |
+| **Statistiques** — séries, activité de l'année, tendances | **Catalogue** — fiche, carnet d'instrument, façade, codes de prise |
+| ![Thème Béton](macos/docs/screenshots/sessions-beton.png) | ![Réglages](macos/docs/screenshots/settings.png) |
+| Les **6 thèmes** de l'app web (ici Béton) + un thème personnalisé | **Réglages** — taille du texte et du menu, police, thème |
+
+### Ce qu'elle fait
+
+- **Jouer** : Ce soir (tirage), séance En cours avec chrono, Spark, séance rapide (⇧⌘N).
+- **Journal** : séances (tous les champs, nom de prise Zoom R8, titres dans l'esthétique AZA, filtres),
+  projets, registre des prises, statistiques.
+- **Matériel** : catalogue (carnet d'instrument, façade, proposition de codes), **patcher**, relevés de
+  façade, presets, **SysEx DX7 / Volca FM** via CoreMIDI, wishlist.
+- **Références** : lore (lu depuis le vault Obsidian, rien n'est copié), influences, stratégies
+  obliques, morceaux, inspirations, samples, MiRack.
+- **Sorties** : fiches imprimables A4 (séance, rappel, feuille d'atelier, formulaire terrain, fiches
+  matériel) en impression ou PDF ; export Markdown, CSV, JSON ; écriture dans le vault Obsidian.
+- **Récap IA** via Ollama (serveur et modèle réglables ; les échecs sont toujours affichés).
+- Pomodoro, bandeau de stratégie oblique, aide clavier (⌘/).
+
+### Construire depuis les sources
+
+```bash
+bash macos/build_app.sh            # → macos/build/AZA.app (avec les seuls Command Line Tools)
+bash macos/build_app.sh --install  # copie aussi dans ~/Applications
+```
+
+Détails techniques : [`macos/README.md`](macos/README.md).
+
+---
+
+## Application web (Flask) — historique
+
+> L'app web ci-dessous reste dans le dépôt pour mémoire. **Version : v3.15.1** ·
+> [Changelog](CHANGELOG.md) · [Live →](https://sessions.robotariis.com)
+
+### Ce que c'est
 
 **Journal de Sessions AZA** est un outil personnel en trois parties :
 

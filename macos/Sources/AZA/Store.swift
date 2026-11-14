@@ -7,7 +7,7 @@ import SwiftUI
 /// modification (écriture différée de 0,6 s pour regrouper la frappe).
 @MainActor
 final class Store: ObservableObject {
-    static let version = "1.7.1"
+    static let version = "1.7.2"
 
     @Published var data: AZAData {
         didSet {

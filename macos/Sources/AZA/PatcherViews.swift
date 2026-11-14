@@ -104,6 +104,8 @@ struct PatchEditor: View {
     @Local private var signal = "audio"
     @Local private var viewSize: CGSize = .zero
     @Local private var didFit = false
+    /// Tant que l'utilisateur n'a ni déplacé ni zoomé, la vue se recadre quand la fenêtre change de taille.
+    @Local private var userAdjusted = false
 
     var snap: Bool { UserDefaults.standard.bool(forKey: "patchSnap") }
     @Local private var grid = UserDefaults.standard.bool(forKey: "patchSnap")
@@ -118,13 +120,16 @@ struct PatchEditor: View {
             Divider()
             HStack(spacing: 0) {
                 GeometryReader { geo in
-                    ZStack(alignment: .bottomTrailing) {
-                        canvas
-                        if minimap && !layout.nodes.isEmpty { minimapView.padding(10) }
-                    }
-                    .clipped()
+                    // Le canvas est bien plus grand que la vue : on le borne à la taille
+                    // visible, sinon la minimap se cale sur son coin hors champ.
+                    canvas
+                        .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+                        .clipped()
+                        .overlay(alignment: .bottomTrailing) {
+                            if minimap && !layout.nodes.isEmpty { minimapView.padding(10) }
+                        }
                     .onAppear { viewSize = geo.size; if !didFit { fit(); didFit = true } }
-                    .onChange(of: geo.size) { viewSize = $0 }
+                    .onChange(of: geo.size) { viewSize = $0; if !userAdjusted { fit() } }
                 }
                 if showCatalogue {
                     Divider()
@@ -303,6 +308,7 @@ struct PatchEditor: View {
         .gesture(panGesture)
         .simultaneousGesture(MagnificationGesture()
             .onChanged { v in
+                userAdjusted = true
                 if zoomStart == nil { zoomStart = zoom }
                 zoom = min(3, max(0.2, (zoomStart ?? 1) * v))
             }
@@ -353,6 +359,7 @@ struct PatchEditor: View {
     var panGesture: some Gesture {
         DragGesture(minimumDistance: 3)
             .onChanged { v in
+                userAdjusted = true
                 if panStart == nil { panStart = pan }
                 pan = CGSize(width: (panStart?.width ?? 0) + v.translation.width,
                              height: (panStart?.height ?? 0) + v.translation.height)
@@ -410,6 +417,7 @@ struct PatchEditor: View {
     }
 
     func zoomBy(_ k: CGFloat) {
+        userAdjusted = true
         let c = CGPoint(x: viewSize.width / 2, y: viewSize.height / 2)
         let nz = min(3, max(0.2, zoom * k))
         // Garder le centre de la vue fixe.
@@ -667,9 +675,13 @@ struct NodeView: View {
     let armColor: Color
     var linked = false
     var inactive = false
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        let col = Color(hex: node.color)
+        // Les couleurs de type (rouge sombre, bleu nuit…) viennent du patcher web, pensé
+        // sur fond clair : sur fond sombre on les éclaircit pour que le texte reste lisible.
+        let base = Color(hex: node.color)
+        let col = scheme == .dark ? base.mixed(with: .white, 0.45) : base
         VStack(spacing: 1) {
             ZStack {
                 Text(node.label).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(col)

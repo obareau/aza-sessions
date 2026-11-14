@@ -1,5 +1,7 @@
 # AZA — app macOS native
 
+![AZA](docs/screenshots/sessions.png)
+
 Journal de Sessions AZA en SwiftUI, sans serveur. Les données vivent dans un seul
 fichier JSON : `~/Documents/AZA Sessions/aza-sessions.json` (5 sauvegardes datées
 dans `backups/` à côté, prises à l'ouverture et avant chaque import).
@@ -41,3 +43,18 @@ toujours affichés), export vers le vault Obsidian (une séance ou toutes), expo
 filtres (type, intention, note, mois), bandeau de stratégie oblique, pomodoro, aide clavier (⌘/), À propos.
 
 Toutes les fonctions de l'app web sont portées.
+
+## Captures d'écran
+
+Les images de `docs/screenshots/` sont produites par l'app elle-même, sur un jeu de démo :
+
+```bash
+swift build --package-path macos
+BIN=$(swift build --package-path macos --show-bin-path)
+"$BIN/aza-check" --demo /tmp/aza-demo/aza-demo.json
+"$BIN/AZA" -snapshotDir /tmp/aza-shots -dataFile /tmp/aza-demo/aza-demo.json -theme machine
+```
+
+L'app photographie sa propre fenêtre (aucune autorisation d'enregistrement d'écran) puis quitte.
+Les arguments `-dataFile`, `-theme`… ne passent que par le domaine d'arguments : rien n'est écrit
+dans les préférences.

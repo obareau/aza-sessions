@@ -4,6 +4,7 @@ import SwiftUI
 // MARK: - Ce soir : le tirage
 
 struct TonightView: View {
+    @Environment(\.azaStyle) private var style
     @EnvironmentObject var store: Store
     @EnvironmentObject var nav: Nav
     @EnvironmentObject var prefs: Prefs
@@ -79,7 +80,7 @@ struct TonightView: View {
         }
         .padding(20)
         .background(RoundedRectangle(cornerRadius: 6).fill(prefs.palette?.surface ?? Color(nsColor: .controlBackgroundColor)))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.accentColor.opacity(0.5)))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(style.accent.opacity(0.5)))
     }
 
     func gearRow(_ label: String, _ g: GearItem?) -> some View {

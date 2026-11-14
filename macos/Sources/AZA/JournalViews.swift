@@ -51,6 +51,7 @@ struct TakesView: View {
 // MARK: - Statistiques
 
 struct StatsView: View {
+    @Environment(\.azaStyle) private var style
     @EnvironmentObject var store: Store
     @EnvironmentObject var nav: Nav
     @EnvironmentObject var prefs: Prefs
@@ -93,9 +94,10 @@ struct StatsView: View {
         // Charts dessine ses annotations dans un rendu à part, sans les
         // EnvironmentObject de l'app : la police doit y entrer comme une valeur.
         let font = prefs.font(.caption2)
+        let accent = style.accent
         return Chart(Array(items.enumerated()), id: \.offset) { _, it in
             BarMark(x: .value("n", it.1), y: .value("nom", it.0))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(accent)
                 .annotation(position: .trailing) { Text("\(it.1)").font(font) }
         }
         .chartXAxis(.hidden)
@@ -103,6 +105,7 @@ struct StatsView: View {
     }
 
     @ViewBuilder func content(_ st: Stats) -> some View {
+        let accent = style.accent
         VStack(alignment: .leading, spacing: 14) {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
                 tile("\(st.total)", "séances")
@@ -135,7 +138,7 @@ struct StatsView: View {
 
             block("Séances par mois") {
                 Chart(st.monthly, id: \.0) { m in
-                    BarMark(x: .value("mois", m.0), y: .value("séances", m.1)).foregroundStyle(Color.accentColor)
+                    BarMark(x: .value("mois", m.0), y: .value("séances", m.1)).foregroundStyle(accent)
                 }
                 .frame(height: 180)
             }
@@ -155,6 +158,7 @@ struct StatsView: View {
                         }
                     }
                     .chartYScale(domain: 0...5)
+                    .chartForegroundStyleScale(["Note ★": accent, "Énergie ⚡": Color.green])
                     .frame(height: 180)
                 }
             }
@@ -162,7 +166,7 @@ struct StatsView: View {
             if !st.durationRating.isEmpty {
                 block("Durée × note") {
                     Chart(Array(st.durationRating.enumerated()), id: \.offset) { _, p in
-                        PointMark(x: .value("minutes", p.0), y: .value("note", p.1)).foregroundStyle(Color.accentColor)
+                        PointMark(x: .value("minutes", p.0), y: .value("note", p.1)).foregroundStyle(accent)
                     }
                     .chartYScale(domain: 0...5)
                     .frame(height: 180)
@@ -191,6 +195,7 @@ struct StatsView: View {
 
 /// Calendrier d'activité façon « contributions » : 53 colonnes de 7 jours.
 struct Heatmap: View {
+    @Environment(\.azaStyle) private var style
     let counts: [String: Int]
 
     var body: some View {
@@ -199,6 +204,7 @@ struct Heatmap: View {
         let weekday = (cal.component(.weekday, from: today) + 5) % 7  // lundi = 0
         let start = cal.date(byAdding: .day, value: -(52 * 7 + weekday), to: today)!
         let maxC = max(1, counts.values.max() ?? 1)
+        let accent = style.accent
         Canvas { ctx, size in
             let cell = min(size.width / 53, size.height / 7)
             for w in 0..<53 {
@@ -207,7 +213,7 @@ struct Heatmap: View {
                     let n = counts[Clock.day(day)] ?? 0
                     let rect = CGRect(x: CGFloat(w) * cell, y: CGFloat(d) * cell, width: cell - 2, height: cell - 2)
                     let color = n == 0 ? Color.secondary.opacity(0.15)
-                        : Color.accentColor.opacity(0.35 + 0.65 * Double(n) / Double(maxC))
+                        : accent.opacity(0.35 + 0.65 * Double(n) / Double(maxC))
                     ctx.fill(Path(roundedRect: rect, cornerRadius: 2), with: .color(color))
                 }
             }

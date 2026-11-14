@@ -55,6 +55,7 @@ struct MIDIBar: View {
 // MARK: - Loader
 
 struct SysexLoader: View {
+    @Environment(\.azaStyle) private var style
     @EnvironmentObject var store: Store
     @EnvironmentObject var midi: MIDIManager
     @EnvironmentObject var prefs: Prefs
@@ -87,7 +88,7 @@ struct SysexLoader: View {
         }
         .frame(maxWidth: .infinity, minHeight: 120)
         .background(RoundedRectangle(cornerRadius: 6)
-            .strokeBorder(dropping ? Color.accentColor : Color.secondary.opacity(0.5), style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])))
+            .strokeBorder(dropping ? style.accent : Color.secondary.opacity(0.5), style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])))
         .onDrop(of: [.fileURL], isTargeted: $dropping) { providers in
             guard let p = providers.first else { return false }
             _ = p.loadObject(ofClass: URL.self) { url, _ in

@@ -257,6 +257,7 @@ struct ContentView: View {
                 detail.azaSurface()
             }
         }
+        .task { if SnapshotRunner.dir != nil { await SnapshotRunner.run(nav: nav, store: store) } }
         .sheet(item: $nav.quick) { q in
             QuickSessionSheet(preselection: q.gear) { nav.quick = nil }
                 .environmentObject(store).environmentObject(nav).environmentObject(prefs)

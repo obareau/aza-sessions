@@ -49,6 +49,7 @@ final class Pomodoro: ObservableObject {
 }
 
 struct PomodoroWidget: View {
+    @Environment(\.azaStyle) private var style
     @EnvironmentObject var pomo: Pomodoro
     @Local private var open = false
 
@@ -58,7 +59,7 @@ struct PomodoroWidget: View {
                 Button { open.toggle() } label: {
                     HStack(spacing: 6) {
                         Text(pomo.display).azaFont(.title3, mono: true).monospacedDigit()
-                            .foregroundStyle(pomo.running ? (pomo.label == "Focus" ? Color.accentColor : .green) : .primary)
+                            .foregroundStyle(pomo.running ? (pomo.label == "Focus" ? style.accent : .green) : .primary)
                         Text(pomo.label.uppercased()).foregroundStyle(.secondary).azaFont(.caption2, mono: true)
                     }
                 }.buttonStyle(.plain).help("Pomodoro")
@@ -68,7 +69,7 @@ struct PomodoroWidget: View {
                 Button { pomo.reset() } label: { Image(systemName: "arrow.counterclockwise") }.buttonStyle(.borderless)
             }
             GeometryReader { g in
-                Rectangle().fill(Color.accentColor.opacity(0.7)).frame(width: g.size.width * pomo.fraction)
+                Rectangle().fill(style.accent.opacity(0.7)).frame(width: g.size.width * pomo.fraction)
             }
             .frame(height: 2)
             if open {
@@ -84,6 +85,7 @@ struct PomodoroWidget: View {
 
 /// Bandeau « ∴ Stratégie » en tête de chaque écran.
 struct ObliqueBanner: View {
+    @Environment(\.azaStyle) private var style
     @EnvironmentObject var store: Store
     @Local private var text: String? = nil
 
@@ -95,7 +97,7 @@ struct ObliqueBanner: View {
             Button("Autre") { text = store.data.randomOblique() }.buttonStyle(.link).azaFont(.caption)
         }
         .padding(.horizontal, 12).padding(.vertical, 5)
-        .background(Color.accentColor.opacity(0.06))
+        .background(style.accent.opacity(0.06))
         .onAppear { if text == nil { text = store.data.randomOblique() } }
     }
 }
