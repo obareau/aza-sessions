@@ -19,6 +19,8 @@ indisponible sans Xcode), l'état local passe par `@Local` (`Sources/AZA/Local.s
   - Matériel : Catalogue (fiche, carnet d'instrument, façade ; proposition de codes), Patcher, Façades & relevés, Presets, Wishlist
   - Patcher (⇧⌘P) : nœuds depuis le catalogue ou une séance, câbles audio/MIDI/CV/USB (mode câble : C),
     grille G, minimap M, tout afficher F, pincer pour zoomer ; exports Mermaid, SVG, PNG, JSON portable (format web) ; → séance
+    Lien vivant avec le catalogue : un nœud lié suit sa fiche (nom, type, couleur de type) ; une fiche supprimée
+    délie le nœud ; un nœud libre au nom d'une fiche s'y relie (sauf « Délier »). Panneau catalogue (K) à droite.
   - SysEx (CoreMIDI) : loader .syx (glisser-déposer, noms des 32 voix DX7, contrôle du checksum), sortie + canal
     réécrit dans l'en-tête Yamaha, phrase de test, librairie ; éditeur de banque 32 voix (renommer, réordonner,
     export .syx, envoi). Envoi par MIDISendSysex, cadencé par CoreMIDI.

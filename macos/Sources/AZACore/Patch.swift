@@ -51,17 +51,20 @@ public struct PatchNode: Codable, Identifiable, Hashable, Sendable {
     public var color = "#3A3A3A"
     public var catalogueId: Int?
     public var note = ""
+    /// Délié à la main : ne pas le relier automatiquement par son nom.
+    public var detached = false
 
     public init(id: Int, label: String, nodeType: String = "free", x: Double = 100, y: Double = 100) {
         self.id = id; self.label = label; self.nodeType = nodeType; self.x = x; self.y = y
         color = PatchVocab.color(nodeType)
     }
-    enum CodingKeys: String, CodingKey { case id, label, x, y, nodeType, color, catalogueId, note }
+    enum CodingKeys: String, CodingKey { case id, label, x, y, nodeType, color, catalogueId, note, detached }
     public init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         id = try c.decode(Int.self, forKey: .id)
         label = c.v(.label, ""); x = c.v(.x, 100); y = c.v(.y, 100); nodeType = c.v(.nodeType, "free")
         color = c.v(.color, PatchVocab.color(nodeType)); catalogueId = c.v(.catalogueId, nil); note = c.v(.note, "")
+        detached = c.v(.detached, false)
     }
 
     /// Taille du nœud, mêmes règles que le canvas web.
@@ -392,5 +395,54 @@ public extension PatchLayout {
         }
         o.append("</svg>")
         return o.joined(separator: "\n")
+    }
+}
+
+// MARK: - Lien vivant patcher ↔ catalogue
+
+public extension AZAData {
+    /// Aligne les nœuds de tous les patches sur le catalogue. Rend `true` si quelque chose a bougé.
+    ///
+    /// - Un nœud lié prend le nom et le type de sa fiche : renommer ou reclasser une
+    ///   machine se voit partout. Sa couleur suit le type, sauf si elle a été choisie à la main.
+    /// - Une fiche supprimée délie le nœud sans l'effacer : le câblage reste lisible.
+    /// - Un nœud libre qui porte exactement le nom d'une fiche (une seule) s'y lie :
+    ///   c'est le cas des patches importés du web, souvent sans `catalogue_id`.
+    @discardableResult
+    mutating func syncPatches() -> Bool {
+        guard !patches.isEmpty else { return false }
+        let byId = Dictionary(uniqueKeysWithValues: catalogue.map { ($0.id, $0) })
+        var byName: [String: GearItem?] = [:]
+        for g in catalogue {
+            let k = g.name.trimmingCharacters(in: .whitespaces).lowercased()
+            byName[k] = byName[k] == nil ? g : .some(nil)   // homonymes : ambigu, pas de lien
+        }
+        var changed = false
+        for p in patches.indices {
+            for i in patches[p].nodes.indices {
+                var n = patches[p].nodes[i]
+                if let cid = n.catalogueId {
+                    if let g = byId[cid] {
+                        if n.label != g.name { n.label = g.name }
+                        if n.nodeType != g.type {
+                            if n.color.uppercased() == PatchVocab.color(n.nodeType).uppercased() { n.color = PatchVocab.color(g.type) }
+                            n.nodeType = g.type
+                        }
+                    } else {
+                        n.catalogueId = nil
+                    }
+                } else if !n.detached, let match = byName[n.label.trimmingCharacters(in: .whitespaces).lowercased()], let g = match {
+                    n.catalogueId = g.id
+                    if n.nodeType == "free" { n.nodeType = g.type; n.color = PatchVocab.color(g.type) }
+                }
+                if n != patches[p].nodes[i] { patches[p].nodes[i] = n; changed = true }
+            }
+        }
+        return changed
+    }
+
+    /// Patches où figure une fiche, pour le lien retour depuis le catalogue.
+    func patches(using gearId: Int) -> [PatchLayout] {
+        patches.filter { $0.nodes.contains { $0.catalogueId == gearId } }
     }
 }

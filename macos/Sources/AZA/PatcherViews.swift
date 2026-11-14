@@ -7,11 +7,14 @@ import SwiftUI
 struct PatcherView: View {
     @EnvironmentObject var store: Store
     @EnvironmentObject var nav: Nav
-    @Local private var selection: Int? = nil
+    var selection: Int? {
+        get { nav.patch }
+        nonmutating set { nav.patch = newValue }
+    }
 
     var body: some View {
         HSplitView {
-            List(store.data.patches.sorted { $0.createdAt > $1.createdAt }, selection: $selection) { p in
+            List(store.data.patches.sorted { $0.createdAt > $1.createdAt }, selection: $nav.patch) { p in
                 VStack(alignment: .leading, spacing: 2) {
                     Text(p.name).azaFont(.body, mono: true)
                     let s = store.data.sessions.first { $0.id == p.sessionId }
@@ -105,19 +108,28 @@ struct PatchEditor: View {
     var snap: Bool { UserDefaults.standard.bool(forKey: "patchSnap") }
     @Local private var grid = UserDefaults.standard.bool(forKey: "patchSnap")
     @Local private var minimap = UserDefaults.standard.object(forKey: "patchMinimap") as? Bool ?? true
+    @Local private var showCatalogue = UserDefaults.standard.object(forKey: "patchCatalogue") as? Bool ?? true
+    @Local private var catQuery = ""
+    @Local private var showInactive = false
 
     var body: some View {
         VStack(spacing: 0) {
             topBar
             Divider()
-            GeometryReader { geo in
-                ZStack(alignment: .bottomTrailing) {
-                    canvas
-                    if minimap && !layout.nodes.isEmpty { minimapView.padding(10) }
+            HStack(spacing: 0) {
+                GeometryReader { geo in
+                    ZStack(alignment: .bottomTrailing) {
+                        canvas
+                        if minimap && !layout.nodes.isEmpty { minimapView.padding(10) }
+                    }
+                    .clipped()
+                    .onAppear { viewSize = geo.size; if !didFit { fit(); didFit = true } }
+                    .onChange(of: geo.size) { viewSize = $0 }
                 }
-                .clipped()
-                .onAppear { viewSize = geo.size; if !didFit { fit(); didFit = true } }
-                .onChange(of: geo.size) { viewSize = $0 }
+                if showCatalogue {
+                    Divider()
+                    cataloguePanel.frame(width: 250)
+                }
             }
             Divider()
             properties
@@ -151,6 +163,9 @@ struct PatchEditor: View {
 
             addMenu
             Spacer()
+            Toggle(isOn: Binding(get: { showCatalogue }, set: { showCatalogue = $0; UserDefaults.standard.set($0, forKey: "patchCatalogue") })) {
+                Image(systemName: "sidebar.right")
+            }.toggleStyle(.button).help("Panneau catalogue (K)")
             Toggle(isOn: Binding(get: { grid }, set: { grid = $0; UserDefaults.standard.set($0, forKey: "patchSnap") })) {
                 Image(systemName: "grid")
             }.toggleStyle(.button).help("Grille magnétique 20 px (G)")
@@ -271,7 +286,9 @@ struct PatchEditor: View {
             ForEach(layout.nodes) { n in
                 NodeView(node: n, surface: surface,
                          selected: selected == .node(n.id), armed: cableFrom == n.id,
-                         armColor: Color(hex: PatchVocab.signalColors[signal] ?? "#888"))
+                         armColor: Color(hex: PatchVocab.signalColors[signal] ?? "#888"),
+                         linked: n.catalogueId != nil,
+                         inactive: store.data.gear(n.catalogueId).map { !$0.active } ?? false)
                     .offset(x: n.x, y: n.y)
                     .gesture(nodeDrag(n))
                     .simultaneousGesture(TapGesture().onEnded { tapNode(n.id) })
@@ -370,8 +387,23 @@ struct PatchEditor: View {
     func add(_ label: String, type: String, catalogueId: Int? = nil) {
         let cx = (viewSize.width / 2 - pan.width) / zoom - 65
         let cy = (viewSize.height / 2 - pan.height) / zoom - 21
-        let jitter = Double(layout.nodes.count % 5) * 24
-        var x = max(0, cx + jitter), y = max(0, cy + jitter)
+        // Première place libre en tournant autour du centre de la vue : ajouter
+        // un type entier depuis le catalogue ne doit pas empiler les nœuds.
+        let w = max(130, Double(label.count) * 7 + 44), h = 42.0
+        func free(_ x: Double, _ y: Double) -> Bool {
+            !layout.nodes.contains { n in
+                x < n.x + n.width + 20 && x + w + 20 > n.x && y < n.y + n.height + 20 && y + h + 20 > n.y
+            }
+        }
+        var x = max(0, cx), y = max(0, cy)
+        search: for ring in 0..<12 {
+            for dy in -ring...ring {
+                for dx in -ring...ring where abs(dx) == ring || abs(dy) == ring {
+                    let px = max(0, cx + Double(dx) * 180), py = max(0, cy + Double(dy) * 70)
+                    if free(px, py) { x = px; y = py; break search }
+                }
+            }
+        }
         if grid { x = (x / 20).rounded() * 20; y = (y / 20).rounded() * 20 }
         let id = layout.addNode(label, type: type, x: x, y: y, catalogueId: catalogueId)
         selected = .node(id)
@@ -428,6 +460,76 @@ struct PatchEditor: View {
         .help("Clic : centrer la vue ici")
     }
 
+    // MARK: Panneau catalogue — toujours le catalogue du moment
+
+    var catalogueTypes: [String] {
+        let present = Set(store.data.catalogue.map(\.type))
+        let known = Vocab.itemTypes.map(\.key).filter(present.contains)
+        return known + present.subtracting(known).sorted()
+    }
+
+    var cataloguePanel: some View {
+        let q = catQuery.trimmingCharacters(in: .whitespaces).lowercased()
+        let counts = Dictionary(layout.nodes.compactMap(\.catalogueId).map { ($0, 1) }, uniquingKeysWith: +)
+        let items = store.data.catalogue.filter { (showInactive || $0.active)
+            && (q.isEmpty || "\($0.name) \($0.manufacturer) \($0.code)".lowercased().contains(q)) }
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("CATALOGUE").azaHeading()
+                Spacer()
+                Button { nav.pane = .catalogue } label: {
+                    Image(systemName: "arrow.up.right.square")
+                }.buttonStyle(.borderless).help("Ouvrir le catalogue")
+            }
+            TextField("Filtrer…", text: $catQuery).textFieldStyle(.roundedBorder)
+            Toggle("Fiches inactives", isOn: $showInactive).azaFont(.caption)
+            List {
+                ForEach(catalogueTypes, id: \.self) { t in
+                    let group = items.filter { $0.type == t }
+                        .sorted { ($0.manufacturer.lowercased(), $0.name.lowercased()) < ($1.manufacturer.lowercased(), $1.name.lowercased()) }
+                    if !group.isEmpty {
+                        SwiftUI.Section {
+                            ForEach(group) { g in
+                                Button { add(g.name, type: g.type, catalogueId: g.id) } label: {
+                                    HStack(spacing: 6) {
+                                        Text(PatchVocab.icon(g.type)).foregroundStyle(Color(hex: PatchVocab.color(g.type)))
+                                        VStack(alignment: .leading, spacing: 0) {
+                                            Text(g.name).lineLimit(1).foregroundStyle(g.active ? .primary : .secondary)
+                                            if !g.manufacturer.isEmpty {
+                                                Text(g.manufacturer).foregroundStyle(.secondary).azaFont(.caption2)
+                                            }
+                                        }
+                                        Spacer()
+                                        if let n = counts[g.id] {
+                                            Text(n > 1 ? "✓×\(n)" : "✓").foregroundStyle(.tint).azaFont(.caption)
+                                        }
+                                    }
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .help(counts[g.id] == nil ? "Ajouter au patch" : "Déjà dans le patch — clic pour un autre exemplaire")
+                            }
+                        } header: {
+                            HStack {
+                                Text(Vocab.itemLabel(t).uppercased()).azaFont(.caption2, mono: true)
+                                Spacer()
+                                Button("+ tout") {
+                                    for g in group where counts[g.id] == nil { add(g.name, type: g.type, catalogueId: g.id) }
+                                }
+                                .buttonStyle(.borderless).azaFont(.caption2)
+                                .disabled(group.allSatisfy { counts[$0.id] != nil })
+                            }
+                        }
+                    }
+                }
+            }
+            .listStyle(.sidebar)
+            Text("Les nœuds liés suivent leur fiche : nom, type, ajout ou suppression se répercutent ici.")
+                .foregroundStyle(.secondary).azaFont(.caption2)
+        }
+        .padding(8)
+    }
+
     // MARK: Propriétés
 
     var nodeTypes: [String] {
@@ -441,19 +543,48 @@ struct PatchEditor: View {
             switch selected {
             case .node(let id):
                 if let i = layout.nodes.firstIndex(where: { $0.id == id }) {
+                    let linked = store.data.gear(layout.nodes[i].catalogueId)
                     Text(PatchVocab.icon(layout.nodes[i].nodeType)).foregroundStyle(Color(hex: layout.nodes[i].color))
-                    TextField("Label", text: $layout.nodes[i].label).frame(width: 180)
-                    Picker("Type", selection: Binding(get: { layout.nodes[i].nodeType }, set: {
-                        layout.nodes[i].nodeType = $0; layout.nodes[i].color = PatchVocab.color($0)
-                    })) {
-                        ForEach(nodeTypes, id: \.self) { Text($0).tag($0) }
-                    }.frame(width: 170)
+                    if let g = linked {
+                        // Nom et type viennent de la fiche : on les change dans le catalogue.
+                        HStack(spacing: 4) {
+                            Image(systemName: "link").foregroundStyle(.tint)
+                            Text(g.name).azaFont(.body, mono: true).lineLimit(1)
+                            Text("· \(Vocab.itemLabel(g.type))").foregroundStyle(.secondary).azaFont(.caption)
+                            if !g.active { Text("inactive").foregroundStyle(.orange).azaFont(.caption) }
+                        }
+                        .frame(minWidth: 180, alignment: .leading)
+                        .help("Lié au catalogue : renomme ou reclasse la fiche, le patch suit")
+                    } else {
+                        TextField("Label", text: $layout.nodes[i].label).frame(width: 180)
+                        Picker("Type", selection: Binding(get: { layout.nodes[i].nodeType }, set: {
+                            layout.nodes[i].nodeType = $0; layout.nodes[i].color = PatchVocab.color($0)
+                        })) {
+                            ForEach(nodeTypes, id: \.self) { Text($0).tag($0) }
+                        }.frame(width: 170)
+                        Menu("Lier…") {
+                            ForEach(store.data.catalogue.sorted { $0.name.lowercased() < $1.name.lowercased() }) { g in
+                                Button(g.name) {
+                                    layout.nodes[i].catalogueId = g.id
+                                    layout.nodes[i].detached = false
+                                }
+                            }
+                        }
+                        .frame(width: 80)
+                        .help("Rattacher ce nœud à une fiche du catalogue")
+                    }
                     ColorPicker("", selection: Binding(get: { Color(hex: layout.nodes[i].color) },
                                                        set: { layout.nodes[i].color = $0.hex }), supportsOpacity: false)
                         .labelsHidden()
                     TextField("Note courte", text: $layout.nodes[i].note)
-                    if let g = store.data.gear(layout.nodes[i].catalogueId) {
+                    if let g = linked {
                         Button("Fiche →") { nav.open(gear: g.id) }.buttonStyle(.link)
+                        Button("Délier") {
+                            layout.nodes[i].catalogueId = nil
+                            layout.nodes[i].detached = true
+                        }
+                        .buttonStyle(.link)
+                        .help("Garder le nœud tel quel, sans suivre la fiche")
                     }
                     Button(role: .destructive) { layout.removeNode(id); selected = nil } label: { Image(systemName: "trash") }
                 }
@@ -497,6 +628,8 @@ struct PatchEditor: View {
             Button("") { grid.toggle(); UserDefaults.standard.set(grid, forKey: "patchSnap") }.keyboardShortcut("g", modifiers: [])
             Button("") { minimap.toggle(); UserDefaults.standard.set(minimap, forKey: "patchMinimap") }.keyboardShortcut("m", modifiers: [])
             Button("") { cableMode.toggle() }.keyboardShortcut("c", modifiers: [])
+            Button("") { showCatalogue.toggle(); UserDefaults.standard.set(showCatalogue, forKey: "patchCatalogue") }
+                .keyboardShortcut("k", modifiers: [])
             Button("") { fit() }.keyboardShortcut("f", modifiers: [])
             Button("") { cableFrom = nil; selected = nil }.keyboardShortcut(.escape, modifiers: [])
             Button("") { deleteSelection() }.keyboardShortcut(.delete, modifiers: [.command])
@@ -532,6 +665,8 @@ struct NodeView: View {
     let selected: Bool
     let armed: Bool
     let armColor: Color
+    var linked = false
+    var inactive = false
 
     var body: some View {
         let col = Color(hex: node.color)
@@ -556,8 +691,14 @@ struct NodeView: View {
         .background(RoundedRectangle(cornerRadius: 3).fill(armed ? col.opacity(0.13) : (selected ? col.opacity(0.10) : surface)))
         .overlay(RoundedRectangle(cornerRadius: 3)
             .stroke(armed ? armColor : col, style: StrokeStyle(lineWidth: selected || armed ? 2.5 : 1.5, dash: armed ? [5, 3] : [])))
+        .overlay(alignment: .topTrailing) {
+            if linked {
+                Image(systemName: "link").font(.system(size: 7)).foregroundStyle(col.opacity(0.7)).padding(3)
+            }
+        }
+        .opacity(inactive ? 0.45 : 1)
         .contentShape(Rectangle())
-        .help(node.note)
+        .help(inactive ? "Fiche inactive dans le catalogue" : node.note)
     }
 }
 

@@ -11,6 +11,9 @@ final class Nav: ObservableObject {
     @Published var session: Int?
     @Published var gear: Int?
     @Published var printJob: PrintJob?
+    @Published var patch: Int?
+
+    func open(patch id: Int) { pane = .patcher; patch = id }
 
     func open(session id: Int) { pane = .sessions; session = id }
     func open(gear id: Int) { pane = .catalogue; gear = id }

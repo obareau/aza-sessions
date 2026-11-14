@@ -222,6 +222,16 @@ struct GearEditor: View {
                     }.buttonStyle(.plain)
                 }
             } header: { Text("UTILISÉE DANS \(usage.count) SÉANCE(S)").azaHeading() }
+            let patches = store.data.patches(using: item.id)
+            if !patches.isEmpty {
+                Section {
+                    ForEach(patches) { p in
+                        Button { nav.open(patch: p.id) } label: {
+                            Text("⬡ \(p.name)").azaFont(.caption, mono: true)
+                        }.buttonStyle(.plain)
+                    }
+                } header: { Text("DANS \(patches.count) PATCH(ES)").azaHeading() }
+            }
         }
         .formStyle(.grouped)
     }

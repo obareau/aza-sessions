@@ -337,5 +337,36 @@ check(ws.contains("<b>MFR_</b>") && ws.contains("◻ LP") && ws.components(separ
 check(Sheets.blankForm(data: shd, version: "t").contains("Behringer Uphoria 1820"), "fiches : formulaire vierge")
 check(Sheets.catalogue(shd.catalogue, filter: "", version: "t").contains("A4 landscape"), "fiches : catalogue en paysage")
 
+// 13. Patcher lié au catalogue
+var lk = Seed.initial()
+let mfG = lk.catalogue.first { $0.name == "MicroFreak" }!
+let ntsG = lk.catalogue.first { $0.name == "NTS-1" }!
+var lp = PatchLayout(id: 1, name: "lié")
+let n1 = lp.addNode(mfG.name, type: mfG.type, x: 0, y: 0, catalogueId: mfG.id)
+let n2 = lp.addNode("NTS-1", type: "free", x: 300, y: 0)            // libre, même nom qu'une fiche
+let n3 = lp.addNode("Pédale maison", type: "free", x: 600, y: 0)
+let n4 = lp.addNode(ntsG.name, type: "machine", x: 0, y: 200, catalogueId: ntsG.id)
+lp.nodes[3].color = "#123456"                                       // couleur choisie à la main
+lk.patches = [lp]
+check(lk.syncPatches() && lk.patches[0].node(n2)?.catalogueId == ntsG.id && lk.patches[0].node(n2)?.nodeType == "machine",
+      "lien : nœud libre relié par son nom")
+check(lk.patches[0].node(n3)?.catalogueId == nil, "lien : nom inconnu reste libre")
+check(!lk.syncPatches(), "lien : synchro idempotente")
+let mfI = lk.catalogue.firstIndex { $0.id == mfG.id }!
+lk.catalogue[mfI].name = "MicroFreak MK2"; lk.catalogue[mfI].type = "synth_ios"
+lk.syncPatches()
+check(lk.patches[0].node(n1)?.label == "MicroFreak MK2" && lk.patches[0].node(n1)?.nodeType == "synth_ios"
+      && lk.patches[0].node(n1)?.color == PatchVocab.color("synth_ios"), "lien : renommage et type suivis, couleur de type")
+let ntsI = lk.catalogue.firstIndex { $0.id == ntsG.id }!
+lk.catalogue[ntsI].type = "effet"; lk.syncPatches()
+check(lk.patches[0].node(n4)?.color == "#123456" && lk.patches[0].node(n4)?.nodeType == "effet", "lien : couleur manuelle gardée")
+lk.catalogue.remove(at: ntsI); lk.syncPatches()
+check(lk.patches[0].node(n4)?.catalogueId == nil && lk.patches[0].node(n4)?.label == "NTS-1", "lien : fiche supprimée → nœud délié, gardé")
+lk.patches[0].nodes[0].catalogueId = nil; lk.patches[0].nodes[0].detached = true; lk.patches[0].nodes[0].label = "Ableton Live"
+lk.syncPatches()
+check(lk.patches[0].nodes[0].catalogueId == nil, "lien : nœud délié à la main jamais relié d'office")
+check(lk.patches(using: lk.catalogue.first { $0.name == "MicroFreak MK2" }?.id ?? -1).isEmpty
+      && lk.patches(using: lk.catalogue.first { $0.name == "Ableton Live" }!.id).isEmpty, "lien : patches d'une fiche")
+
 print(failures == 0 ? "✓ aza-check : \(passed) vérifications OK" : "✗ aza-check : \(failures) échec(s), \(passed) OK")
 exit(failures == 0 ? 0 : 1)

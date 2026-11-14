@@ -7,10 +7,19 @@ import SwiftUI
 /// modification (écriture différée de 0,6 s pour regrouper la frappe).
 @MainActor
 final class Store: ObservableObject {
-    static let version = "1.5.1"
+    static let version = "1.6.0"
 
     @Published var data: AZAData {
-        didSet { if data != oldValue { scheduleSave() } }
+        didSet {
+            guard data != oldValue else { return }
+            // Le patcher suit le catalogue en direct. (Réaffecter `data` dans son
+            // propre didSet ne relance pas l'observateur.)
+            if data.catalogue != oldValue.catalogue || data.patches != oldValue.patches {
+                var d = data
+                if d.syncPatches() { data = d }
+            }
+            scheduleSave()
+        }
     }
     @Published var lastError: String?
     @Published private(set) var lastSaved: Date?
@@ -31,6 +40,7 @@ final class Store: ObservableObject {
         data = AZAData()
         let (d, err) = Self.open(storage)
         data = d ?? Seed.initial()
+        data.syncPatches()
         saveBlocked = d == nil
         lastError = err
         NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
