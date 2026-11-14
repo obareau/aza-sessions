@@ -201,6 +201,13 @@ public enum SQLiteImport {
             c.label = str(r["label"]); c.note = str(r["note"])
             d.patches[li].connections.append(c)
         }
+        if t.contains("sysex_banks") {
+            for (id, name, blob, created) in try blobs(db, "SELECT id, name, data, created_at FROM sysex_banks ORDER BY id") {
+                var b = SysexBank(id: id, name: name.isEmpty ? "bank" : name, data: blob)
+                if !created.isEmpty { b.createdAt = created }
+                d.sysexBanks.append(b)
+            }
+        }
         if t.contains("live_session"), let r = try rows(db, "SELECT * FROM live_session LIMIT 1").first {
             var l = LiveSession(startedAt: str(r["started_at"]).isEmpty ? Clock.stamp() : str(r["started_at"]))
             l.notes = str(r["notes_live"]); l.machines = splitList(str(r["machines"]))
@@ -210,6 +217,25 @@ public enum SQLiteImport {
             l.projectId = int(r["project_id"])
             d.live = l
         }
+    }
+
+    /// Lecture binaire (BLOB) : sqlite3_column_text tronquerait au premier octet nul.
+    static func blobs(_ db: OpaquePointer?, _ sql: String) throws -> [(Int, String, Data, String)] {
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else {
+            throw Failure(description: String(cString: sqlite3_errmsg(db)))
+        }
+        defer { sqlite3_finalize(stmt) }
+        var out: [(Int, String, Data, String)] = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            let id = Int(sqlite3_column_int64(stmt, 0))
+            let name = sqlite3_column_text(stmt, 1).map { String(cString: $0) } ?? ""
+            let n = Int(sqlite3_column_bytes(stmt, 2))
+            let data = n > 0 ? Data(bytes: sqlite3_column_blob(stmt, 2), count: n) : Data()
+            let created = sqlite3_column_text(stmt, 3).map { String(cString: $0) } ?? ""
+            out.append((id, name, data, created))
+        }
+        return out
     }
 
     static func str(_ v: String??) -> String { (v ?? nil) ?? "" }

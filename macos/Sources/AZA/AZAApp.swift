@@ -21,6 +21,7 @@ struct AZAApp: App {
     @StateObject private var store = Store()
     @StateObject private var prefs = Prefs()
     @StateObject private var nav = Nav()
+    @StateObject private var midi = MIDIManager()
 
     var body: some Scene {
         WindowGroup("AZA — Journal de Sessions") {
@@ -30,6 +31,7 @@ struct AZAApp: App {
                 .environmentObject(store)
                 .environmentObject(prefs)
                 .environmentObject(nav)
+                .environmentObject(midi)
         }
         .commands {
             CommandGroup(replacing: .newItem) {
@@ -109,14 +111,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 enum Pane: String, CaseIterable, Identifiable {
     case tonight, live, spark
     case sessions, projects, takes, stats
-    case catalogue, facades, presets, patcher
+    case catalogue, facades, presets, patcher, sysex
     case influences, obliques, tracks, inspirations, samples, mirack, wishlist
     var id: String { rawValue }
 
     static let groups: [(String, [Pane])] = [
         ("Jouer", [.tonight, .live, .spark]),
         ("Journal", [.sessions, .projects, .takes, .stats]),
-        ("Matériel", [.catalogue, .patcher, .facades, .presets, .wishlist]),
+        ("Matériel", [.catalogue, .patcher, .facades, .presets, .sysex, .wishlist]),
         ("Références", [.influences, .obliques, .tracks, .inspirations, .samples, .mirack]),
     ]
 
@@ -133,6 +135,7 @@ enum Pane: String, CaseIterable, Identifiable {
         case .facades: "Façades"
         case .presets: "Presets"
         case .patcher: "Patcher"
+        case .sysex: "SysEx"
         case .influences: "Influences"
         case .obliques: "Stratégies obliques"
         case .tracks: "Morceaux"
@@ -155,6 +158,7 @@ enum Pane: String, CaseIterable, Identifiable {
         case .facades: "dial.medium"
         case .presets: "slider.horizontal.3"
         case .patcher: "point.3.connected.trianglepath.dotted"
+        case .sysex: "cable.connector.horizontal"
         case .influences: "person.2"
         case .obliques: "suit.diamond"
         case .tracks: "music.note.list"
@@ -214,6 +218,7 @@ struct ContentView: View {
         case .facades: FacadesView()
         case .presets: PresetsView()
         case .patcher: PatcherView()
+        case .sysex: SysexView()
         case .influences: InfluencesView()
         case .obliques: ObliquesView()
         case .tracks: TracksView()
@@ -234,6 +239,7 @@ struct ContentView: View {
         case .obliques: return d.obliques.count
         case .presets: return d.presets.count
         case .patcher: return d.patches.count
+        case .sysex: return d.sysexBanks.count
         case .facades: return d.knobSheets.count
         case .tracks: return d.tracks.count
         case .inspirations: return d.inspirations.count

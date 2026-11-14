@@ -217,5 +217,35 @@ let lay = pimp.patches.first
 check(lay?.name == "Live set" && lay?.nodes.count == 2 && lay?.connections.first?.fromId == 11, "import : patch")
 check(lay?.nodes.last?.color.hasPrefix("#") == true && lay?.nodes.first?.note == "algo Karplus", "import : nœuds, type custom coloré")
 
+// 10. SysEx DX7
+var v1 = DX7Voice.initVoice
+check(v1.name == "INIT VOICE" && v1.bytes[15] == 2 && v1.bytes[12] == 56, "sysex : INIT VOICE (ratio 1, detune centré)")
+v1.name = "Brümé ÉTÉ trop long"
+check(v1.name == "Brume ETE", "sysex : nom ASCII 10 car. (\(v1.name))")
+var slots = [DX7Voice?](repeating: nil, count: 32); slots[3] = v1
+let bulk = DX7.buildBulk(slots, channel: 2)
+check(bulk.count == 4104 && bulk[0] == 0xF0 && bulk[2] == 2 && bulk[3] == 0x09 && bulk.last == 0xF7, "sysex : bulk 4104 octets")
+check(DX7.bulkChecksumOK(bulk), "sysex : checksum")
+var broken = bulk; broken[100] ^= 0x01
+check(!DX7.bulkChecksumOK(broken), "sysex : checksum faux détecté")
+check(DX7.patchNames(bulk)[3] == "Brume ETE" && DX7.patchNames(bulk)[0] == "INIT VOICE", "sysex : noms des 32 voix")
+check(DX7.withChannel(bulk, 15)[2] == 15 && DX7.withChannel([0xF0, 0x41, 0x10, 0xF7], 5)[2] == 0x10, "sysex : canal Yamaha seulement")
+check(DX7.voices(bulk)?.count == 32 && DX7.voices([0xF0, 0xF7]) == nil, "sysex : découpage du bulk")
+check(DX7.checksum([0x7F, 0x01]) == 0x00 && DX7.checksum([0x01]) == 0x7F, "sysex : complément à 2 sur 7 bits")
+check(SysexBank(id: 1, name: "b", data: Data(bulk)).format == "DX7 · 32-voice bulk", "sysex : format")
+
+let db4 = work.appendingPathComponent("sysex.db").path
+var h4: OpaquePointer?
+sqlite3_open(db4, &h4)
+sqlite3_exec(h4, "CREATE TABLE sessions (id INTEGER PRIMARY KEY, date TEXT NOT NULL); CREATE TABLE sysex_banks (id INTEGER PRIMARY KEY, name TEXT, format TEXT, size INTEGER, data BLOB, created_at TEXT);", nil, nil, nil)
+var stmt4: OpaquePointer?
+sqlite3_prepare_v2(h4, "INSERT INTO sysex_banks VALUES (3, 'Rom1A', 'x', 4104, ?, '2026-01-01 00:00:00')", -1, &stmt4, nil)
+let blobData = Data(bulk)
+blobData.withUnsafeBytes { _ = sqlite3_bind_blob(stmt4, 1, $0.baseAddress, Int32(blobData.count), nil) }
+sqlite3_step(stmt4); sqlite3_finalize(stmt4); sqlite3_close(h4)
+let simp = try SQLiteImport.load(path: db4)
+check(simp.sysexBanks.first?.data == blobData && simp.sysexBanks.first?.name == "Rom1A", "import : banque SysEx (BLOB avec octets nuls)")
+check(try JSONStorage.decode(JSONStorage.encode(simp)) == simp, "sysex : aller-retour JSON (base64)")
+
 print(failures == 0 ? "✓ aza-check : \(passed) vérifications OK" : "✗ aza-check : \(failures) échec(s), \(passed) OK")
 exit(failures == 0 ? 0 : 1)

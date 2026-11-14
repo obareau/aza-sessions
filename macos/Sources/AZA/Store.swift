@@ -7,7 +7,7 @@ import SwiftUI
 /// modification (écriture différée de 0,6 s pour regrouper la frappe).
 @MainActor
 final class Store: ObservableObject {
-    static let version = "1.2.0"
+    static let version = "1.3.0"
 
     @Published var data: AZAData {
         didSet { if data != oldValue { scheduleSave() } }
