@@ -1,0 +1,390 @@
+import AZACore
+import SwiftUI
+
+struct SessionsView: View {
+    @EnvironmentObject var store: Store
+    @Binding var selection: Int?
+    @Local private var query = ""
+    @Local private var projectFilter: Int? = nil
+    @Local private var modeFilter = ""
+    @Local private var onlyRework = false
+
+    var filtered: [Session] {
+        let q = query.lowercased().trimmingCharacters(in: .whitespaces)
+        return store.data.sessions
+            .filter { projectFilter == nil || $0.projectId == projectFilter }
+            .filter { modeFilter.isEmpty || $0.mode == modeFilter }
+            .filter { !onlyRework || $0.toRework }
+            .filter { s in
+                guard !q.isEmpty else { return true }
+                let hay = ([s.title, s.date, s.mode, s.intention, s.comments, s.patches, s.audioFile,
+                            s.signalRouting, s.loreLink, s.oblique, s.tempo, s.tonality]
+                           + s.tags + s.allGear + s.influences + s.character).joined(separator: " ").lowercased()
+                return hay.contains(q)
+            }
+            .sorted { ($0.date, $0.id) > ($1.date, $1.id) }
+    }
+
+    var body: some View {
+        HSplitView {
+            VStack(spacing: 0) {
+                filters
+                List(filtered, selection: $selection) { s in
+                    SessionRow(session: s).tag(s.id)
+                        .contextMenu {
+                            Button("Copier le setup") { selection = store.newSession(from: s) }
+                            Button("Supprimer…", role: .destructive) { delete(s) }
+                        }
+                }
+                .listStyle(.inset)
+            }
+            .frame(minWidth: 280, idealWidth: 330, maxWidth: 460)
+
+            Group {
+                if let id = selection, let b = store.binding(session: id) {
+                    SessionEditor(session: b, onOpen: { selection = $0 }).id(id)
+                } else {
+                    VStack(spacing: 12) {
+                        Text("Aucune séance sélectionnée").font(.system(.title3, design: .monospaced))
+                        Button("Nouvelle séance  ⌘N") { selection = store.newSession() }
+                    }
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .frame(minWidth: 520, maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .navigationTitle("Séances")
+        .navigationSubtitle("\(filtered.count) / \(store.data.sessions.count)")
+        .toolbar {
+            ToolbarItemGroup {
+                Button { selection = store.newSession() } label: { Label("Nouvelle", systemImage: "plus") }
+                    .help("Nouvelle séance (⌘N)")
+                Button {
+                    if let s = current, let url = Panels.save(name: "session_\(s.date)_\(s.id).md", ext: "md") {
+                        store.exportMarkdown([s], to: url)
+                    }
+                } label: { Label("Markdown", systemImage: "doc.plaintext") }
+                    .help("Exporter la séance en Markdown").disabled(current == nil)
+                Button { if let s = current { delete(s) } } label: { Label("Supprimer", systemImage: "trash") }
+                    .help("Supprimer la séance").disabled(current == nil)
+            }
+        }
+    }
+
+    var current: Session? { store.data.sessions.first { $0.id == selection } }
+
+    var filters: some View {
+        VStack(spacing: 6) {
+            TextField("Rechercher…", text: $query).textFieldStyle(.roundedBorder)
+            HStack {
+                Picker("", selection: $projectFilter) {
+                    Text("Tous projets").tag(Int?.none)
+                    ForEach(store.data.projects) { p in Text(p.title).tag(Int?.some(p.id)) }
+                }.labelsHidden()
+                Picker("", selection: $modeFilter) {
+                    Text("Tous modes").tag("")
+                    ForEach(Vocab.modes, id: \.self) { Text($0).tag($0) }
+                }.labelsHidden()
+                Toggle("↻", isOn: $onlyRework).toggleStyle(.button).help("À retravailler seulement")
+            }
+        }
+        .padding(8)
+    }
+
+    func delete(_ s: Session) {
+        guard Panels.confirm("Supprimer « \(s.displayTitle) » ?",
+                             "La séance est retirée du fichier JSON (les sauvegardes la conservent).",
+                             ok: "Supprimer") else { return }
+        if selection == s.id { selection = nil }
+        store.deleteSession(s.id)
+    }
+}
+
+struct SessionRow: View {
+    @EnvironmentObject var store: Store
+    let session: Session
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(store.data.project(session.projectId).map { Color(hex: $0.color) } ?? .clear)
+                .frame(width: 4)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(session.displayTitle).font(.system(.body, design: .monospaced)).lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(session.date)
+                    if !session.mode.isEmpty { Text(session.mode) }
+                    if let r = session.rating, r > 0 { Text(String(repeating: "★", count: r)).foregroundStyle(azaOrange) }
+                    if session.toRework { Text("↻") }
+                    if session.releasePotential { Text("◆").foregroundStyle(azaOrange) }
+                }
+                .font(.system(.caption, design: .monospaced)).foregroundStyle(.secondary)
+                let gear = session.allGear
+                if !gear.isEmpty {
+                    Text(gear.joined(separator: " · ")).font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+                }
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+struct SessionEditor: View {
+    @EnvironmentObject var store: Store
+    @Binding var session: Session
+    var onOpen: (Int) -> Void
+
+    var body: some View {
+        Form {
+            Section {
+                TextField("Titre", text: $session.title, prompt: Text(session.displayTitle))
+                HStack {
+                    DatePicker("Date", selection: Binding(
+                        get: { Clock.day(session.date) ?? Date() },
+                        set: { session.date = Clock.day($0) }), displayedComponents: .date)
+                    Picker("Type", selection: $session.sessionType) {
+                        ForEach(Vocab.sessionTypes, id: \.key) { Text($0.label).tag($0.key) }
+                    }
+                }
+                HStack {
+                    Picker("Mode", selection: $session.mode) {
+                        Text("—").tag("")
+                        ForEach(Vocab.modes, id: \.self) { Text($0).tag($0) }
+                        if !session.mode.isEmpty && !Vocab.modes.contains(session.mode) { Text(session.mode).tag(session.mode) }
+                    }
+                    Picker("Intention", selection: $session.intention) {
+                        Text("—").tag("")
+                        ForEach(Vocab.intentions, id: \.self) { Text($0).tag($0) }
+                        if !session.intention.isEmpty && !Vocab.intentions.contains(session.intention) {
+                            Text(session.intention).tag(session.intention)
+                        }
+                    }
+                }
+                HStack {
+                    TextField("Durée (min)", value: $session.durationMin, format: .number)
+                    Picker("Projet", selection: $session.projectId) {
+                        Text("Aucun").tag(Int?.none)
+                        ForEach(store.data.projects) { p in Text(p.title).tag(Int?.some(p.id)) }
+                    }
+                }
+                HStack(spacing: 24) {
+                    LabeledContent("Note") { Dots(value: $session.rating, symbol: "★") }
+                    LabeledContent("Énergie") { Dots(value: $session.energyLevel, symbol: "⚡") }
+                }
+                HStack {
+                    Toggle("À retravailler", isOn: $session.toRework)
+                    Toggle("Potentiel release", isOn: $session.releasePotential)
+                }
+            } header: { header("Séance #\(session.id)") }
+
+            Section {
+                ForEach(GearField.allCases, id: \.self) { f in
+                    GearPicker(field: f, values: $session[dynamicMember: f.keyPath])
+                }
+            } header: { header("Matériel") }
+
+            Section {
+                HStack {
+                    TextField("Tempo", text: $session.tempo)
+                    TextField("Tonalité", text: $session.tonality)
+                    TextField("Algo MicroFreak", text: $session.microfreakAlgo)
+                }
+                LabeledContent("Caractère") {
+                    FlowToggles(options: Vocab.characters, values: $session.character)
+                }
+                MultiLine("Patches / presets", text: $session.patches)
+                MultiLine("Signal routing", text: $session.signalRouting)
+            } header: { header("Son") }
+
+            Section {
+                HStack {
+                    TextField("Fichier audio / nom de prise", text: $session.audioFile)
+                    let take = store.data.takeName(for: session)
+                    Button("Prise : \(take.isEmpty ? "—" : take)") { session.audioFile = take }
+                        .disabled(take.isEmpty)
+                        .help(take.isEmpty ? "Aucune fiche du setup n'a de code catalogue"
+                                           : "Nom de projet Zoom R8 (8 car. max)")
+                }
+                MultiLine("Timestamps intéressants", text: $session.timestamps)
+            } header: { header("Enregistrement") }
+
+            Section {
+                ListField("Tags", values: $session.tags)
+                LabeledContent("Influences") {
+                    NamePicker(options: store.data.influences.filter(\.active).map(\.name),
+                               values: $session.influences, title: "Influences")
+                }
+                TextField("Lien lore AZA", text: $session.loreLink)
+                HStack(alignment: .top) {
+                    TextField("Stratégie oblique", text: $session.oblique, axis: .vertical)
+                    Button { session.oblique = store.data.randomOblique() ?? session.oblique } label: {
+                        Image(systemName: "dice")
+                    }.help("Tirer une autre stratégie")
+                }
+                Picker("Séance liée", selection: $session.linkedSession) {
+                    Text("Aucune").tag(Int?.none)
+                    ForEach(store.data.sessions.filter { $0.id != session.id }.sorted { $0.date > $1.date }) { s in
+                        Text("\(s.date) — \(s.displayTitle)").tag(Int?.some(s.id))
+                    }
+                }
+                if let l = session.linkedSession {
+                    Button("Ouvrir la séance liée →") { onOpen(l) }.buttonStyle(.link)
+                }
+            } header: { header("Contexte") }
+
+            Section {
+                MultiLine("Notes libres", text: $session.comments, minHeight: 120)
+                MultiLine("Récap", text: $session.recapClaude)
+            } header: { header("Notes") }
+        }
+        .formStyle(.grouped)
+    }
+
+    func header(_ s: String) -> some View {
+        Text(s.uppercased()).font(.system(.caption, design: .monospaced)).foregroundStyle(azaOrange)
+    }
+}
+
+// MARK: - Champs réutilisables
+
+struct Dots: View {
+    @Binding var value: Int?
+    let symbol: String
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(1...5, id: \.self) { i in
+                Text(symbol)
+                    .opacity((value ?? 0) >= i ? 1 : 0.2)
+                    .onTapGesture { value = value == i ? nil : i }
+            }
+        }
+        .foregroundStyle(azaOrange)
+        .help("Clic pour noter, re-clic pour effacer")
+    }
+}
+
+struct MultiLine: View {
+    let title: String
+    @Binding var text: String
+    var minHeight: CGFloat = 54
+    init(_ title: String, text: Binding<String>, minHeight: CGFloat = 54) {
+        self.title = title; _text = text; self.minHeight = minHeight
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.caption).foregroundStyle(.secondary)
+            TextEditor(text: $text)
+                .font(.system(.body, design: .monospaced))
+                .frame(minHeight: minHeight)
+                .scrollContentBackground(.hidden)
+                .padding(4)
+                .background(RoundedRectangle(cornerRadius: 5).fill(Color(nsColor: .textBackgroundColor)))
+        }
+    }
+}
+
+/// Liste saisie en texte « a, b, c ».
+struct ListField: View {
+    let title: String
+    @Binding var values: [String]
+    @Local private var text = ""
+    init(_ title: String, values: Binding<[String]>) { self.title = title; _values = values }
+    var body: some View {
+        TextField(title, text: $text, prompt: Text("séparés par des virgules"))
+            .onAppear { text = values.joined(separator: ", ") }
+            .onChange(of: text) { values = splitList($0) }
+    }
+}
+
+struct FlowToggles: View {
+    let options: [String]
+    @Binding var values: [String]
+    var body: some View {
+        let all = options + values.filter { !options.contains($0) }
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 4)], alignment: .leading, spacing: 4) {
+            ForEach(all, id: \.self) { o in
+                Toggle(o, isOn: Binding(
+                    get: { values.contains(o) },
+                    set: { on in if on { values.append(o) } else { values.removeAll { $0 == o } } }))
+                .toggleStyle(.button).controlSize(.small)
+            }
+        }
+    }
+}
+
+/// Sélection multiple dans une liste de noms, via un menu à cases.
+struct NamePicker: View {
+    let options: [String]
+    @Binding var values: [String]
+    let title: String
+    @Local private var open = false
+    @Local private var filter = ""
+
+    var body: some View {
+        HStack {
+            Text(values.isEmpty ? "—" : values.joined(separator: ", "))
+                .foregroundStyle(values.isEmpty ? .secondary : .primary)
+                .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button("Choisir…") { open = true }
+                .popover(isPresented: $open, arrowEdge: .trailing) { popover }
+        }
+    }
+
+    var popover: some View {
+        let extra = values.filter { !options.contains($0) }
+        let shown = (options + extra).filter { filter.isEmpty || $0.localizedCaseInsensitiveContains(filter) }
+        return VStack(alignment: .leading, spacing: 6) {
+            Text(title).font(.system(.headline, design: .monospaced))
+            TextField("Filtrer ou ajouter…", text: $filter)
+                .onSubmit {
+                    let n = filter.trimmingCharacters(in: .whitespaces)
+                    if !n.isEmpty && !values.contains(n) { values.append(n) }
+                    filter = ""
+                }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 3) {
+                    ForEach(shown, id: \.self) { o in
+                        Toggle(o, isOn: Binding(
+                            get: { values.contains(o) },
+                            set: { on in if on { values.append(o) } else { values.removeAll { $0 == o } } }))
+                    }
+                }
+            }.frame(height: min(320, CGFloat(shown.count) * 22 + 8))
+            Text("Entrée : ajouter un nom libre").font(.caption2).foregroundStyle(.secondary)
+        }
+        .padding(12).frame(width: 280)
+    }
+}
+
+struct GearPicker: View {
+    @EnvironmentObject var store: Store
+    let field: GearField
+    @Binding var values: [String]
+
+    var body: some View {
+        let items = store.data.catalogue
+            .filter { $0.type == field.catalogueType && $0.active }
+            .sorted { ($0.favorite ? 0 : 1, $0.manufacturer, $0.name) < ($1.favorite ? 0 : 1, $1.manufacturer, $1.name) }
+        LabeledContent(field.label) {
+            NamePicker(options: items.map(\.name), values: $values, title: field.label)
+        }
+    }
+}
+
+extension Color {
+    init(hex: String) {
+        var s = hex.trimmingCharacters(in: .whitespaces)
+        if s.hasPrefix("#") { s.removeFirst() }
+        let v = UInt64(s, radix: 16) ?? 0xD4380D
+        self.init(red: Double((v >> 16) & 0xFF) / 255, green: Double((v >> 8) & 0xFF) / 255,
+                  blue: Double(v & 0xFF) / 255)
+    }
+
+    var hex: String {
+        let c = NSColor(self).usingColorSpace(.sRGB) ?? .orange
+        return String(format: "#%02X%02X%02X", Int(c.redComponent * 255),
+                      Int(c.greenComponent * 255), Int(c.blueComponent * 255))
+    }
+}
