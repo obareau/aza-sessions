@@ -1,11 +1,18 @@
 # ROADMAP — Journal de Sessions AZA
 
 > Carte des possibles — pas un backlog, pas de deadlines.
-> Mis à jour : 2026-09-27 (après release **v3.20.0**)
+> Mis à jour : 2026-11-14 (release **v4.0.0** — app Mac, sauvegarde JSON)
 
 ---
 
 ## ⏸ État du projet
+
+⚠️⚠️ **Roblab n'existe plus — AZA est une app Mac native depuis le 2026-11-14**
+(v4.0.0). La base vit sur le Mac, une **sauvegarde JSON complète est écrite à chaque
+modification**, hors du dossier de la base. Motif : l'historique des séances s'était
+perdu à répétition (copie SQLite seulement au démarrage du service, 5 gardées, sur le
+même disque). Conséquence assumée : **le téléphone ne voit plus le journal** — le
+serveur n'écoute que sur 127.0.0.1.
 
 ⚠️⚠️ **AZA s'est RECENTRÉ le 2026-08-09** (v3.12.0) : le Prompteur et tout l'axe
 Ableton Link sont partis chez D.I.M. Ce n'est pas une perte — c'est la fin d'une
@@ -73,6 +80,8 @@ depuis l'interface — c'est le modèle qu'il faut vérifier, pas le code.
 | v3.19.1 | **Fiches matériel dans le menu** Catalogue — la vue table n'était atteignable que par un bouton |
 | v3.19.2 | **Contraintes réelles du R8 appliquées** (manuel p. 94) — 8 caractères max, `A-Z 0-9 _` seulement, tiret refusé. Le préfixe est rogné, jamais le rang ; les codes sont assainis à la lecture |
 | v3.20.0 | **Aperçu du nom de prise en direct** sur `/vite` — et il nomme ce qui manque : matériel sans code, préfixe rogné. Route `POST /api/nom-de-prise` |
+| v3.21 → v3.36 | ⚠️ **Non reportées ici** — cette table a décroché après v3.20.0. Le détail est dans `CHANGELOG.md` (noms AZA, stats d'évolution, mode focus, lore, potards, prises, rappel, Ce soir, atelier, tirage) |
+| v4.0.0 | **App Mac native** (Swift + serveur embarqué, universel, macOS 12+) et **sauvegarde JSON à chaque modification** : vérifiée par SHA-256, rétention par paliers, restauration `.json` ou `.db` entière, filet obligatoire avant toute destruction, bandeau si elle échoue. Fin de Roblab : `wsgi.py`, `Dockerfile`, gunicorn retirés |
 
 ---
 
@@ -202,9 +211,11 @@ construction. Le quantize n'existait ici que parce que le Prompteur comptait en
 | Priorité | Idée | Notes |
 |---|---|---|
 | ✅ ★★☆ | ~~**Tests automatisés** — suite Flask pour routes critiques~~ | **Livré** (v3.6.0/v3.7.1) — pytest, smoke tests des 18 blueprints + DB init/schema |
-| ★☆☆ | **Compilation binaire M4** — `.app` macOS natif Apple Silicon via PyInstaller | Lancement sans terminal |
-| ★☆☆ | **Mode multi-machines** — sync `sessions.db` réseau local (rsync ou SQLite over LAN) | Mac + iPad dans le même studio |
-| ★☆☆ | **QR code vers session** — pointe vers `localhost:5001/session/<id>` | Scanner depuis iPhone en studio |
+| ✅ | ~~**Compilation binaire M4** — `.app` macOS natif Apple Silicon via PyInstaller~~ | **Livré en v4.0.0**, plus large que prévu : **universel** Intel + Apple Silicon, **macOS 12+** (le MacBook Intel plafonne à Monterey). Swift + WKWebView pour la fenêtre, PyInstaller pour le serveur. CI qui lance l'app pour de vrai sur les deux processeurs |
+| ★★☆ | **Signer et notariser l'app** (compte Apple Developer) | Supprimerait le `xattr -dr com.apple.quarantine` du premier lancement, et la nouvelle demande d'accès à Documents après chaque mise à jour (la signature ad hoc change à chaque build). Demande un compte payant — à décider par Olivier |
+| ★☆☆ | **Mode multi-machines** — requalifié en v4.0.0 | La base est sur UN Mac. Deux Macs (M4 + MacBook Intel) = deux bases qui divergent : **ne pas** synchroniser `sessions.db` par fichier (iCloud/rsync corrompent SQLite). Piste saine : le serveur de l'app écoute aussi le LAN sur demande, et l'autre machine s'y connecte — une seule base |
+| ★☆☆ | **QR code vers session** | Dépend du mode multi-machines : `127.0.0.1` n'est pas joignable depuis l'iPhone |
+| ★☆☆ | **Adresse Ollama réglable** | `core/ollama_client.py` vise `192.168.1.100` en dur. Depuis la fin de Roblab, rien ne dit que cette machine existe encore — le récap renverrait alors son 502. Vérifier avant de chercher un bug |
 | ⛔ ★☆☆ | ~~**Factoriser les 16 `_get_db()` identiques**~~ — une classe de base pour les 15 moteurs | **Écarté le 2026-09-27.** Trouvé par graphify (degré 26 sur `._get_db()`). Trois lignes triviales dupliquées quinze fois ne valent pas une hiérarchie de classes — le gain n'existera que le jour où le mode de connexion changera |
 
 ---
@@ -219,7 +230,7 @@ construction. Le quantize n'existait ici que parce que le Prompteur comptait en
 
 ---
 
-*Dernière mise à jour : 2026-09-27 — v3.20.0*
+*Dernière mise à jour : 2026-11-14 — v4.0.0*
 *Ce fichier évolue librement — ce n'est pas un backlog, c'est une carte des possibles.*
 
 ## Demandes externes (Argus)
