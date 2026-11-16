@@ -478,8 +478,107 @@ struct SettingsView: View {
         }
     }
 
+    @AppStorage("cloudBackup") private var cloudBackup = false
+
+    var cloudSection: some View {
+        Section {
+            if !CloudDrive.available {
+                Label("iCloud Drive n'est pas activé sur ce Mac (Réglages Système › identifiant Apple › iCloud).",
+                      systemImage: "exclamationmark.icloud").foregroundStyle(.orange)
+            } else {
+                HStack(spacing: 10) {
+                    Image(systemName: store.inCloud ? "checkmark.icloud.fill" : "icloud.slash")
+                        .font(.title2).foregroundStyle(store.inCloud ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(store.inCloud ? "Synchronisé par iCloud Drive" : "Sur ce Mac uniquement").azaFont(.headline)
+                        Text(store.inCloud
+                             ? "Tes autres Mac voient les mêmes données : sur chacun, Réglages › Données › « Utiliser iCloud Drive »."
+                             : "Une panne de disque emporterait tout. Synchronise, ou au moins sauvegarde dans iCloud Drive.")
+                            .foregroundStyle(.secondary).azaFont(.caption)
+                    }
+                }
+                if store.inCloud {
+                    if let t = store.lastExternalReload {
+                        Text("Dernière mise à jour venue d'un autre Mac : \(t.formatted(date: .abbreviated, time: .shortened))")
+                            .foregroundStyle(.secondary).azaFont(.caption)
+                    }
+                    let copies = CloudDrive.conflictCopies(of: store.storage.url)
+                    if !copies.isEmpty {
+                        Label("iCloud a créé \(copies.count) copie(s) de conflit à côté du fichier. Ouvre le dossier pour les comparer.",
+                              systemImage: "exclamationmark.triangle").foregroundStyle(.orange).azaFont(.caption)
+                    }
+                    HStack {
+                        Button("Afficher dans le Finder") { store.revealFile() }
+                        Button("Revenir au stockage sur ce Mac…") {
+                            if Panels.confirm("Revenir au stockage local ?",
+                                              "Les données sont recopiées dans ~/Documents/AZA Sessions. La copie dans iCloud Drive "
+                                              + "reste intacte, mais ce Mac ne la suivra plus.", ok: "Revenir") { store.moveToLocal() }
+                        }
+                    }
+                } else {
+                    Button("Synchroniser avec iCloud Drive…") { startSync() }.buttonStyle(.borderedProminent)
+                }
+                Text("Pas de CloudKit : AZA n'est pas signée par un compte développeur Apple. Elle s'appuie sur iCloud Drive, "
+                     + "que macOS synchronise seul. Évite d'écrire sur deux Mac exactement en même temps : en cas de "
+                     + "collision, les deux versions sont gardées (backups/conflit-…).")
+                    .foregroundStyle(.tertiary).azaFont(.caption2)
+
+                Divider()
+                Toggle("Sauvegarde quotidienne dans iCloud Drive", isOn: $cloudBackup)
+                Text("Une copie datée du JSON par jour (30 gardées) et les médias du journal, dans "
+                     + "« iCloud Drive/AZA Sessions — Sauvegardes ». Utile même sans synchro : c'est une sauvegarde hors du Mac.")
+                    .foregroundStyle(.secondary).azaFont(.caption)
+                HStack {
+                    Button("Sauvegarder maintenant") { store.runCloudBackup() }
+                    Button("Ouvrir les sauvegardes") {
+                        try? FileManager.default.createDirectory(at: CloudDrive.backupFolder, withIntermediateDirectories: true)
+                        NSWorkspace.shared.open(CloudDrive.backupFolder)
+                    }
+                    Spacer()
+                    if let t = store.lastCloudBackup {
+                        Text("dernière : \(t.formatted(date: .abbreviated, time: .shortened)) · \(CloudBackup.list(CloudDrive.backupFolder).count) jour(s)")
+                            .foregroundStyle(.secondary).azaFont(.caption)
+                    }
+                }
+            }
+            if !store.cloudStatus.isEmpty { Text(store.cloudStatus).azaFont(.caption).textSelection(.enabled) }
+        } header: { Text("iCloud Drive").azaHeading() }
+    }
+
+    func startSync() {
+        let existing = CloudDrive.dataFolder.appendingPathComponent("aza-sessions.json")
+        let there = FileManager.default.fileExists(atPath: existing.path) || CloudDrive.isEvicted(existing)
+        if there {
+            let a = NSAlert()
+            a.messageText = "Des données AZA sont déjà dans iCloud Drive"
+            a.informativeText = "Sans doute venues d'un autre Mac. Les utiliser sur ce Mac (recommandé si l'autre Mac est ta "
+                + "machine principale), ou les remplacer par celles d'ici ? Dans les deux cas, une sauvegarde est faite."
+            a.addButton(withTitle: "Utiliser celles d'iCloud")
+            a.addButton(withTitle: "Remplacer par celles de ce Mac")
+            a.addButton(withTitle: "Annuler")
+            switch a.runModal() {
+            case .alertFirstButtonReturn:
+                Store.ensureDownloaded(existing)
+                store.moveToCloud(useExisting: true)
+            case .alertSecondButtonReturn:
+                try? FileManager.default.createDirectory(at: CloudDrive.dataFolder.appendingPathComponent("backups"), withIntermediateDirectories: true)
+                try? FileManager.default.copyItem(at: existing, to: CloudDrive.dataFolder.appendingPathComponent(
+                    "backups/remplace-\(Clock.stamp().replacingOccurrences(of: ":", with: "-")).json"))
+                store.moveToCloud(useExisting: false)
+            default: return
+            }
+        } else {
+            guard Panels.confirm("Synchroniser avec iCloud Drive ?",
+                                 "Le JSON, les photos et sons du journal et les sauvegardes sont copiés dans « iCloud Drive/AZA Sessions », "
+                                 + "puis AZA travaille là. La copie actuelle sur ce Mac reste en place, intacte.",
+                                 ok: "Synchroniser") else { return }
+            store.moveToCloud(useExisting: false)
+        }
+    }
+
     var data: some View {
         Form {
+            cloudSection
             Section {
                 LabeledContent("Fichier") {
                     Text(store.storage.url.path).textSelection(.enabled).azaFont(.caption, mono: true)

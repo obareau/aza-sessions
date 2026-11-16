@@ -7,7 +7,7 @@ import SwiftUI
 /// modification (écriture différée de 0,6 s pour regrouper la frappe).
 @MainActor
 final class Store: ObservableObject {
-    static let version = "1.8.0"
+    static let version = "1.9.0"
 
     @Published var data: AZAData {
         didSet {
@@ -18,6 +18,9 @@ final class Store: ObservableObject {
                 var d = data
                 if d.syncPatches() { data = d }
             }
+            // Un rechargement depuis le disque (autre Mac) n'est pas une modification locale.
+            if applyingExternal { return }
+            dirty = true
             scheduleSave()
         }
     }
@@ -29,6 +32,19 @@ final class Store: ObservableObject {
     /// Fichier illisible au chargement : on ne l'écrase jamais, même après
     /// fermeture de l'alerte. Levé seulement en changeant de fichier.
     private var saveBlocked = false
+    /// Modifications locales pas encore écrites. Sans elles, rien n'est écrit :
+    /// sur un dossier synchronisé, réécrire un fichier inchangé pourrait écraser
+    /// ce qu'un autre Mac vient d'y mettre.
+    private var dirty = false
+    private var applyingExternal = false
+    /// Empreinte du fichier tel que nous l'avons lu ou écrit en dernier.
+    private var diskPrint: FileFingerprint?
+    private var watchTimer: Timer?
+    @Published private(set) var lastExternalReload: Date?
+    @Published private(set) var lastCloudBackup: Date? = UserDefaults.standard.object(forKey: "lastCloudBackup") as? Date
+    @Published var cloudStatus = ""
+
+    var inCloud: Bool { CloudDrive.contains(storage.url) }
 
     static var savedURL: URL {
         if let p = UserDefaults.standard.string(forKey: "dataFile"), !p.isEmpty { return URL(fileURLWithPath: p) }
@@ -38,15 +54,53 @@ final class Store: ObservableObject {
     init() {
         storage = JSONStorage(url: Self.savedURL)
         data = AZAData()
+        Self.ensureDownloaded(storage.url)
         let (d, err) = Self.open(storage)
         data = d ?? Seed.initial()
         data.syncPatches()
         saveBlocked = d == nil
         lastError = err
+        // Les affectations ci-dessus passent par l'observateur de `data` : ce n'est
+        // pas une modification. Sans ça, le fichier était réécrit à l'identique une
+        // seconde après l'ouverture — de quoi écraser le travail d'un autre Mac.
+        pending?.cancel(); pending = nil
+        dirty = false
+        diskPrint = FileFingerprint.of(storage.url)
         NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
                                                object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.flush() }
+            MainActor.assumeIsolated {
+                self?.flush()
+                if UserDefaults.standard.bool(forKey: "cloudBackup") { self?.runCloudBackup() }
+            }
         }
+        NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification,
+                                               object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.checkExternalChange() }
+        }
+        // Un autre Mac peut écrire à tout moment : on regarde le fichier toutes les 4 s.
+        watchTimer = Timer.scheduledTimer(withTimeInterval: 4, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.checkExternalChange() }
+        }
+        // Sauvegarde iCloud : au lancement (après quelques secondes), puis toutes les heures.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak self] in
+            MainActor.assumeIsolated { self?.cloudBackupIfDue() }
+        }
+        Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.cloudBackupIfDue() }
+        }
+    }
+
+    /// iCloud « Optimiser le stockage » peut avoir déchargé le fichier : on le
+    /// fait redescendre avant de lire (15 s au plus).
+    static func ensureDownloaded(_ url: URL) {
+        guard CloudDrive.isEvicted(url) else { return }
+        try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/brctl")
+        p.arguments = ["download", url.path]
+        try? p.run()
+        let limit = Date().addingTimeInterval(15)
+        while CloudDrive.isEvicted(url) && Date() < limit { Thread.sleep(forTimeInterval: 0.25) }
     }
 
     /// Charge (ou crée) le fichier. `nil` = illisible, à ne pas écraser.
@@ -74,7 +128,11 @@ final class Store: ObservableObject {
         pending?.cancel()
         storage = next
         saveBlocked = false
+        applyingExternal = true
         data = d
+        applyingExternal = false
+        dirty = false
+        diskPrint = FileFingerprint.of(next.url)
         UserDefaults.standard.set(url == JSONStorage.defaultURL ? "" : url.path, forKey: "dataFile")
     }
 
@@ -95,12 +153,105 @@ final class Store: ObservableObject {
 
     func flush() {
         pending?.cancel(); pending = nil
-        guard !saveBlocked else { return }
+        guard !saveBlocked, dirty else { return }
+        // Le fichier a changé sur le disque depuis notre dernière lecture (un autre
+        // Mac, via iCloud) alors qu'on a aussi des modifications : on garde les
+        // deux. La version du disque part en « conflit-… » dans backups/.
+        if let disk = FileFingerprint.of(storage.url), let known = diskPrint, disk != known {
+            let dest = storage.backupDir.appendingPathComponent("conflit-\(Clock.stamp().replacingOccurrences(of: ":", with: "-")).json")
+            try? FileManager.default.createDirectory(at: storage.backupDir, withIntermediateDirectories: true)
+            try? FileManager.default.copyItem(at: storage.url, to: dest)
+            lastError = "Le fichier a été modifié ailleurs (un autre Mac ?) pendant que tu écrivais ici. Tes modifications "
+                + "sont gardées ; l'autre version est conservée dans backups/\(dest.lastPathComponent)."
+        }
         do {
-            try storage.save(data)
+            try coordinatedSave(data)
+            dirty = false
+            diskPrint = FileFingerprint.of(storage.url)
             lastSaved = Date()
         } catch {
             lastError = "Sauvegarde impossible : \(error.localizedDescription)"
+        }
+    }
+
+    /// Écriture coordonnée : iCloud Drive sait qu'on écrit et ne mélange pas les versions.
+    private func coordinatedSave(_ d: AZAData) throws {
+        guard inCloud else { try storage.save(d); return }
+        var coordErr: NSError?
+        var saveErr: Error?
+        NSFileCoordinator(filePresenter: nil).coordinate(writingItemAt: storage.url, options: .forReplacing, error: &coordErr) { url in
+            do { try JSONStorage(url: url).save(d) } catch { saveErr = error }
+        }
+        if let e = coordErr ?? saveErr { throw e }
+    }
+
+    /// Recharge si un autre Mac a écrit le fichier (et qu'on n'a rien en attente ici).
+    func checkExternalChange() {
+        guard !saveBlocked, !dirty else { return }
+        if CloudDrive.isEvicted(storage.url) {
+            try? FileManager.default.startDownloadingUbiquitousItem(at: storage.url)
+            return
+        }
+        guard let disk = FileFingerprint.of(storage.url), disk != diskPrint,
+              let raw = try? Data(contentsOf: storage.url),
+              let fresh = try? JSONStorage.decode(raw) else { return }   // fichier en cours de synchro : on réessaiera
+        applyingExternal = true
+        var d = fresh
+        d.syncPatches()
+        data = d
+        applyingExternal = false
+        diskPrint = disk
+        lastExternalReload = Date()
+    }
+
+    // MARK: iCloud Drive
+
+    /// Déplace les données (JSON, médias, sauvegardes) dans iCloud Drive.
+    /// `useExisting` : un fichier AZA y est déjà (autre Mac) — on l'ouvre au lieu de l'écraser.
+    func moveToCloud(useExisting: Bool) {
+        flush()
+        let dst = CloudDrive.dataFolder.appendingPathComponent("aza-sessions.json")
+        do {
+            try DataFolder.copy(json: storage.url, to: dst, overwriteJSON: !useExisting)
+            switchTo(url: dst)
+            cloudStatus = useExisting ? "✓ Données d'iCloud Drive ouvertes (médias et sauvegardes de ce Mac ajoutés)"
+                                      : "✓ Données déplacées dans iCloud Drive"
+        } catch {
+            lastError = "Copie vers iCloud Drive impossible : \(error.localizedDescription)"
+        }
+    }
+
+    /// Revient au stockage local (copie depuis iCloud Drive, qui reste intact).
+    func moveToLocal() {
+        flush()
+        let dst = JSONStorage.defaultURL
+        do {
+            try DataFolder.copy(json: storage.url, to: dst, overwriteJSON: true)
+            switchTo(url: dst)
+            cloudStatus = "✓ Données recopiées sur ce Mac ; la copie dans iCloud Drive n'est plus utilisée"
+        } catch {
+            lastError = "Copie vers ce Mac impossible : \(error.localizedDescription)"
+        }
+    }
+
+    func cloudBackupIfDue() {
+        guard UserDefaults.standard.bool(forKey: "cloudBackup") else { return }
+        if let last = lastCloudBackup, Date().timeIntervalSince(last) < 6 * 3600 { return }
+        runCloudBackup()
+    }
+
+    /// Copie datée du JSON (30 jours) et miroir des médias dans iCloud Drive.
+    func runCloudBackup() {
+        guard CloudDrive.available else { cloudStatus = "✗ iCloud Drive n'est pas activé sur ce Mac"; return }
+        flush()
+        do {
+            let r = try CloudBackup.run(json: storage.url, media: mediaDir, into: CloudDrive.backupFolder)
+            lastCloudBackup = Date()
+            UserDefaults.standard.set(lastCloudBackup, forKey: "lastCloudBackup")
+            cloudStatus = (r.file.map { "✓ Sauvegardé : \($0.lastPathComponent)" } ?? "✓ Déjà à jour")
+                + (r.mediaCopied > 0 ? " · \(r.mediaCopied) média(s) copiés" : "")
+        } catch {
+            cloudStatus = "✗ Sauvegarde iCloud impossible : \(error.localizedDescription)"
         }
     }
 

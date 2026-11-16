@@ -572,5 +572,44 @@ check(DiaryAttachment.kind(forExtension: "HEIC") == .image && DiaryAttachment.ki
 check(try JSONStorage.decode(JSONStorage.encode(jd)) == jd, "journal : aller-retour JSON")
 check(try JSONStorage.decode(Data(#"{"diary":[{"id":3}]}"#.utf8)).diary.first?.feelings == [], "journal : décodage tolérant")
 
+// 16. Synchro / sauvegarde iCloud Drive (dossiers temporaires, pas le vrai iCloud)
+let syncRoot = work.appendingPathComponent("sync")
+let local = syncRoot.appendingPathComponent("local/aza-sessions.json")
+let cloud = syncRoot.appendingPathComponent("cloud/AZA Sessions/aza-sessions.json")
+try FileManager.default.createDirectory(at: local.deletingLastPathComponent().appendingPathComponent("journal-media"), withIntermediateDirectories: true)
+try Data("{\"format\":1}".utf8).write(to: local)
+try Data("img".utf8).write(to: local.deletingLastPathComponent().appendingPathComponent("journal-media/a.png"))
+try DataFolder.copy(json: local, to: cloud, overwriteJSON: false)
+check(FileManager.default.fileExists(atPath: cloud.path)
+      && FileManager.default.fileExists(atPath: cloud.deletingLastPathComponent().appendingPathComponent("journal-media/a.png").path),
+      "icloud : copie JSON + médias")
+try Data("autre mac".utf8).write(to: cloud)
+try DataFolder.copy(json: local, to: cloud, overwriteJSON: false)
+check((try? String(contentsOf: cloud, encoding: .utf8)) == "autre mac", "icloud : JSON existant non écrasé (useExisting)")
+try DataFolder.copy(json: local, to: cloud, overwriteJSON: true)
+check((try? String(contentsOf: cloud, encoding: .utf8)) == "{\"format\":1}", "icloud : JSON remplacé si demandé")
+let evicted = syncRoot.appendingPathComponent("cloud/AZA Sessions/x.json")
+try Data().write(to: CloudDrive.placeholder(for: evicted))
+check(CloudDrive.isEvicted(evicted) && !CloudDrive.isEvicted(cloud) && CloudDrive.placeholder(for: evicted).lastPathComponent == ".x.json.icloud",
+      "icloud : fichier déchargé détecté")
+for n in ["aza-sessions 2.json", "aza-sessions 3.json", "aza-sessions-notes.json", "aza-sessions 2.txt"] {
+    try Data().write(to: cloud.deletingLastPathComponent().appendingPathComponent(n))
+}
+check(CloudDrive.conflictCopies(of: cloud).map(\.lastPathComponent) == ["aza-sessions 2.json", "aza-sessions 3.json"], "icloud : copies de conflit")
+check(FileFingerprint(data: Data("a".utf8)) != FileFingerprint(data: Data("b".utf8))
+      && FileFingerprint.of(cloud) == FileFingerprint(data: (try? Data(contentsOf: cloud)) ?? Data()), "icloud : empreinte")
+let bdir = syncRoot.appendingPathComponent("backups-cloud")
+let media = local.deletingLastPathComponent().appendingPathComponent("journal-media")
+let r1 = try CloudBackup.run(json: local, media: media, into: bdir, now: Clock.day("2026-11-10")!)
+let r2 = try CloudBackup.run(json: local, media: media, into: bdir, now: Clock.day("2026-11-11")!)
+check(r1.file?.lastPathComponent == "aza-sessions-2026-11-10.json" && r1.mediaCopied == 1 && r2.file == nil && r2.mediaCopied == 0,
+      "icloud : sauvegarde du jour, rien si inchangé")
+for day in 12...20 {
+    try Data("v\(day)".utf8).write(to: local)
+    _ = try CloudBackup.run(json: local, media: media, into: bdir, keep: 5, now: Clock.day("2026-11-\(day)")!)
+}
+check(CloudBackup.list(bdir).count == 5 && CloudBackup.list(bdir).first?.lastPathComponent == "aza-sessions-2026-11-20.json",
+      "icloud : rétention des sauvegardes")
+
 print(failures == 0 ? "✓ aza-check : \(passed) vérifications OK" : "✗ aza-check : \(failures) échec(s), \(passed) OK")
 exit(failures == 0 ? 0 : 1)

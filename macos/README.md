@@ -11,6 +11,12 @@ bash macos/build_app.sh            # → macos/build/AZA.app (universel, signé 
 bash macos/build_app.sh --install  # copie aussi dans ~/Applications
 ```
 
+iCloud Drive (Réglages › Données) : synchro en déplaçant les données dans
+`~/Library/Mobile Documents/com~apple~CloudDocs/AZA Sessions`, ou sauvegarde quotidienne (30 jours) dans
+`… /AZA Sessions — Sauvegardes`. Le Store n'écrit que des modifications locales (`dirty`), compare l'empreinte
+SHA-256 du fichier avant d'écrire (conflit → `backups/conflit-…`), recharge toutes les 4 s si un autre Mac a écrit,
+écrit via `NSFileCoordinator` dans iCloud Drive et retélécharge un fichier déchargé (`.nom.icloud`).
+
 Construit avec les seuls Command Line Tools : pas de `@State` (macro SwiftUI
 indisponible sans Xcode), l'état local passe par `@Local` (`Sources/AZA/Local.swift`).
 

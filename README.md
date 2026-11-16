@@ -24,6 +24,20 @@ chaque modification, avec 5 copies datées. Toutes les fonctions de l'app web Fl
 macOS 13 Ventura ou plus récent · binaire universel (Apple Silicon et Intel).
 Pour reprendre une base de l'app web : **Fichier › Importer une base sessions.db…**
 
+### iCloud Drive : synchro et sauvegarde (nouveau en 1.9)
+
+Dans **Réglages › Données › iCloud Drive** :
+- **Synchroniser avec iCloud Drive** : le JSON, les photos et sons du journal et les sauvegardes passent dans
+  `iCloud Drive/AZA Sessions`, et tous tes Mac travaillent sur les mêmes données. AZA recharge ce qu'un autre
+  Mac a écrit, ne réécrit jamais un fichier qu'elle n'a pas modifié, et en cas de collision garde les deux
+  versions (`backups/conflit-…`).
+- **Sauvegarde quotidienne dans iCloud Drive** : même sans synchro, une copie datée du JSON par jour
+  (30 gardées) et les médias du journal partent dans `iCloud Drive/AZA Sessions — Sauvegardes`. Une sauvegarde
+  hors du Mac, sans rien payer de plus que ton iCloud.
+
+Pas de CloudKit : il faudrait un compte développeur Apple. AZA s'appuie sur iCloud Drive, que macOS synchronise
+lui-même ; un fichier déchargé par « Optimiser le stockage » est retéléchargé avant d'être lu.
+
 ### Journal (nouveau en 1.8)
 
 Un journal personnel dans l'esprit de l'app Journal d'Apple — qui n'existe pas sur macOS 13 —, mais relié
@@ -91,6 +105,7 @@ couvrent que le JSON : garde ce dossier avec lui (Time Machine, iCloud…).
 
 | Version | Ce qui arrive |
 |---|---|
+| **1.9.0** | **iCloud Drive** : synchro entre Mac et sauvegarde quotidienne hors du Mac. L'app ne réécrit plus un fichier inchangé (à l'ouverture comme à la fermeture). |
 | **1.8.0** | **Journal** : entrées avec photos et sons, état d'esprit, suggestions AZA, calendrier, aperçu, verrou Touch ID, rappel quotidien. Puces à la couleur du thème. |
 | **1.7.2** | Graphiques et calendrier d'activité à la couleur du thème ; patcher bien cadré à l'ouverture, minimap visible, nœuds lisibles en thème sombre. |
 | **1.7.1** | Fin du portage de l'app web : **récap IA** (Ollama), **export vers le vault Obsidian**, **séance rapide** (⇧⌘N), export CSV, propositions de titres, filtres de séances, pomodoro, bandeau de stratégie, aide clavier, **taille du menu latéral**. |
