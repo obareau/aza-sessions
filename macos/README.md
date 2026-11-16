@@ -16,6 +16,9 @@ indisponible sans Xcode), l'état local passe par `@Local` (`Sources/AZA/Local.s
 
 - `Sources/AZACore` — modèle, stockage JSON, nom de prise R8, export Markdown, import `sessions.db`
 - `Sources/AZA` — l'app :
+  - Écrire : Journal (entrées avec photos et notes audio dans `journal-media/` à côté du JSON, état d'esprit,
+    suggestions tirées des séances / presets / patches / obliques / lore, calendrier, aperçu, verrou Touch ID,
+    rappel quotidien, export vers le vault Obsidian dans `Journal/`)
   - Jouer : Ce soir (tirage instrument + traitement + contrainte + titre + prise), séance En cours (chrono), Spark
   - Journal : Séances, Projets, Prises (registre des noms R8), Statistiques
   - Matériel : Catalogue (fiche, carnet d'instrument, façade ; proposition de codes), Patcher, Façades & relevés, Presets, Wishlist

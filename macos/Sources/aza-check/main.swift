@@ -1,6 +1,8 @@
 // aza-check — auto-test du cœur (JSON, sauvegardes, nom de prise, import SQLite).
 // Usage : aza-check <dossier de travail>
 import AZACore
+import CoreGraphics
+import ImageIO
 import Foundation
 import SQLite3
 
@@ -113,6 +115,63 @@ if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "--demo" {
     d.wishlist[1].manufacturer = "Elektron"; d.wishlist[1].price = 749; d.wishlist[1].priority = "Rêve"
     let url = URL(fileURLWithPath: CommandLine.arguments[2])
     try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+    // Journal de démo : images dithérées (charte Robōtariis) et une note audio synthétique.
+    let media = url.deletingLastPathComponent().appendingPathComponent("journal-media")
+    try FileManager.default.createDirectory(at: media, withIntermediateDirectories: true)
+    func demoImage(_ name: String, seed: Int) throws {
+        let w = 320, h = 220
+        var px = [UInt8](repeating: 0, count: w * h * 4)
+        let bayer: [[Double]] = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
+        for y in 0..<h { for x in 0..<w {
+            let fx = Double(x) / Double(w), fy = Double(y) / Double(h)
+            let v = 0.5 + 0.5 * sin(fx * 6.0 + Double(seed)) * cos(fy * 4.0 + Double(seed) * 0.7) - fy * 0.35
+            let on = v > (bayer[y % 4][x % 4] + 0.5) / 16
+            let i = (y * w + x) * 4
+            px[i] = on ? 0xF9 : 0x11; px[i + 1] = on ? 0x73 : 0x12; px[i + 2] = on ? 0x16 : 0x10; px[i + 3] = 255
+        } }
+        let ctx = CGContext(data: &px, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        let dest = CGImageDestinationCreateWithURL(media.appendingPathComponent(name) as CFURL, "public.png" as CFString, 1, nil)!
+        CGImageDestinationAddImage(dest, ctx.makeImage()!, nil)
+        CGImageDestinationFinalize(dest)
+    }
+    try demoImage("demo-quai.png", seed: 1); try demoImage("demo-relais.png", seed: 4); try demoImage("demo-friche.png", seed: 7)
+    // 2 s de drone (WAV 16 bits mono)
+    var wav = Data(); let sr = 22050, n = sr * 2
+    func le<T: FixedWidthInteger>(_ v: T) { withUnsafeBytes(of: v.littleEndian) { wav.append(contentsOf: $0) } }
+    wav.append(contentsOf: Array("RIFF".utf8)); le(UInt32(36 + n * 2)); wav.append(contentsOf: Array("WAVEfmt ".utf8))
+    le(UInt32(16)); le(UInt16(1)); le(UInt16(1)); le(UInt32(sr)); le(UInt32(sr * 2)); le(UInt16(2)); le(UInt16(16))
+    wav.append(contentsOf: Array("data".utf8)); le(UInt32(n * 2))
+    for i in 0..<n {
+        let t = Double(i) / Double(sr)
+        let v = 0.3 * sin(2 * .pi * 55 * t) + 0.15 * sin(2 * .pi * 82.4 * t) * sin(.pi * t / 2)
+        le(Int16(max(-1, min(1, v)) * 30000))
+    }
+    try wav.write(to: media.appendingPathComponent("demo-drone.wav"))
+    func entry(_ id: Int, _ date: String, _ title: String, _ body: String, mood: Int?, feelings: [String], assoc: [String],
+               images: [String] = [], audio: Bool = false, session: Int? = nil, bookmark: Bool = false, prompt: String = "") -> DiaryEntry {
+        var e = DiaryEntry(id: id, date: date)
+        e.title = title; e.body = body; e.mood = mood; e.feelings = feelings; e.associations = assoc
+        e.bookmarked = bookmark; e.prompt = prompt; e.place = "Scaër"
+        e.attachments = images.map { DiaryAttachment(kind: .image, file: $0) }
+        if audio { var a = DiaryAttachment(kind: .audio, file: "demo-drone.wav"); a.caption = "Le drone du quai, enregistré au téléphone"; e.attachments.append(a) }
+        if let s = session { e.sessionIds = [s] }
+        return e
+    }
+    d.diary = [
+        entry(1, "2026-11-14 23:40:00", "Le quai, après la séance",
+              "La nappe tenait encore dans ma tête en sortant. Le brouillard sur le quai avait exactement la texture du Karplus saturé.\n\nJe veux retrouver ce grain demain : résonance haute, cutoff à mi-course, et rien d'autre.",
+              mood: 6, feelings: ["Inspiré", "Calme"], assoc: ["Musique", "Scaër"], images: ["demo-quai.png"], audio: true,
+              session: 1, bookmark: true, prompt: "Qu'as-tu retenu de « MÉMOIRE RÉSIDUELLE » (2026-11-14) ?"),
+        entry(2, "2026-11-13 19:05:00", "", "Journée lourde. Pas touché aux machines, mais j'ai relu les notes du Relais 3 et une scène s'est dessinée : la tour qui émet seule, la nuit, pour personne.",
+              mood: 3, feelings: ["Fatigué", "Curieux"], assoc: ["Lore", "Travail"], images: ["demo-relais.png"]),
+        entry(3, "2026-11-11 22:15:00", "Corrosion lente", "Trois prises, aucune bonne, mais la troisième avait un accident de 40 secondes qui vaut la soirée.",
+              mood: 5, feelings: ["Concentré"], assoc: ["Musique"], session: 3),
+        entry(4, "2026-11-09 16:30:00", "Friche ouest", "Marche jusqu'à la friche. Les tôles qui battent au vent : un séquenceur sans horloge.",
+              mood: 6, feelings: ["Reconnaissant", "Curieux"], assoc: ["Nature", "Scaër"], images: ["demo-friche.png"]),
+        entry(5, "2026-11-08 21:00:00", "", "Commence par la fin. Alors j'ai commencé par le silence final, et remonté jusqu'au premier son.",
+              mood: 4, feelings: ["Calme"], assoc: ["Musique"], prompt: "Commence par la fin."),
+    ]
     try JSONStorage(url: url).save(d)
     print("✓ démo : \(d.sessions.count) séances, \(d.patches.count) patch → \(url.path)")
     exit(0)
@@ -483,6 +542,35 @@ check(csv.hasPrefix("\u{FEFF}id,session_type") && csv.contains("\"A, B\"") && cs
 let vdir = work.appendingPathComponent("vault-export/Sessions")
 check((try? cd.exportToVault(cs, folder: vdir, version: "t")) == "session_20261114_1.md"
       && FileManager.default.fileExists(atPath: vdir.appendingPathComponent("session_20261114_1.md").path), "vault : fichier écrit")
+
+// 15. Journal
+var jd = Seed.initial()
+var je = DiaryEntry(id: 1, date: "2026-11-14 22:00:00"); je.body = "Première ligne\nLa suite du texte ici."
+check(je.displayTitle == "Première ligne" && je.excerpt == "La suite du texte ici." && je.wordCount == 7, "journal : titre et extrait")
+je.title = "Nuit"; check(je.displayTitle == "Nuit" && je.excerpt.hasPrefix("Première"), "journal : titre saisi")
+jd.diary = [je, DiaryEntry(id: 2, date: "2026-11-13 10:00:00"), DiaryEntry(id: 3, date: "2026-11-12 10:00:00"),
+            DiaryEntry(id: 4, date: "2026-11-05 10:00:00")]
+jd.diary[1].mood = 6; jd.diary[2].mood = 2; jd.diary[1].feelings = ["Calme"]; jd.diary[2].feelings = ["Calme", "Fatigué"]
+let jins = jd.diaryInsights(today: Clock.day("2026-11-14")!)
+check(jins.streak == 3 && jins.longestStreak == 3 && jins.entriesThisYear == 4 && jins.moodAverage == 4
+      && jins.feelings.first?.0 == "Calme", "journal : aperçu (série, humeur, ressentis)")
+check(jd.diaryInsights(today: Clock.day("2026-11-15")!).streak == 3 && jd.diaryInsights(today: Clock.day("2026-11-16")!).streak == 0,
+      "journal : série tolère « pas encore écrit aujourd'hui »")
+check(jd.diarySearch("suite").map(\.id) == [1] && jd.diarySearch("CALME").count == 2 && jd.diarySearch("").first?.id == 1,
+      "journal : recherche")
+var js = Session(id: 9, date: "2026-11-13"); js.title = "NODE SCAER-7"; jd.sessions = [js]
+let jp = jd.diaryPrompts(today: Clock.day("2026-11-14")!, lore: ["Une citation du lore."])
+check(jp.contains { $0.sessionId == 9 } && jp.contains { $0.kind == "Lore" } && jp.contains { $0.kind == "Réflexion" },
+      "journal : suggestions (séance récente, lore, réflexions)")
+jd.diary[0].sessionIds = [9]
+check(!jd.diaryPrompts(today: Clock.day("2026-11-14")!).contains { $0.sessionId == 9 }, "journal : pas de suggestion pour une séance déjà racontée")
+jd.diary[0].mood = 6; jd.diary[0].attachments = [DiaryAttachment(kind: .image, file: "x.png")]
+let jmd = jd.diaryMarkdown(jd.diary[0])
+check(jmd.hasPrefix("---\ndate: 2026-11-14 22:00:00") && jmd.contains("humeur: 6") && jmd.contains("![[x.png]]")
+      && jmd.contains("NODE SCAER-7"), "journal : export Markdown (frontmatter, médias, liens)")
+check(DiaryAttachment.kind(forExtension: "HEIC") == .image && DiaryAttachment.kind(forExtension: "m4a") == .audio, "journal : type de média")
+check(try JSONStorage.decode(JSONStorage.encode(jd)) == jd, "journal : aller-retour JSON")
+check(try JSONStorage.decode(Data(#"{"diary":[{"id":3}]}"#.utf8)).diary.first?.feelings == [], "journal : décodage tolérant")
 
 print(failures == 0 ? "✓ aza-check : \(passed) vérifications OK" : "✗ aza-check : \(failures) échec(s), \(passed) OK")
 exit(failures == 0 ? 0 : 1)

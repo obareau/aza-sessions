@@ -25,6 +25,9 @@ enum SnapshotRunner {
         let first = store.data.sessions.sorted { ($0.date, $0.id) > ($1.date, $1.id) }.first?.id
         let gear = store.data.catalogue.first { $0.name == "MicroFreak" }?.id
         let shots: [(String, () -> Void)] = [
+            ("journal", { nav.pane = .diary; nav.diary = store.data.diary.max { $0.date < $1.date }?.id }),
+            ("journal-calendar", { nav.pane = .diary; NotificationCenter.default.post(name: .azaDiaryMode, object: "Calendrier") }),
+            ("journal-insights", { nav.pane = .diary; NotificationCenter.default.post(name: .azaDiaryMode, object: "Aperçu") }),
             ("sessions", { nav.pane = .sessions; nav.session = first }),
             ("tonight", { nav.pane = .tonight }),
             ("patcher", { nav.pane = .patcher; nav.patch = store.data.patches.first?.id }),
@@ -55,4 +58,9 @@ enum SnapshotRunner {
         view.cacheDisplay(in: view.bounds, to: rep)
         try? rep.representation(using: .png, properties: [:])?.write(to: url)
     }
+}
+
+extension Notification.Name {
+    /// Mode capture : demande à l'écran Journal de changer de vue.
+    static let azaDiaryMode = Notification.Name("azaDiaryMode")
 }

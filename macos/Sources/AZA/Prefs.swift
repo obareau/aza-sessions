@@ -108,6 +108,9 @@ final class Prefs: ObservableObject {
     /// Taille propre au menu latéral : la barre latérale macOS impose sa propre
     /// taille de texte et ne suit pas d'elle-même la taille générale.
     @Published var sidebarScale: Double { didSet { ud.set(sidebarScale, forKey: "sidebarScale") } }
+    @Published var diaryLock: Bool { didSet { ud.set(diaryLock, forKey: "diaryLock") } }
+    @Published var diaryReminder: Bool { didSet { ud.set(diaryReminder, forKey: "diaryReminder") } }
+    @Published var diaryReminderTime: Date { didSet { ud.set(diaryReminderTime, forKey: "diaryReminderTime") } }
 
     init() {
         let s = ud.double(forKey: "fontScale")
@@ -127,6 +130,10 @@ final class Prefs: ObservableObject {
         obliqueBanner = ud.object(forKey: "obliqueBanner") as? Bool ?? true
         let sb = ud.double(forKey: "sidebarScale")
         sidebarScale = sb == 0 ? 1.0 : sb
+        diaryLock = ud.bool(forKey: "diaryLock")
+        diaryReminder = ud.bool(forKey: "diaryReminder")
+        diaryReminderTime = ud.object(forKey: "diaryReminderTime") as? Date
+            ?? Calendar.current.date(bySettingHour: 21, minute: 30, second: 0, of: Date())!
     }
 
     var palette: Theme? {
@@ -276,6 +283,7 @@ struct SettingsView: View {
         TabView {
             appearance.tabItem { Label("Apparence", systemImage: "paintpalette") }
             data.tabItem { Label("Données", systemImage: "externaldrive") }
+            journal.tabItem { Label("Journal", systemImage: "book.pages") }
             integrations.tabItem { Label("Obsidian & IA", systemImage: "sparkles") }
         }
         .frame(width: 560, height: 520)
@@ -361,6 +369,46 @@ struct SettingsView: View {
     func colorField(_ label: String, _ hex: Binding<String>) -> some View {
         ColorPicker(label, selection: Binding(get: { Color(hex: hex.wrappedValue) }, set: { hex.wrappedValue = $0.hex }),
                     supportsOpacity: false)
+    }
+
+    @Local private var reminderStatus = ""
+
+    var journal: some View {
+        Form {
+            Section {
+                Toggle("Verrouiller le journal (Touch ID ou mot de passe du Mac)", isOn: $prefs.diaryLock)
+                Text("Le journal se referme quand AZA passe à l'arrière-plan. Le reste de l'app reste ouvert.")
+                    .foregroundStyle(.secondary).azaFont(.caption)
+            } header: { Text("Confidentialité").azaHeading() }
+            Section {
+                Toggle("Rappel quotidien", isOn: $prefs.diaryReminder)
+                DatePicker("Heure", selection: $prefs.diaryReminderTime, displayedComponents: .hourAndMinute)
+                    .disabled(!prefs.diaryReminder)
+                HStack {
+                    Button("Appliquer") { applyReminder() }
+                    Text(reminderStatus).foregroundStyle(.secondary).azaFont(.caption)
+                }
+            } header: { Text("Rappel d'écriture").azaHeading() }
+            Section {
+                LabeledContent("Médias") {
+                    Text(store.mediaDir.path).textSelection(.enabled).azaFont(.caption, mono: true)
+                }
+                Button("Afficher dans le Finder") {
+                    try? FileManager.default.createDirectory(at: store.mediaDir, withIntermediateDirectories: true)
+                    NSWorkspace.shared.open(store.mediaDir)
+                }
+                Text("Photos et sons du journal sont des fichiers à côté du JSON. Les sauvegardes datées ne couvrent que "
+                     + "le JSON : pense à garder ce dossier avec lui (Time Machine, iCloud…).")
+                    .foregroundStyle(.secondary).azaFont(.caption)
+            } header: { Text("Photos et sons").azaHeading() }
+        }
+        .formStyle(.grouped)
+        .azaSurface()
+    }
+
+    func applyReminder() {
+        let c = Calendar.current.dateComponents([.hour, .minute], from: prefs.diaryReminderTime)
+        DiaryReminder.apply(enabled: prefs.diaryReminder, hour: c.hour ?? 21, minute: c.minute ?? 30) { reminderStatus = $0 }
     }
 
     @Local private var testing = false

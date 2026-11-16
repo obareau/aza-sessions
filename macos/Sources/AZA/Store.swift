@@ -7,7 +7,7 @@ import SwiftUI
 /// modification (écriture différée de 0,6 s pour regrouper la frappe).
 @MainActor
 final class Store: ObservableObject {
-    static let version = "1.7.2"
+    static let version = "1.8.0"
 
     @Published var data: AZAData {
         didSet {
@@ -238,6 +238,86 @@ final class Store: ObservableObject {
         for i in data.presets.indices { data.presets[i].sessionId = nil }
         for i in data.knobSheets.indices { data.knobSheets[i].sessionId = nil }
         flush()
+    }
+
+    // MARK: Journal — médias à côté du JSON
+
+    var mediaDir: URL {
+        storage.url.deletingLastPathComponent().appendingPathComponent("journal-media", isDirectory: true)
+    }
+
+    func mediaURL(_ a: DiaryAttachment) -> URL { mediaDir.appendingPathComponent(a.file) }
+
+    @discardableResult
+    func newDiaryEntry(prompt: DiaryPrompt? = nil, day: String? = nil) -> Int {
+        var e = DiaryEntry(id: nextId(data.diary))
+        if let day { e.date = day + " " + String(Clock.stamp().suffix(8)) }
+        if let p = prompt {
+            e.prompt = p.text
+            if let s = p.sessionId { e.sessionIds = [s]; e.associations = ["Musique"] }
+            if let g = p.gearId { e.gearIds = [g]; e.associations = ["Matériel"] }
+            if let pa = p.patchId { e.patchIds = [pa] }
+            if p.lore != nil { e.associations = ["Lore"] }
+        }
+        data.diary.append(e)
+        return e.id
+    }
+
+    /// Copie un fichier dans journal-media/ et l'attache à l'entrée.
+    func attach(_ source: URL, to entryId: Int, kind: DiaryAttachment.Kind? = nil, move: Bool = false) {
+        guard let i = data.diary.firstIndex(where: { $0.id == entryId }) else { return }
+        do {
+            try FileManager.default.createDirectory(at: mediaDir, withIntermediateDirectories: true)
+            let ext = source.pathExtension.isEmpty ? "bin" : source.pathExtension.lowercased()
+            let name = "\(UUID().uuidString.prefix(8).lowercased())-\(Clock.day(Date()).replacingOccurrences(of: "-", with: "")).\(ext)"
+            let dest = mediaDir.appendingPathComponent(name)
+            if move { try FileManager.default.moveItem(at: source, to: dest) }
+            else { try FileManager.default.copyItem(at: source, to: dest) }
+            var a = DiaryAttachment(kind: kind ?? DiaryAttachment.kind(forExtension: ext), file: name)
+            if !move { a.caption = source.deletingPathExtension().lastPathComponent }
+            data.diary[i].attachments.append(a)
+            data.diary[i].updatedAt = Clock.stamp()
+        } catch {
+            lastError = "Impossible d'ajouter « \(source.lastPathComponent) » : \(error.localizedDescription)"
+        }
+    }
+
+    /// Retire un média : le fichier part à la corbeille (récupérable), jamais effacé.
+    func detach(_ a: DiaryAttachment, from entryId: Int) {
+        guard let i = data.diary.firstIndex(where: { $0.id == entryId }) else { return }
+        data.diary[i].attachments.removeAll { $0.id == a.id }
+        try? FileManager.default.trashItem(at: mediaURL(a), resultingItemURL: nil)
+    }
+
+    func deleteDiaryEntry(_ id: Int) {
+        guard let e = data.diary.first(where: { $0.id == id }) else { return }
+        for a in e.attachments { try? FileManager.default.trashItem(at: mediaURL(a), resultingItemURL: nil) }
+        data.diary.removeAll { $0.id == id }
+    }
+
+    func exportDiaryToVault(_ ids: [Int], folder: String) -> String {
+        guard !folder.isEmpty else {
+            lastError = "Dossier du vault Obsidian non configuré (Réglages › Obsidian & IA)."
+            return ""
+        }
+        let base = URL(fileURLWithPath: (folder as NSString).expandingTildeInPath, isDirectory: true)
+        let dir = base.appendingPathComponent("Journal", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            for id in ids {
+                guard let e = data.diary.first(where: { $0.id == id }) else { continue }
+                try data.diaryMarkdown(e).write(to: dir.appendingPathComponent(AZAData.diaryFileName(e)), atomically: true, encoding: .utf8)
+                // Les médias suivent, pour que les ![[…]] s'affichent dans Obsidian.
+                for a in e.attachments where FileManager.default.fileExists(atPath: mediaURL(a).path) {
+                    let dest = dir.appendingPathComponent(a.file)
+                    if !FileManager.default.fileExists(atPath: dest.path) { try FileManager.default.copyItem(at: mediaURL(a), to: dest) }
+                }
+            }
+            return "\(ids.count) entrée(s) écrite(s) dans \(dir.lastPathComponent)/"
+        } catch {
+            lastError = "Écriture dans le vault impossible : \(error.localizedDescription)"
+            return ""
+        }
     }
 
     func revealFile() {

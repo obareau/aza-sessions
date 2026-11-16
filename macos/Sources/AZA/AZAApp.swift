@@ -12,6 +12,7 @@ final class Nav: ObservableObject {
     @Published var gear: Int?
     @Published var printJob: PrintJob?
     @Published var patch: Int?
+    @Published var diary: Int?
     @Published var quick: QuickRequest?
     @Published var shortcuts = false
 
@@ -47,6 +48,8 @@ struct AZAApp: App {
             CommandGroup(replacing: .newItem) {
                 Button("Nouvelle séance") { nav.open(session: store.newSession()) }.keyboardShortcut("n")
                 Button("Séance rapide…") { nav.quick = QuickRequest(gear: []) }.keyboardShortcut("n", modifiers: [.command, .shift])
+                Button("Nouvelle entrée de journal") { nav.pane = .diary; nav.diary = store.newDiaryEntry() }
+                    .keyboardShortcut("j", modifiers: [.command, .shift])
                 Button("Copier le setup de la séance") {
                     let t = store.data.sessions.first { $0.id == nav.session }
                     nav.open(session: store.newSession(from: t))
@@ -156,6 +159,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 enum Pane: String, CaseIterable, Identifiable {
+    case diary
     case tonight, live, spark
     case sessions, projects, takes, stats
     case catalogue, facades, presets, patcher, sysex
@@ -163,14 +167,16 @@ enum Pane: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     static let groups: [(String, [Pane])] = [
+        ("Écrire", [.diary]),
         ("Jouer", [.tonight, .live, .spark]),
-        ("Journal", [.sessions, .projects, .takes, .stats]),
+        ("Séances", [.sessions, .projects, .takes, .stats]),
         ("Matériel", [.catalogue, .patcher, .facades, .presets, .sysex, .wishlist]),
         ("Références", [.lore, .influences, .obliques, .tracks, .inspirations, .samples, .mirack]),
     ]
 
     var label: String {
         switch self {
+        case .diary: "Journal"
         case .tonight: "Ce soir"
         case .live: "En cours"
         case .spark: "Spark"
@@ -195,6 +201,7 @@ enum Pane: String, CaseIterable, Identifiable {
     }
     var icon: String {
         switch self {
+        case .diary: "book.pages"
         case .tonight: "moon.stars"
         case .live: "record.circle"
         case .spark: "sparkles"
@@ -279,6 +286,7 @@ struct ContentView: View {
 
     @ViewBuilder var detail: some View {
         switch nav.pane {
+        case .diary: DiaryView()
         case .tonight: TonightView()
         case .live: LiveView()
         case .spark: SparkView()
@@ -305,6 +313,7 @@ struct ContentView: View {
     func count(_ p: Pane) -> Int {
         let d = store.data
         switch p {
+        case .diary: return d.diary.count
         case .sessions: return d.sessions.count
         case .projects: return d.projects.count
         case .catalogue: return d.catalogue.count

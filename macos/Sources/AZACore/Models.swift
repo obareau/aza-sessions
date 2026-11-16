@@ -254,12 +254,13 @@ public struct AZAData: Codable, Equatable, Sendable {
     public var live: LiveSession?
     public var patches: [PatchLayout] = []
     public var sysexBanks: [SysexBank] = []
+    public var diary: [DiaryEntry] = []
 
     public init() {}
 
     enum CodingKeys: String, CodingKey {
         case format, sessions, projects, catalogue, influences, obliques
-        case wishlist, samples, tracks, inspirations, mirack, presets, gearPairings, gearNotes, knobSheets, live, patches, sysexBanks
+        case wishlist, samples, tracks, inspirations, mirack, presets, gearPairings, gearNotes, knobSheets, live, patches, sysexBanks, diary
     }
     public init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
@@ -281,6 +282,7 @@ public struct AZAData: Codable, Equatable, Sendable {
         live = try c.decodeIfPresent(LiveSession.self, forKey: .live)
         patches = try c.decodeIfPresent([PatchLayout].self, forKey: .patches) ?? []
         sysexBanks = try c.decodeIfPresent([SysexBank].self, forKey: .sysexBanks) ?? []
+        diary = try c.decodeIfPresent([DiaryEntry].self, forKey: .diary) ?? []
     }
 }
 
@@ -298,6 +300,8 @@ public enum Clock {
         return f
     }()
     public static func today() -> String { dayFormat.string(from: Date()) }
+    public static func stamp(_ d: Date) -> String { stampFormat.string(from: d) }
+    public static func stampDate(_ s: String) -> Date? { stampFormat.date(from: s) ?? dayFormat.date(from: String(s.prefix(10))) }
     public static func stamp() -> String { stampFormat.string(from: Date()) }
     public static func day(_ s: String) -> Date? { dayFormat.date(from: String(s.prefix(10))) }
     public static func day(_ d: Date) -> String { dayFormat.string(from: d) }

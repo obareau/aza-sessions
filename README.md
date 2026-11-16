@@ -24,6 +24,19 @@ chaque modification, avec 5 copies datées. Toutes les fonctions de l'app web Fl
 macOS 13 Ventura ou plus récent · binaire universel (Apple Silicon et Intel).
 Pour reprendre une base de l'app web : **Fichier › Importer une base sessions.db…**
 
+### Journal
+
+Un journal personnel dans l'esprit de l'app Journal d'Apple — qui n'existe pas sur macOS 13 —, relié à l'univers AZA :
+entrées datées avec **photos et notes audio**, **état d'esprit** (7 crans, ressentis, ce qui y est lié), signets,
+**suggestions d'écriture** tirées de tes séances récentes, presets, patches, stratégies obliques et citations du lore,
+**calendrier**, **aperçu** (séries, mots écrits, ressentis), recherche et filtres, **verrou Touch ID** et rappel quotidien.
+Chaque entrée peut se lier à des séances, du matériel, un patch ou une page du lore, et s'écrire dans le vault Obsidian.
+
+| | |
+|---|---|
+| ![Journal](macos/docs/screenshots/journal.png) | ![Calendrier du journal](macos/docs/screenshots/journal-calendar.png) |
+| **Journal** — suggestions, fil, photo, note audio, état d'esprit | **Calendrier** — les jours écrits, avec leurs photos et leur humeur |
+
 ### En images
 
 | | |
@@ -37,6 +50,7 @@ Pour reprendre une base de l'app web : **Fichier › Importer une base sessions.
 
 ### Ce qu'elle fait
 
+- **Écrire** : journal personnel (photos, sons, état d'esprit, suggestions, calendrier, aperçu, verrou Touch ID).
 - **Jouer** : Ce soir (tirage), séance En cours avec chrono, Spark, séance rapide (⇧⌘N).
 - **Journal** : séances (tous les champs, nom de prise Zoom R8, titres dans l'esthétique AZA, filtres),
   projets, registre des prises, statistiques.

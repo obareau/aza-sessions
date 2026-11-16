@@ -393,17 +393,28 @@ struct ListField: View {
     }
 }
 
+/// Puces à cocher, à la couleur d'accent du thème (le style bouton de macOS
+/// imposerait le bleu système).
 struct FlowToggles: View {
     let options: [String]
     @Binding var values: [String]
+    @Environment(\.azaStyle) private var style
     var body: some View {
         let all = options + values.filter { !options.contains($0) }
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 4)], alignment: .leading, spacing: 4) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 5)], alignment: .leading, spacing: 5) {
             ForEach(all, id: \.self) { o in
-                Toggle(o, isOn: Binding(
-                    get: { values.contains(o) },
-                    set: { on in if on { values.append(o) } else { values.removeAll { $0 == o } } }))
-                .toggleStyle(.button).controlSize(.small)
+                let on = values.contains(o)
+                Button {
+                    if on { values.removeAll { $0 == o } } else { values.append(o) }
+                } label: {
+                    Text(o).lineLimit(1).azaFont(.callout)
+                        .padding(.horizontal, 9).padding(.vertical, 3)
+                        .frame(maxWidth: .infinity)
+                        .foregroundStyle(on ? Color.white : Color.primary)
+                        .background(Capsule().fill(on ? style.accent : Color.secondary.opacity(0.14)))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
             }
         }
     }

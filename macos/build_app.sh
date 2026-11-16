@@ -7,7 +7,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD="$HERE/build"
 APP="$BUILD/AZA.app"
-VERSION="1.7.2"
+VERSION="1.8.0"
 
 echo "▸ compilation release"
 # Binaire universel : Apple Silicon + Intel
@@ -52,6 +52,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>LSMinimumSystemVersion</key><string>13.0</string>
     <key>LSApplicationCategoryType</key><string>public.app-category.music</string>
     <key>NSHighResolutionCapable</key><true/>
+    <key>NSMicrophoneUsageDescription</key><string>AZA enregistre les notes audio de ton journal.</string>
     <key>NSHumanReadableCopyright</key><string>Robōtariis · Dark Umbrae</string>
 </dict>
 </plist>
