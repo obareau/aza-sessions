@@ -5,7 +5,7 @@
 
 **App macOS** · [Télécharger](https://github.com/obareau/aza-sessions/releases/latest) · [Code de l'app](macos/) · [App web (historique)](#application-web-flask--historique)
 
-![AZA — journal des séances](macos/docs/screenshots/sessions.png)
+![AZA — le Journal](macos/docs/screenshots/journal.png)
 
 ---
 
@@ -24,35 +24,59 @@ chaque modification, avec 5 copies datées. Toutes les fonctions de l'app web Fl
 macOS 13 Ventura ou plus récent · binaire universel (Apple Silicon et Intel).
 Pour reprendre une base de l'app web : **Fichier › Importer une base sessions.db…**
 
-### Journal
+### Journal (nouveau en 1.8)
 
-Un journal personnel dans l'esprit de l'app Journal d'Apple — qui n'existe pas sur macOS 13 —, relié à l'univers AZA :
-entrées datées avec **photos et notes audio**, **état d'esprit** (7 crans, ressentis, ce qui y est lié), signets,
-**suggestions d'écriture** tirées de tes séances récentes, presets, patches, stratégies obliques et citations du lore,
-**calendrier**, **aperçu** (séries, mots écrits, ressentis), recherche et filtres, **verrou Touch ID** et rappel quotidien.
-Chaque entrée peut se lier à des séances, du matériel, un patch ou une page du lore, et s'écrire dans le vault Obsidian.
+Un journal personnel dans l'esprit de l'app Journal d'Apple — qui n'existe pas sur macOS 13 —, mais relié
+à l'univers AZA. Il est dans le groupe **Écrire** du menu, et **⇧⌘J** ouvre une nouvelle entrée depuis n'importe où.
+
+- **Entrées** datées : date, heure et lieu modifiables après coup, titre facultatif (sinon la première ligne
+  fait titre), signets, compteur de mots.
+- **Photos et notes audio** : bouton, glisser-déposer, ou **enregistrement au micro**. Double-clic pour
+  ouvrir une photo, lecture et légende pour chaque son.
+- **État d'esprit** : 7 crans de « très désagréable » à « très agréable », puis ce que tu ressens
+  (Calme, Inspiré, Fatigué…) et ce qui y est lié (Musique, Lore, Scaër…).
+- **Suggestions d'écriture** tirées de ce que tu fais : les séances de la semaine pas encore racontées,
+  ton dernier preset, un instrument favori, ton dernier patch, une stratégie oblique, une citation du lore,
+  une inspiration, et des questions de réflexion. L'entrée garde la suggestion en exergue et se relie à la
+  séance ou au matériel concerné.
+- **Calendrier** du mois, avec les photos et l'humeur de chaque jour ; double-clic sur un jour vide pour
+  écrire ce jour-là.
+- **Aperçu** : série en cours et record, entrées, mots et jours écrits dans l'année, humeur moyenne,
+  ressentis les plus fréquents, carte des jours écrits.
+- **Recherche** et **filtres** : signets, avec photos, avec son, avec humeur, liées à AZA.
+- **Liens** vers des séances, du matériel, un patch ou une page du lore, ouvrables d'un clic.
+- **Export** Markdown, ou écriture directe dans le vault Obsidian (dossier `Journal/`, médias compris).
+- **Verrou Touch ID** (ou mot de passe du Mac), refermé quand AZA passe à l'arrière-plan, et **rappel
+  quotidien** à l'heure choisie : Réglages › Journal.
 
 | | |
 |---|---|
-| ![Journal](macos/docs/screenshots/journal.png) | ![Calendrier du journal](macos/docs/screenshots/journal-calendar.png) |
-| **Journal** — suggestions, fil, photo, note audio, état d'esprit | **Calendrier** — les jours écrits, avec leurs photos et leur humeur |
+| ![Journal — fil et éditeur](macos/docs/screenshots/journal.png) | ![Journal — calendrier](macos/docs/screenshots/journal-calendar.png) |
+| **Fil et éditeur** — suggestions, entrées, photo, note audio, état d'esprit | **Calendrier** — les jours écrits, avec leurs photos et leur humeur |
+| ![Journal — aperçu](macos/docs/screenshots/journal-insights.png) | ![Journal — thème Béton](macos/docs/screenshots/journal-beton.png) |
+| **Aperçu** — séries, mots écrits, ressentis, humeur | Le même journal en thème **Béton** |
+
+Les photos et les sons sont des fichiers dans `journal-media/`, à côté du JSON. Les sauvegardes datées ne
+couvrent que le JSON : garde ce dossier avec lui (Time Machine, iCloud…).
 
 ### En images
 
 | | |
 |---|---|
+| ![Séances](macos/docs/screenshots/sessions.png) | ![Thème Béton](macos/docs/screenshots/sessions-beton.png) |
+| **Séances** — tous les champs, filtres, nom de prise Zoom R8 | Les **6 thèmes** de l'app web (ici Béton) + un thème personnalisé |
 | ![Patcher lié au catalogue](macos/docs/screenshots/patcher.png) | ![Ce soir — le tirage](macos/docs/screenshots/tonight.png) |
 | **Patcher** — câbles audio / MIDI / CV / USB, minimap, lié en direct au catalogue | **Ce soir** — un instrument, un traitement, une contrainte, un titre, un nom de prise |
 | ![Statistiques](macos/docs/screenshots/stats.png) | ![Catalogue](macos/docs/screenshots/catalogue.png) |
 | **Statistiques** — séries, activité de l'année, tendances | **Catalogue** — fiche, carnet d'instrument, façade, codes de prise |
-| ![Thème Béton](macos/docs/screenshots/sessions-beton.png) | ![Réglages](macos/docs/screenshots/settings.png) |
-| Les **6 thèmes** de l'app web (ici Béton) + un thème personnalisé | **Réglages** — taille du texte et du menu, police, thème |
+| ![Réglages](macos/docs/screenshots/settings.png) | |
+| **Réglages** — taille du texte et du menu latéral, police, thème | |
 
 ### Ce qu'elle fait
 
-- **Écrire** : journal personnel (photos, sons, état d'esprit, suggestions, calendrier, aperçu, verrou Touch ID).
+- **Écrire** : journal personnel (photos, sons, état d'esprit, suggestions, calendrier, aperçu, verrou Touch ID, rappel).
 - **Jouer** : Ce soir (tirage), séance En cours avec chrono, Spark, séance rapide (⇧⌘N).
-- **Journal** : séances (tous les champs, nom de prise Zoom R8, titres dans l'esthétique AZA, filtres),
+- **Séances** : séances (tous les champs, nom de prise Zoom R8, titres dans l'esthétique AZA, filtres),
   projets, registre des prises, statistiques.
 - **Matériel** : catalogue (carnet d'instrument, façade, proposition de codes), **patcher**, relevés de
   façade, presets, **SysEx DX7 / Volca FM** via CoreMIDI, wishlist.
@@ -61,7 +85,20 @@ Chaque entrée peut se lier à des séances, du matériel, un patch ou une page 
 - **Sorties** : fiches imprimables A4 (séance, rappel, feuille d'atelier, formulaire terrain, fiches
   matériel) en impression ou PDF ; export Markdown, CSV, JSON ; écriture dans le vault Obsidian.
 - **Récap IA** via Ollama (serveur et modèle réglables ; les échecs sont toujours affichés).
-- Pomodoro, bandeau de stratégie oblique, aide clavier (⌘/).
+- Pomodoro, bandeau de stratégie oblique, aide clavier (⌘/), taille du texte et du menu latéral réglables.
+
+### Nouveautés
+
+| Version | Ce qui arrive |
+|---|---|
+| **1.8.0** | **Journal** : entrées avec photos et sons, état d'esprit, suggestions AZA, calendrier, aperçu, verrou Touch ID, rappel quotidien. Puces à la couleur du thème. |
+| **1.7.2** | Graphiques et calendrier d'activité à la couleur du thème ; patcher bien cadré à l'ouverture, minimap visible, nœuds lisibles en thème sombre. |
+| **1.7.1** | Fin du portage de l'app web : **récap IA** (Ollama), **export vers le vault Obsidian**, **séance rapide** (⇧⌘N), export CSV, propositions de titres, filtres de séances, pomodoro, bandeau de stratégie, aide clavier, **taille du menu latéral**. |
+| **1.6.0** | **Patcher lié en direct au catalogue** : renommer ou reclasser une fiche se répercute dans tous les patches ; panneau catalogue dans le patcher. |
+| **1.5** | Fiches imprimables A4 (séance, rappel, atelier, formulaire, matériel) en impression ou PDF. |
+| **1.0 – 1.4** | App native, sauvegarde JSON, import `sessions.db`, réglages et thèmes, patcher, SysEx DX7 / Volca FM, lecture du lore. |
+
+Détail de chaque version : [releases](https://github.com/obareau/aza-sessions/releases).
 
 ### Construire depuis les sources
 
