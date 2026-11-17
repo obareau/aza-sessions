@@ -38,6 +38,21 @@ Dans **Réglages › Données › iCloud Drive** :
 Pas de CloudKit : il faudrait un compte développeur Apple. AZA s'appuie sur iCloud Drive, que macOS synchronise
 lui-même ; un fichier déchargé par « Optimiser le stockage » est retéléchargé avant d'être lu.
 
+### Annuler, historique, barre de menus (nouveau en 1.10)
+
+- **Annuler / Rétablir** (⌘Z / ⇧⌘Z) sur tout : séances, journal, patcher, catalogue… Une phrase tapée
+  s'annule d'un coup, et le menu dit ce qui sera annulé (« Annuler — journal »).
+- **Historique et restauration** (⇧⌘Y) : les sauvegardes de ce Mac (à l'ouverture et toutes les heures,
+  12 gardées), les copies de conflit et les sauvegardes d'iCloud Drive. Pour chacune, ce qui a changé depuis ;
+  **restaurer tout**, ou **récupérer une séance ou une entrée de journal** sans toucher au reste.
+- **AZA dans la barre de menus** : chrono de la séance en cours (avec notes rapides et « Terminer → séance »),
+  pomodoro, tirage du soir, une pensée à ajouter au journal. Fermer la fenêtre ne quitte plus AZA.
+
+| | |
+|---|---|
+| ![Historique et restauration](macos/docs/screenshots/history.png) | ![Barre de menus](macos/docs/screenshots/menubar.png) |
+| **Historique** — ce qui a changé depuis une sauvegarde, récupération à la pièce | **Barre de menus** — séance en cours, pomodoro, tirage, journal |
+
 ### Journal (nouveau en 1.8)
 
 Un journal personnel dans l'esprit de l'app Journal d'Apple — qui n'existe pas sur macOS 13 —, mais relié
@@ -99,12 +114,14 @@ couvrent que le JSON : garde ce dossier avec lui (Time Machine, iCloud…).
 - **Sorties** : fiches imprimables A4 (séance, rappel, feuille d'atelier, formulaire terrain, fiches
   matériel) en impression ou PDF ; export Markdown, CSV, JSON ; écriture dans le vault Obsidian.
 - **Récap IA** via Ollama (serveur et modèle réglables ; les échecs sont toujours affichés).
+- Annuler / rétablir (⌘Z), historique et restauration (⇧⌘Y), AZA dans la barre de menus.
 - Pomodoro, bandeau de stratégie oblique, aide clavier (⌘/), taille du texte et du menu latéral réglables.
 
 ### Nouveautés
 
 | Version | Ce qui arrive |
 |---|---|
+| **1.10.0** | **Annuler / Rétablir** partout, **historique et restauration** des sauvegardes (tout ou à la pièce), **AZA dans la barre de menus**. Sauvegardes locales toutes les heures. |
 | **1.9.0** | **iCloud Drive** : synchro entre Mac et sauvegarde quotidienne hors du Mac. L'app ne réécrit plus un fichier inchangé (à l'ouverture comme à la fermeture). |
 | **1.8.0** | **Journal** : entrées avec photos et sons, état d'esprit, suggestions AZA, calendrier, aperçu, verrou Touch ID, rappel quotidien. Puces à la couleur du thème. |
 | **1.7.2** | Graphiques et calendrier d'activité à la couleur du thème ; patcher bien cadré à l'ouverture, minimap visible, nœuds lisibles en thème sombre. |

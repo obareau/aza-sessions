@@ -7,7 +7,7 @@ import SwiftUI
 /// modification (écriture différée de 0,6 s pour regrouper la frappe).
 @MainActor
 final class Store: ObservableObject {
-    static let version = "1.9.0"
+    static let version = "1.10.0"
 
     @Published var data: AZAData {
         didSet {
@@ -20,6 +20,7 @@ final class Store: ObservableObject {
             }
             // Un rechargement depuis le disque (autre Mac) n'est pas une modification locale.
             if applyingExternal { return }
+            if !applyingUndo { history.record(before: oldValue, after: data) }
             dirty = true
             scheduleSave()
         }
@@ -37,6 +38,10 @@ final class Store: ObservableObject {
     /// ce qu'un autre Mac vient d'y mettre.
     private var dirty = false
     private var applyingExternal = false
+    private var applyingUndo = false
+    /// Annuler / rétablir sur tout le document (⌘Z / ⇧⌘Z).
+    @Published private(set) var history = EditHistory()
+    static let localBackups = 12
     /// Empreinte du fichier tel que nous l'avons lu ou écrit en dernier.
     private var diskPrint: FileFingerprint?
     private var watchTimer: Timer?
@@ -52,7 +57,7 @@ final class Store: ObservableObject {
     }
 
     init() {
-        storage = JSONStorage(url: Self.savedURL)
+        storage = Self.makeStorage(Self.savedURL)
         data = AZAData()
         Self.ensureDownloaded(storage.url)
         let (d, err) = Self.open(storage)
@@ -65,7 +70,12 @@ final class Store: ObservableObject {
         // seconde après l'ouverture — de quoi écraser le travail d'un autre Mac.
         pending?.cancel(); pending = nil
         dirty = false
+        history.clear()
         diskPrint = FileFingerprint.of(storage.url)
+        // Sauvegarde locale toutes les heures (seulement si le fichier a changé).
+        Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.flush(); try? self?.storage.backup() }
+        }
         NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
                                                object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
@@ -119,10 +129,65 @@ final class Store: ObservableObject {
         }
     }
 
+    static func makeStorage(_ url: URL) -> JSONStorage {
+        var s = JSONStorage(url: url)
+        s.backupCount = localBackups
+        return s
+    }
+
+    // MARK: Séance en cours
+
+    func startLive(oblique: Bool = true) {
+        guard data.live == nil else { return }
+        var l = LiveSession()
+        if oblique { l.oblique = data.randomOblique() ?? "" }
+        data.live = l
+    }
+
+    /// Termine la séance en cours : crée la séance (durée, matériel, notes, prise) et lance le récap.
+    @discardableResult
+    func finishLive(prefs: Prefs) -> Int? {
+        guard let l = data.live else { return nil }
+        var s = Session(id: data.nextSessionId(), date: String(l.startedAt.prefix(10)))
+        if let start = l.startDate { s.durationMin = max(1, Int(Date().timeIntervalSince(start) / 60)) }
+        s.machines = l.machines; s.effects = l.effects; s.daws = l.daws; s.synthsIOS = l.synthsIOS
+        s.plugins = l.plugins; s.mode = l.mode; s.intention = l.intention; s.oblique = l.oblique
+        s.projectId = l.projectId; s.comments = l.notes
+        s.audioFile = data.takeName(for: s)
+        data.sessions.append(s)
+        data.live = nil
+        // Comme /new?from_live=1 de l'app web : le récap part en fond, la séance est déjà enregistrée.
+        if prefs.recapAfterLive { generateRecap(s.id, baseURL: prefs.ollamaURL, model: prefs.ollamaModel) }
+        return s.id
+    }
+
+    // MARK: Annuler / rétablir
+
+    func undo() {
+        guard let state = history.undo(current: data) else { return }
+        applyingUndo = true
+        data = state
+        applyingUndo = false
+    }
+
+    func redo() {
+        guard let state = history.redo(current: data) else { return }
+        applyingUndo = true
+        data = state
+        applyingUndo = false
+    }
+
+    /// Remplace tout le document par une sauvegarde (annulable, et l'état actuel est sauvegardé avant).
+    func restoreAll(from backup: AZAData) {
+        flush()
+        try? storage.backup()
+        data = backup
+    }
+
     /// Change de fichier : ouvre celui-ci s'il existe, sinon y écrit les données actuelles.
     func switchTo(url: URL) {
         flush()
-        let next = JSONStorage(url: url)
+        let next = Self.makeStorage(url)
         let (d, err) = Self.open(next, seed: data)
         guard let d else { lastError = err; return }
         pending?.cancel()
@@ -132,6 +197,7 @@ final class Store: ObservableObject {
         data = d
         applyingExternal = false
         dirty = false
+        history.clear()
         diskPrint = FileFingerprint.of(next.url)
         UserDefaults.standard.set(url == JSONStorage.defaultURL ? "" : url.path, forKey: "dataFile")
     }
@@ -201,6 +267,8 @@ final class Store: ObservableObject {
         data = d
         applyingExternal = false
         diskPrint = disk
+        // Annuler ramènerait l'état d'avant l'autre Mac : on repart d'une pile vide.
+        history.clear()
         lastExternalReload = Date()
     }
 

@@ -611,5 +611,45 @@ for day in 12...20 {
 check(CloudBackup.list(bdir).count == 5 && CloudBackup.list(bdir).first?.lastPathComponent == "aza-sessions-2026-11-20.json",
       "icloud : rétention des sauvegardes")
 
+// 17. Annuler / historique
+var z_hist = EditHistory()
+var z_h0 = Seed.initial(); var z_h1 = z_h0; z_h1.sessions.append(Session(id: 1, date: "2026-11-17"))
+let z_t0 = Date(timeIntervalSince1970: 1000)
+z_hist.record(before: z_h0, after: z_h1, at: z_t0)
+var z_h2 = z_h1; z_h2.sessions[0].title = "A"
+z_hist.record(before: z_h1, after: z_h2, at: z_t0.addingTimeInterval(0.5))        // même geste : regroupé
+var z_h3 = z_h2; z_h3.diary.append(DiaryEntry(id: 1))
+z_hist.record(before: z_h2, after: z_h3, at: z_t0.addingTimeInterval(0.8))        // autre partie : nouvelle étape
+check(z_hist.undoStack.count == 2 && z_hist.undoLabel == "journal", "annuler : regroupement et libellé")
+let z_u1 = z_hist.undo(current: z_h3)
+check(z_u1 == z_h2 && z_hist.undoLabel == "séances" && z_hist.redoLabel == "journal", "annuler : retour d'une étape")
+let z_u2 = z_hist.undo(current: z_u1!)
+check(z_u2 == z_h0 && !z_hist.canUndo, "annuler : le geste regroupé s'annule d'un coup")
+check(z_hist.redo(current: z_u2!) == z_h2 && z_hist.redo(current: z_h2) == z_h3 && !z_hist.canRedo, "rétablir")
+z_hist.record(before: z_h3, after: z_h0, at: z_t0.addingTimeInterval(10))
+check(!z_hist.canRedo, "annuler : une nouvelle modification efface « rétablir »")
+var z_lim = EditHistory(); z_lim.limit = 3
+for i in 0..<6 { var x = z_h0; x.obliques.removeLast(i); z_lim.record(before: z_h0, after: x, at: z_t0.addingTimeInterval(Double(i) * 10)) }
+check(z_lim.undoStack.count == 3, "annuler : limite de la pile")
+
+var z_bk = Seed.initial()
+var z_sA = Session(id: 1, date: "2026-11-01"); z_sA.title = "Gardée"
+var z_sB = Session(id: 2, date: "2026-11-02"); z_sB.title = "Supprimée depuis"
+var z_sC = Session(id: 3, date: "2026-11-03"); z_sC.title = "Avant modif"
+z_bk.sessions = [z_sA, z_sB, z_sC]; z_bk.diary = [DiaryEntry(id: 4)]
+var z_now = z_bk; z_now.sessions.removeAll { $0.id == 2 }; z_now.sessions[1].title = "Après modif"
+z_now.sessions.append(Session(id: 9, date: "2026-11-17")); z_now.diary = []; z_now.obliques.removeLast()
+let z_df = z_now.diff(fromBackup: z_bk)
+let z_ds = z_df.parts.first { $0.name == "Séances" }!
+check(z_ds.onlyInBackup == [2] && z_ds.onlyInCurrent == [9] && z_ds.changed == [3]
+      && z_df.parts.first { $0.name == "Journal" }!.onlyInBackup == [4] && z_df.otherChanges == ["stratégies"], "historique : différences")
+check(z_bk.diff(fromBackup: z_bk).isEmpty, "historique : identique")
+var z_rec = z_now
+check(z_rec.recover(sessions: [2, 3], diary: [4], from: z_bk) == 3, "historique : récupération")
+check(z_rec.sessions.contains { $0.id == 2 && $0.title == "Supprimée depuis" }
+      && z_rec.sessions.contains { $0.title == "Avant modif (restaurée)" && $0.id != 3 && $0.linkedSession == 3 }
+      && z_rec.sessions.first { $0.id == 3 }?.title == "Après modif" && z_rec.diary.count == 1,
+      "historique : supprimée revient, modifiée revient à côté")
+
 print(failures == 0 ? "✓ aza-check : \(passed) vérifications OK" : "✗ aza-check : \(failures) échec(s), \(passed) OK")
 exit(failures == 0 ? 0 : 1)

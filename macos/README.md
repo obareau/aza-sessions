@@ -11,6 +11,11 @@ bash macos/build_app.sh            # → macos/build/AZA.app (universel, signé 
 bash macos/build_app.sh --install  # copie aussi dans ~/Applications
 ```
 
+Annuler / rétablir : `EditHistory` (AZACore) garde les états précédents du document entier (100 au plus,
+frappes rapprochées regroupées). Historique : `AZAData.diff(fromBackup:)` et `recover(sessions:diary:from:)`.
+Barre de menus : `NSStatusItem` + popover (la scène SwiftUI `MenuBarExtra` faisait déborder la pile au lancement,
+le type de `AZAApp.body` devenant trop profond ; le menu de l'app est aussi sorti dans `AZACommands`).
+
 iCloud Drive (Réglages › Données) : synchro en déplaçant les données dans
 `~/Library/Mobile Documents/com~apple~CloudDocs/AZA Sessions`, ou sauvegarde quotidienne (30 jours) dans
 `… /AZA Sessions — Sauvegardes`. Le Store n'écrit que des modifications locales (`dirty`), compare l'empreinte

@@ -109,6 +109,7 @@ final class Prefs: ObservableObject {
     /// taille de texte et ne suit pas d'elle-même la taille générale.
     @Published var sidebarScale: Double { didSet { ud.set(sidebarScale, forKey: "sidebarScale") } }
     @Published var diaryLock: Bool { didSet { ud.set(diaryLock, forKey: "diaryLock") } }
+    @Published var menuBar: Bool { didSet { ud.set(menuBar, forKey: "menuBar") } }
     @Published var diaryReminder: Bool { didSet { ud.set(diaryReminder, forKey: "diaryReminder") } }
     @Published var diaryReminderTime: Date { didSet { ud.set(diaryReminderTime, forKey: "diaryReminderTime") } }
 
@@ -131,6 +132,7 @@ final class Prefs: ObservableObject {
         let sb = ud.double(forKey: "sidebarScale")
         sidebarScale = sb == 0 ? 1.0 : sb
         diaryLock = ud.bool(forKey: "diaryLock")
+        menuBar = ud.object(forKey: "menuBar") as? Bool ?? true
         diaryReminder = ud.bool(forKey: "diaryReminder")
         diaryReminderTime = ud.object(forKey: "diaryReminderTime") as? Date
             ?? Calendar.current.date(bySettingHour: 21, minute: 30, second: 0, of: Date())!
@@ -314,6 +316,8 @@ struct SettingsView: View {
                 Toggle("Titres en monospace", isOn: $prefs.monoTitles)
                 Toggle("Interface compacte", isOn: $prefs.compact)
                 Toggle("Bandeau de stratégie oblique", isOn: $prefs.obliqueBanner)
+                Toggle("AZA dans la barre de menus", isOn: $prefs.menuBar)
+                    .help("Séance en cours, pomodoro, tirage du soir et journal, sans ouvrir la fenêtre ; fermer la fenêtre ne quitte plus AZA")
             } header: { Text("Texte").azaHeading() }
 
             Section {
@@ -612,8 +616,9 @@ struct SettingsView: View {
             } header: { Text("Corpus de lore").azaHeading() }
 
             Section {
-                LabeledContent("Sauvegardes") { Text("\((try? store.storage.backups().count) ?? 0) / 5") }
+                LabeledContent("Sauvegardes") { Text("\((try? store.storage.backups().count) ?? 0) / \(Store.localBackups)") }
                 Button("Faire une sauvegarde maintenant") { store.backupNow() }
+                Button("Historique et restauration…") { NotificationCenter.default.post(name: .azaShowHistory, object: nil) }
                 Button("Supprimer toutes les séances…", role: .destructive) {
                     guard Panels.confirm("Supprimer les \(store.data.sessions.count) séances ?",
                                          "Une sauvegarde datée du JSON est faite avant. Le catalogue, les patches, presets "
@@ -622,8 +627,8 @@ struct SettingsView: View {
                     store.resetSessions()
                 }
                 .disabled(store.data.sessions.isEmpty)
-                Text("Une copie datée est prise à chaque ouverture et avant chaque import ; "
-                     + "les 5 plus récentes sont gardées dans le dossier backups/.")
+                Text("Une copie datée est prise à l'ouverture, toutes les heures et avant chaque import ou restauration "
+                     + "(seulement si quelque chose a changé) ; les 12 plus récentes sont gardées dans backups/.")
                     .foregroundStyle(.secondary).azaFont(.caption)
             } header: { Text("Sauvegardes").azaHeading() }
 

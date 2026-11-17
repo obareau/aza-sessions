@@ -15,6 +15,7 @@ final class Nav: ObservableObject {
     @Published var diary: Int?
     @Published var quick: QuickRequest?
     @Published var shortcuts = false
+    @Published var history = false
 
     func open(patch id: Int) { pane = .patcher; patch = id }
 
@@ -33,7 +34,7 @@ struct AZAApp: App {
     @StateObject private var pomo = Pomodoro()
 
     var body: some Scene {
-        WindowGroup("AZA — Journal de Sessions") {
+        WindowGroup("AZA — Journal de Sessions", id: "main") {
             ContentView()
                 .azaRoot()
                 .frame(minWidth: 1000, minHeight: 640)
@@ -44,101 +45,7 @@ struct AZAApp: App {
                 .environmentObject(lore)
                 .environmentObject(pomo)
         }
-        .commands {
-            CommandGroup(replacing: .newItem) {
-                Button("Nouvelle séance") { nav.open(session: store.newSession()) }.keyboardShortcut("n")
-                Button("Séance rapide…") { nav.quick = QuickRequest(gear: []) }.keyboardShortcut("n", modifiers: [.command, .shift])
-                Button("Nouvelle entrée de journal") { nav.pane = .diary; nav.diary = store.newDiaryEntry() }
-                    .keyboardShortcut("j", modifiers: [.command, .shift])
-                Button("Copier le setup de la séance") {
-                    let t = store.data.sessions.first { $0.id == nav.session }
-                    nav.open(session: store.newSession(from: t))
-                }
-                .keyboardShortcut("d")
-                .disabled(nav.session == nil)
-                Divider()
-                Button("Séance en cours") { nav.pane = .live }.keyboardShortcut("l", modifiers: [.command, .shift])
-                Button("Ce soir — tirer une séance") { nav.pane = .tonight }.keyboardShortcut("t", modifiers: [.command, .shift])
-                Button("Patcher") { nav.pane = .patcher }.keyboardShortcut("p", modifiers: [.command, .shift])
-            }
-            CommandGroup(after: .importExport) {
-                Button("Importer une base sessions.db…") {
-                    guard let url = Panels.open(types: ["db", "sqlite", "sqlite3"]) else { return }
-                    guard Panels.confirm("Remplacer les données ?",
-                                         "Le contenu actuel sera remplacé par celui de la base. " +
-                                         "Une sauvegarde du JSON actuel est faite avant.",
-                                         ok: "Importer") else { return }
-                    nav.session = nil; nav.gear = nil
-                    store.importSQLite(url: url)
-                }
-                Button("Importer un fichier JSON…") {
-                    guard let url = Panels.open(types: ["json"]) else { return }
-                    guard Panels.confirm("Remplacer les données ?",
-                                         "Une sauvegarde du JSON actuel est faite avant.",
-                                         ok: "Importer") else { return }
-                    nav.session = nil; nav.gear = nil
-                    store.importJSON(url: url)
-                }
-                Divider()
-                Button("Exporter en JSON…") {
-                    if let url = Panels.save(name: "aza-sessions-\(Clock.today()).json", ext: "json") {
-                        store.exportJSON(to: url)
-                    }
-                }.keyboardShortcut("e", modifiers: [.command, .shift])
-                Divider()
-                Button("Imprimer un formulaire vierge…") {
-                    nav.print(PrintJob(title: "Formulaire terrain", html: Sheets.blankForm(data: store.data, version: Store.version),
-                                       fileName: "formulaire_aza"))
-                }
-                Button("Imprimer les fiches matériel…") {
-                    nav.print(PrintJob(title: "Fiches matériel",
-                                       html: Sheets.catalogue(store.data.catalogue, filter: "", version: Store.version),
-                                       landscape: true, fileName: "fiches_materiel_\(Clock.today())"))
-                }
-                Button("Exporter les séances en CSV…") {
-                    if let url = Panels.save(name: "aza_\(Clock.today().replacingOccurrences(of: "-", with: "")).csv", ext: "csv") {
-                        store.exportCSV(to: url)
-                    }
-                }
-                Button("Écrire toutes les séances dans le vault Obsidian") {
-                    guard Panels.confirm("Écrire \(store.data.sessions.count) séance(s) dans le vault ?",
-                                         "Dossier : \(prefs.obsidianVault)\nLes fichiers du même nom sont remplacés.",
-                                         ok: "Écrire") else { return }
-                    let msg = store.exportToVault(store.data.sessions.map(\.id), folder: prefs.obsidianVault)
-                    if !msg.isEmpty { store.lastError = "✓ " + msg }
-                }
-                .disabled(prefs.obsidianVault.isEmpty)
-                Button("Exporter toutes les séances en Markdown…") {
-                    if let url = Panels.save(name: "aza_\(Clock.today()).md", ext: "md") {
-                        store.exportMarkdown(store.data.sessions.sorted { $0.date > $1.date }, to: url)
-                    }
-                }
-                Divider()
-                Button("Afficher le fichier JSON dans le Finder") { store.revealFile() }
-                    .keyboardShortcut("r", modifiers: [.command, .shift])
-            }
-            CommandGroup(replacing: .saveItem) {
-                Button("Enregistrer maintenant") { store.flush() }.keyboardShortcut("s")
-            }
-            CommandGroup(after: .toolbar) {
-                Button("Agrandir le texte") { prefs.scale = min(1.8, prefs.scale + 0.1) }.keyboardShortcut("+")
-                Button("Réduire le texte") { prefs.scale = max(0.8, prefs.scale - 0.1) }.keyboardShortcut("-")
-                Button("Taille réelle") { prefs.scale = 1.0 }.keyboardShortcut("0")
-                Divider()
-            }
-        }
-
-        .commands {
-            CommandGroup(replacing: .appInfo) {
-                Button("À propos d'AZA") { AboutPanel.show() }
-            }
-            CommandGroup(replacing: .help) {
-                Button("Raccourcis clavier") { nav.shortcuts = true }.keyboardShortcut("/", modifiers: .command)
-                Button("Code source et releases") {
-                    NSWorkspace.shared.open(URL(string: "https://github.com/obareau/aza-sessions/releases")!)
-                }
-            }
-        }
+        .commands { AZACommands(store: store, nav: nav, prefs: prefs) }
 
         Settings {
             SettingsView()
@@ -155,7 +62,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
     }
-    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+    /// Avec l'icône dans la barre de menus, fermer la fenêtre ne quitte pas AZA.
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        !(UserDefaults.standard.object(forKey: "menuBar") as? Bool ?? true)
+    }
 }
 
 enum Pane: String, CaseIterable, Identifiable {
@@ -227,9 +137,11 @@ enum Pane: String, CaseIterable, Identifiable {
 }
 
 struct ContentView: View {
+    @Environment(\.openWindow) private var openWindow
     @EnvironmentObject var store: Store
     @EnvironmentObject var prefs: Prefs
     @EnvironmentObject var nav: Nav
+    @EnvironmentObject var pomo: Pomodoro
 
     var body: some View {
         NavigationSplitView {
@@ -264,19 +176,31 @@ struct ContentView: View {
                 detail.azaSurface()
             }
         }
-        .task { if SnapshotRunner.dir != nil { await SnapshotRunner.run(nav: nav, store: store) } }
+        .onAppear {
+            StatusBar.shared.install(store: store, nav: nav, prefs: prefs, pomo: pomo, openMain: { openWindow(id: "main") })
+        }
+        .task { if SnapshotRunner.dir != nil { await SnapshotRunner.run(nav: nav, store: store, prefs: prefs, pomo: pomo) } }
         .sheet(item: $nav.quick) { q in
             QuickSessionSheet(preselection: q.gear) { nav.quick = nil }
-                .environmentObject(store).environmentObject(nav).environmentObject(prefs)
                 .azaRoot()
+                .environmentObject(store).environmentObject(nav).environmentObject(prefs)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .azaShowHistory)) { _ in
+            NSApp.windows.first { $0.title.contains("AZA") }?.makeKeyAndOrderFront(nil)
+            nav.history = true
+        }
+        .sheet(isPresented: $nav.history) {
+            HistoryView { nav.history = false }
+                .azaRoot()
+                .environmentObject(store).environmentObject(prefs)
         }
         .sheet(isPresented: $nav.shortcuts) {
-            ShortcutsHelp { nav.shortcuts = false }.environmentObject(prefs).azaRoot()
+            ShortcutsHelp { nav.shortcuts = false }.azaRoot().environmentObject(prefs)
         }
         .sheet(item: $nav.printJob) { job in
             PrintPreview(job: job) { nav.printJob = nil }
-                .environmentObject(prefs)
                 .azaRoot()
+                .environmentObject(prefs)
         }
         .alert("AZA", isPresented: Binding(get: { store.lastError != nil },
                                            set: { if !$0 { store.lastError = nil } })) {
@@ -353,4 +277,175 @@ struct ContentView: View {
 struct QuickRequest: Identifiable {
     let id = UUID()
     let gear: [String]
+}
+
+/// Le menu de l'app, dans sa propre structure : déclaré directement dans le corps
+/// de la scène, il rendait le type de `AZAApp.body` si profond que Swift
+/// plantait en le décodant au lancement (dès l'ajout de la barre de menus).
+struct AZACommands: Commands {
+    @ObservedObject var store: Store
+    @ObservedObject var nav: Nav
+    @ObservedObject var prefs: Prefs
+
+    // Le contenu de chaque groupe vit dans sa propre vue (AZAMenu1…) : écrit en
+    // place, le type générique des menus faisait planter Swift au lancement.
+    var body: some Commands {
+        CommandGroup(replacing: .newItem) { AZAMenu1(store: store, nav: nav, prefs: prefs) }
+        CommandGroup(after: .importExport) { AZAMenu2(store: store, nav: nav, prefs: prefs) }
+        CommandGroup(replacing: .undoRedo) { AZAMenu3(store: store, nav: nav, prefs: prefs) }
+        CommandGroup(replacing: .saveItem) { AZAMenu4(store: store, nav: nav, prefs: prefs) }
+        CommandGroup(after: .toolbar) { AZAMenu5(store: store, nav: nav, prefs: prefs) }
+        CommandGroup(replacing: .appInfo) { AZAMenu6(store: store, nav: nav, prefs: prefs) }
+        CommandGroup(replacing: .help) { AZAMenu7(store: store, nav: nav, prefs: prefs) }
+    }
+}
+
+struct AZAMenu1: View {
+    @ObservedObject var store: Store
+    @ObservedObject var nav: Nav
+    @ObservedObject var prefs: Prefs
+    var body: some View {
+            Button("Nouvelle séance") { nav.open(session: store.newSession()) }.keyboardShortcut("n")
+            Button("Séance rapide…") { nav.quick = QuickRequest(gear: []) }.keyboardShortcut("n", modifiers: [.command, .shift])
+            Button("Nouvelle entrée de journal") { nav.pane = .diary; nav.diary = store.newDiaryEntry() }
+                .keyboardShortcut("j", modifiers: [.command, .shift])
+            Button("Copier le setup de la séance") {
+                let t = store.data.sessions.first { $0.id == nav.session }
+                nav.open(session: store.newSession(from: t))
+            }
+            .keyboardShortcut("d")
+            .disabled(nav.session == nil)
+            Divider()
+            Button("Séance en cours") { nav.pane = .live }.keyboardShortcut("l", modifiers: [.command, .shift])
+            Button("Ce soir — tirer une séance") { nav.pane = .tonight }.keyboardShortcut("t", modifiers: [.command, .shift])
+            Button("Patcher") { nav.pane = .patcher }.keyboardShortcut("p", modifiers: [.command, .shift])
+        
+    }
+}
+
+struct AZAMenu2: View {
+    @ObservedObject var store: Store
+    @ObservedObject var nav: Nav
+    @ObservedObject var prefs: Prefs
+    var body: some View {
+            Button("Importer une base sessions.db…") {
+                guard let url = Panels.open(types: ["db", "sqlite", "sqlite3"]) else { return }
+                guard Panels.confirm("Remplacer les données ?",
+                                     "Le contenu actuel sera remplacé par celui de la base. " +
+                                     "Une sauvegarde du JSON actuel est faite avant.",
+                                     ok: "Importer") else { return }
+                nav.session = nil; nav.gear = nil
+                store.importSQLite(url: url)
+            }
+            Button("Importer un fichier JSON…") {
+                guard let url = Panels.open(types: ["json"]) else { return }
+                guard Panels.confirm("Remplacer les données ?",
+                                     "Une sauvegarde du JSON actuel est faite avant.",
+                                     ok: "Importer") else { return }
+                nav.session = nil; nav.gear = nil
+                store.importJSON(url: url)
+            }
+            Divider()
+            Button("Exporter en JSON…") {
+                if let url = Panels.save(name: "aza-sessions-\(Clock.today()).json", ext: "json") {
+                    store.exportJSON(to: url)
+                }
+            }.keyboardShortcut("e", modifiers: [.command, .shift])
+            Divider()
+            Button("Imprimer un formulaire vierge…") {
+                nav.print(PrintJob(title: "Formulaire terrain", html: Sheets.blankForm(data: store.data, version: Store.version),
+                                   fileName: "formulaire_aza"))
+            }
+            Button("Imprimer les fiches matériel…") {
+                nav.print(PrintJob(title: "Fiches matériel",
+                                   html: Sheets.catalogue(store.data.catalogue, filter: "", version: Store.version),
+                                   landscape: true, fileName: "fiches_materiel_\(Clock.today())"))
+            }
+            Button("Exporter les séances en CSV…") {
+                if let url = Panels.save(name: "aza_\(Clock.today().replacingOccurrences(of: "-", with: "")).csv", ext: "csv") {
+                    store.exportCSV(to: url)
+                }
+            }
+            Button("Écrire toutes les séances dans le vault Obsidian") {
+                guard Panels.confirm("Écrire \(store.data.sessions.count) séance(s) dans le vault ?",
+                                     "Dossier : \(prefs.obsidianVault)\nLes fichiers du même nom sont remplacés.",
+                                     ok: "Écrire") else { return }
+                let msg = store.exportToVault(store.data.sessions.map(\.id), folder: prefs.obsidianVault)
+                if !msg.isEmpty { store.lastError = "✓ " + msg }
+            }
+            .disabled(prefs.obsidianVault.isEmpty)
+            Button("Exporter toutes les séances en Markdown…") {
+                if let url = Panels.save(name: "aza_\(Clock.today()).md", ext: "md") {
+                    store.exportMarkdown(store.data.sessions.sorted { $0.date > $1.date }, to: url)
+                }
+            }
+            Divider()
+            Button("Afficher le fichier JSON dans le Finder") { store.revealFile() }
+                .keyboardShortcut("r", modifiers: [.command, .shift])
+        
+    }
+}
+
+struct AZAMenu3: View {
+    @ObservedObject var store: Store
+    @ObservedObject var nav: Nav
+    @ObservedObject var prefs: Prefs
+    var body: some View {
+            Button(store.history.undoLabel.map { "Annuler — \($0)" } ?? "Annuler") { store.undo() }
+                .keyboardShortcut("z")
+                .disabled(!store.history.canUndo)
+            Button(store.history.redoLabel.map { "Rétablir — \($0)" } ?? "Rétablir") { store.redo() }
+                .keyboardShortcut("z", modifiers: [.command, .shift])
+                .disabled(!store.history.canRedo)
+            Divider()
+            Button("Historique et restauration…") { nav.history = true }
+                .keyboardShortcut("y", modifiers: [.command, .shift])
+        
+    }
+}
+
+struct AZAMenu4: View {
+    @ObservedObject var store: Store
+    @ObservedObject var nav: Nav
+    @ObservedObject var prefs: Prefs
+    var body: some View {
+            Button("Enregistrer maintenant") { store.flush() }.keyboardShortcut("s")
+        
+    }
+}
+
+struct AZAMenu5: View {
+    @ObservedObject var store: Store
+    @ObservedObject var nav: Nav
+    @ObservedObject var prefs: Prefs
+    var body: some View {
+            Button("Agrandir le texte") { prefs.scale = min(1.8, prefs.scale + 0.1) }.keyboardShortcut("+")
+            Button("Réduire le texte") { prefs.scale = max(0.8, prefs.scale - 0.1) }.keyboardShortcut("-")
+            Button("Taille réelle") { prefs.scale = 1.0 }.keyboardShortcut("0")
+            Divider()
+        
+    }
+}
+
+struct AZAMenu6: View {
+    @ObservedObject var store: Store
+    @ObservedObject var nav: Nav
+    @ObservedObject var prefs: Prefs
+    var body: some View {
+            Button("À propos d'AZA") { AboutPanel.show() }
+        
+    }
+}
+
+struct AZAMenu7: View {
+    @ObservedObject var store: Store
+    @ObservedObject var nav: Nav
+    @ObservedObject var prefs: Prefs
+    var body: some View {
+            Button("Raccourcis clavier") { nav.shortcuts = true }.keyboardShortcut("/", modifiers: .command)
+            Button("Code source et releases") {
+                NSWorkspace.shared.open(URL(string: "https://github.com/obareau/aza-sessions/releases")!)
+            }
+        
+    }
 }

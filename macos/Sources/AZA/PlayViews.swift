@@ -293,18 +293,7 @@ struct LiveView: View {
     }
 
     func finish() {
-        guard let l = store.data.live else { return }
-        var s = Session(id: store.data.nextSessionId(), date: String(l.startedAt.prefix(10)))
-        if let start = l.startDate { s.durationMin = max(1, Int(Date().timeIntervalSince(start) / 60)) }
-        s.machines = l.machines; s.effects = l.effects; s.daws = l.daws; s.synthsIOS = l.synthsIOS
-        s.plugins = l.plugins; s.mode = l.mode; s.intention = l.intention; s.oblique = l.oblique
-        s.projectId = l.projectId; s.comments = l.notes
-        s.audioFile = store.data.takeName(for: s)
-        store.data.sessions.append(s)
-        store.data.live = nil
-        nav.open(session: s.id)
-        // Comme /new?from_live=1 de l'app web : le récap part en fond, la séance est déjà enregistrée.
-        if prefs.recapAfterLive { store.generateRecap(s.id, baseURL: prefs.ollamaURL, model: prefs.ollamaModel) }
+        if let id = store.finishLive(prefs: prefs) { nav.open(session: id) }
     }
 }
 
