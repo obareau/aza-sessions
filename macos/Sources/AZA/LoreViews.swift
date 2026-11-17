@@ -53,6 +53,7 @@ final class LoreCache: ObservableObject {
 
 struct LoreView: View {
     @EnvironmentObject var lore: LoreCache
+    @EnvironmentObject var nav: Nav
     @EnvironmentObject var prefs: Prefs
     @Local private var tab = 0
     @Local private var section: String? = nil
@@ -98,7 +99,11 @@ struct LoreView: View {
         }
         .navigationTitle("Lore")
         .navigationSubtitle(lore.available ? "Corpus Robōtariis — lu depuis le vault, jamais copié" : "Source non configurée")
-        .onAppear { if quote == nil { quote = lore.quotes.randomElement() } }
+        .onAppear {
+            if quote == nil { quote = lore.quotes.randomElement() }
+            if let q = nav.paneQuery { query = q; tab = 0; nav.paneQuery = nil }
+        }
+        .onChange(of: nav.paneQuery) { q in if let q { query = q; tab = 0; nav.paneQuery = nil } }
         .onChange(of: lore.quotes) { q in if quote == nil || !q.contains(quote!) { quote = q.randomElement() } }
     }
 

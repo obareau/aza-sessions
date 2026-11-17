@@ -126,7 +126,7 @@ struct ShortcutsHelp: View {
     static let groups: [(String, [(String, String)])] = [
         ("Séances", [("Nouvelle séance", "⌘N"), ("Séance rapide", "⇧⌘N"), ("Copier le setup", "⌘D"),
                      ("Séance en cours", "⇧⌘L"), ("Ce soir — tirage", "⇧⌘T"), ("Enregistrer maintenant", "⌘S")]),
-        ("Navigation", [("Patcher", "⇧⌘P"), ("Mode focus (masquer la barre latérale)", "⌃⌘S"),
+        ("Navigation", [("Rechercher partout", "⌘K"), ("Historique et restauration", "⇧⌘Y"), ("Annuler / rétablir", "⌘Z / ⇧⌘Z"), ("Patcher", "⇧⌘P"), ("Mode focus (masquer la barre latérale)", "⌃⌘S"),
                         ("Réglages", "⌘,"), ("Afficher le fichier JSON", "⇧⌘R"), ("Exporter en JSON", "⇧⌘E")]),
         ("Texte", [("Agrandir / réduire", "⌘+ / ⌘−"), ("Taille réelle", "⌘0")]),
         ("Patcher", [("Basculer déplacer / câbler", "C"), ("Grille magnétique", "G"), ("Minimap", "M"),

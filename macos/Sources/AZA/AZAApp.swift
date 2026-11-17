@@ -16,6 +16,9 @@ final class Nav: ObservableObject {
     @Published var quick: QuickRequest?
     @Published var shortcuts = false
     @Published var history = false
+    @Published var palette = false
+    /// Recherche à reporter dans l'écran ouvert depuis la palette (lore, morceaux…), consommée une fois.
+    @Published var paneQuery: String?
 
     func open(patch id: Int) { pane = .patcher; patch = id }
 
@@ -176,6 +179,16 @@ struct ContentView: View {
                 detail.azaSurface()
             }
         }
+        .overlay(alignment: .top) {
+            if nav.palette {
+                ZStack(alignment: .top) {
+                    Color.black.opacity(0.25).ignoresSafeArea()
+                        .onTapGesture { nav.palette = false }
+                    SearchPalette().padding(.top, 70)
+                }
+                .transition(.opacity)
+            }
+        }
         .onAppear {
             StatusBar.shared.install(store: store, nav: nav, prefs: prefs, pomo: pomo, openMain: { openWindow(id: "main") })
         }
@@ -319,6 +332,8 @@ struct AZAMenu1: View {
             Button("Séance en cours") { nav.pane = .live }.keyboardShortcut("l", modifiers: [.command, .shift])
             Button("Ce soir — tirer une séance") { nav.pane = .tonight }.keyboardShortcut("t", modifiers: [.command, .shift])
             Button("Patcher") { nav.pane = .patcher }.keyboardShortcut("p", modifiers: [.command, .shift])
+            Divider()
+            Button("Rechercher partout…") { nav.palette.toggle() }.keyboardShortcut("k")
         
     }
 }

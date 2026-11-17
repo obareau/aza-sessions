@@ -38,6 +38,17 @@ Dans **Réglages › Données › iCloud Drive** :
 Pas de CloudKit : il faudrait un compte développeur Apple. AZA s'appuie sur iCloud Drive, que macOS synchronise
 lui-même ; un fichier déchargé par « Optimiser le stockage » est retéléchargé avant d'être lu.
 
+### Recherche globale ⌘K (nouveau en 1.11)
+
+Une seule saisie pour tout AZA : séances (titre, matériel, notes, récap…), journal, catalogue, patches,
+projets, presets, relevés de façade, lore, influences, stratégies, morceaux, inspirations, samples, MiRack,
+wishlist, banques SysEx. Sans tenir compte des accents ni de la casse (« scaer » trouve Scaër) ; plusieurs mots
+doivent tous figurer ; le titre compte plus que le texte, avec un extrait autour du mot trouvé. La même palette
+ouvre un écran ou lance une action (« nouvelle séance », « statistiques », « historique »…) ; sans saisie,
+elle montre ce sur quoi tu as travaillé dernièrement. **↑↓** pour choisir, **↩** pour ouvrir, **esc** pour fermer.
+
+![Recherche globale](macos/docs/screenshots/search.png)
+
 ### Annuler, historique, barre de menus (nouveau en 1.10)
 
 - **Annuler / Rétablir** (⌘Z / ⇧⌘Z) sur tout : séances, journal, patcher, catalogue… Une phrase tapée
@@ -114,13 +125,14 @@ couvrent que le JSON : garde ce dossier avec lui (Time Machine, iCloud…).
 - **Sorties** : fiches imprimables A4 (séance, rappel, feuille d'atelier, formulaire terrain, fiches
   matériel) en impression ou PDF ; export Markdown, CSV, JSON ; écriture dans le vault Obsidian.
 - **Récap IA** via Ollama (serveur et modèle réglables ; les échecs sont toujours affichés).
-- Annuler / rétablir (⌘Z), historique et restauration (⇧⌘Y), AZA dans la barre de menus.
+- Recherche globale (⌘K), annuler / rétablir (⌘Z), historique et restauration (⇧⌘Y), AZA dans la barre de menus.
 - Pomodoro, bandeau de stratégie oblique, aide clavier (⌘/), taille du texte et du menu latéral réglables.
 
 ### Nouveautés
 
 | Version | Ce qui arrive |
 |---|---|
+| **1.11.0** | **Recherche globale ⌘K** sur tout AZA, avec écrans et actions dans la même palette. |
 | **1.10.0** | **Annuler / Rétablir** partout, **historique et restauration** des sauvegardes (tout ou à la pièce), **AZA dans la barre de menus**. Sauvegardes locales toutes les heures. |
 | **1.9.0** | **iCloud Drive** : synchro entre Mac et sauvegarde quotidienne hors du Mac. L'app ne réécrit plus un fichier inchangé (à l'ouverture comme à la fermeture). |
 | **1.8.0** | **Journal** : entrées avec photos et sons, état d'esprit, suggestions AZA, calendrier, aperçu, verrou Touch ID, rappel quotidien. Puces à la couleur du thème. |

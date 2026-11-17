@@ -45,6 +45,13 @@ enum SnapshotRunner {
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             save(window, to: dir.appendingPathComponent(name + ".png"))
         }
+        // Palette ⌘K
+        nav.pane = .sessions
+        nav.palette = true
+        try? await Task.sleep(nanoseconds: 1_500_000_000)
+        save(window, to: dir.appendingPathComponent("search.png"))
+        nav.palette = false
+        try? await Task.sleep(nanoseconds: 600_000_000)
         // Historique (feuille attachée à la fenêtre)
         nav.history = true
         try? await Task.sleep(nanoseconds: 1_500_000_000)

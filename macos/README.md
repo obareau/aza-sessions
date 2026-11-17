@@ -11,6 +11,7 @@ bash macos/build_app.sh            # → macos/build/AZA.app (universel, signé 
 bash macos/build_app.sh --install  # copie aussi dans ~/Applications
 ```
 
+Recherche globale ⌘K : `AZAData.globalSearch(_:lore:)` (AZACore, repli des accents, tous les termes requis, titre prioritaire) ; palette dans `SearchPalette.swift` (↑↓ par un moniteur clavier, macOS 13 n'ayant pas `onKeyPress`).
 Annuler / rétablir : `EditHistory` (AZACore) garde les états précédents du document entier (100 au plus,
 frappes rapprochées regroupées). Historique : `AZAData.diff(fromBackup:)` et `recover(sessions:diary:from:)`.
 Barre de menus : `NSStatusItem` + popover (la scène SwiftUI `MenuBarExtra` faisait déborder la pile au lancement,

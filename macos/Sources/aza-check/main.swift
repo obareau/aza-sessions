@@ -651,5 +651,25 @@ check(z_rec.sessions.contains { $0.id == 2 && $0.title == "Supprimée depuis" }
       && z_rec.sessions.first { $0.id == 3 }?.title == "Après modif" && z_rec.diary.count == 1,
       "historique : supprimée revient, modifiée revient à côté")
 
+// 18. Recherche globale
+var gs = Seed.initial()
+var gs1 = Session(id: 1, date: "2026-11-10"); gs1.title = "MÉMOIRE RÉSIDUELLE"; gs1.machines = ["MicroFreak"]
+gs1.comments = "Une longue nappe sur le quai de Scaër, le Karplus saturé derrière."
+var gs2 = Session(id: 2, date: "2026-11-12"); gs2.title = "Corrosion lente"; gs2.machines = ["NTS-1"]
+gs.sessions = [gs1, gs2]
+var gse = DiaryEntry(id: 1, date: "2026-11-13 20:00:00"); gse.body = "Retour du quai, brouillard épais.\nLa mémoire des machines."
+gs.diary = [gse]
+check(gs.globalSearch("scaer").first?.kind == .session, "recherche : sans accents (Scaër)")
+check(gs.globalSearch("MEMOIRE").first?.ref == "1" && gs.globalSearch("MEMOIRE").first?.kind == .session,
+      "recherche : le titre passe avant le texte")
+check(Set(gs.globalSearch("quai").map(\.kind)) == [.session, .diary], "recherche : séances et journal")
+check(gs.globalSearch("quai karplus").map(\.kind) == [.session], "recherche : tous les mots requis")
+check(gs.globalSearch("microfreak").contains { $0.kind == .gear && $0.title == "MicroFreak" }
+      && gs.globalSearch("microfreak").first?.kind == .gear, "recherche : fiche catalogue en tête sur son nom")
+check(gs.globalSearch("   ").isEmpty && gs.globalSearch("zzzz").isEmpty, "recherche : vide / rien")
+let snip = SearchText.snippet(String(repeating: "abc ", count: 60) + "le mot Karplus ici " + String(repeating: "xyz ", count: 60), terms: ["karplus"])
+check(snip.hasPrefix("…") && snip.contains("Karplus") && snip.hasSuffix("…") && snip.count < 130, "recherche : extrait autour du mot")
+check(gs.globalSearch("strategie").isEmpty == false || gs.globalSearch("machine").contains { $0.kind == .oblique }, "recherche : stratégies obliques")
+
 print(failures == 0 ? "✓ aza-check : \(passed) vérifications OK" : "✗ aza-check : \(failures) échec(s), \(passed) OK")
 exit(failures == 0 ? 0 : 1)

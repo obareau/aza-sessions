@@ -16,6 +16,7 @@ struct MasterDetail<Item: Identifiable & Equatable, Row: View, Editor: View>: Vi
 
     @Local private var selection: Int? = nil
     @Local private var query = ""
+    @EnvironmentObject private var nav: Nav
 
     var body: some View {
         HSplitView {
@@ -42,6 +43,8 @@ struct MasterDetail<Item: Identifiable & Equatable, Row: View, Editor: View>: Vi
         }
         .navigationTitle(title)
         .navigationSubtitle("\(items.count)")
+        .onAppear { takeQuery() }
+        .onChange(of: nav.paneQuery) { _ in takeQuery() }
         .toolbar {
             Button {
                 let it = make(nextId(items))
@@ -51,6 +54,15 @@ struct MasterDetail<Item: Identifiable & Equatable, Row: View, Editor: View>: Vi
             Button { if let id = selection { delete(id) } } label: { Label("Supprimer", systemImage: "trash") }
                 .disabled(selection == nil)
         }
+    }
+
+    /// Recherche transmise par la palette ⌘K : filtre, et sélectionne l'élément s'il est seul.
+    func takeQuery() {
+        guard let q = nav.paneQuery else { return }
+        nav.paneQuery = nil
+        query = q
+        let found = items.filter { include($0) && matches($0, q.lowercased()) }
+        if found.count == 1 { selection = found[0].id }
     }
 
     func delete(_ id: Int) {
